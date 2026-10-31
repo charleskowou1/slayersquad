@@ -28,9 +28,10 @@ const tip = (id, text) => !(inPrologue() || firstBattle()) || tipsSeen().include
 // Game screens get a small ⚙ so music and sound can be changed mid-game (playback pauses while it's open)
 function topbar(eyebrow, title, quit=true){
   return `<header class="top"><div><div class="eyebrow">${eyebrow}</div><div class="title">${title}</div></div>
-    <div class="topbtns"><button class="btn ghost small gearmini" data-a="settings" aria-label="Settings">⚙</button>${quit?(inMatch()?'<button class="btn ghost small" data-a="askquit">Quit</button>':S.mode==='story'?'<button class="btn ghost small" data-a="home">Back</button>':'<button class="btn ghost small" data-a="home">Quit</button>'):''}</div></header>`;
+    <div class="topbtns"><button class="btn ghost small gearmini" data-a="settings" aria-label="Settings">⚙</button>${quit?(isAsync()?'<button class="btn ghost small" data-a="quit" data-v="home">Leave</button>':inMatch()?'<button class="btn ghost small" data-a="askquit">Quit</button>':S.mode==='story'?'<button class="btn ghost small" data-a="home">Back</button>':'<button class="btn ghost small" data-a="home">Quit</button>'):''}</div></header>`;
 }
-// In a match (from who-picks-first to the last round), Quit asks first instead of leaving straight away (CK)
+// In a match (from who-picks-first to the last round), Quit asks first instead of leaving straight away (CK).
+// Two-phone online games carry on without you, so they say Leave and need no warning.
 const inMatch = () => ['spin','draft','pass','plan','scout','ready','result'].includes(S.phase);
 function quitAsk(){
   return `<div class="scrim" data-a="unquit"></div><div class="modal"><div class="in quitask" role="dialog" aria-modal="true" aria-label="Quit this battle?">
@@ -264,22 +265,24 @@ function vModeSet(){
     ${art.length?`<div class="modehero" aria-hidden="true"><span class="mk">${kj}</span>${art.map(id=>`<img decoding="sync" src="${ART[id]}" alt="">`).join('')}</div>`:''}
     <div class="panel modepanel">${modeSettings()}</div>`;
 }
+let INSTALL_LATER=false;
 // "Add to Home Screen": installed, the game keeps its saved progress (iPhone Safari deletes website data after 7 days
 // without a visit, but not for Home Screen apps) and opens full screen. S.install is filled in by app.js.
 function installCard(){
-  const i=S.install; if(!i || i.standalone || !i.mobile || i.hidden) return '';
+  const i=S.install; if(!i || i.standalone || INSTALL_LATER || (!i.mobile && !i.canPrompt) || (typeof isTV==='function'&&isTV())) return '';   // browsers only, every time the game opens; never in the installed app
   const steps = i.ios ? `<ol class="isteps"><li>Tap <b>Share</b> <span class="ishare" aria-hidden="true">⬆︎</span> at the bottom of Safari</li><li>Choose <b>Add to Home Screen</b></li></ol>`
     : i.canPrompt ? '' : '<p class="muted">Open your browser menu (⋮) and choose <b>Install app</b> or <b>Add to Home screen</b>.</p>';
-  return `<div class="install"><div class="ihead"><span class="ik">家</span><div><b>Keep your progress safe</b><span class="muted">Add Slayer Squad to your Home Screen. It opens like an app, and your story and stats stay saved.</span></div></div>
+  return `<div class="install"><div class="ihead"><span class="ik">家</span><div><b>Keep your progress safe!</b><span class="muted">Add Slayer Squad to your Home Screen. It opens like an app, and your story and stats stay saved.</span></div></div>
     ${steps}<div class="ibtns">${i.canPrompt && !i.ios?'<button class="btn small" data-a="install">Install</button>':''}<button class="btn ghost small" data-a="installlater">Later</button></div></div>`;
 }
 // Story on the home screen: a progress pie and one button to carry on where you left off
 function storyHome(){
   const won=storyWon(), next=nextStage(), st=STAGES[next], all=won>=STAGES.length;
-  return `<div class="storyhome"><div class="sprog" style="--won:${won/STAGES.length*100}"><b>${won}</b><span>of ${STAGES.length}</span></div>
+  const place=st&&(PLACE_ART[st.id]||PLACE_ART[st.arc]);
+  return `<div class="storyhome">${place?`<span class="shbg" aria-hidden="true"><img decoding="sync" src="${place}" alt=""></span>`:''}${ART.tanjiro?`<span class="shhero" aria-hidden="true"><img decoding="sync" src="${ART.tanjiro}" alt=""></span>`:''}<div class="sprog" style="--won:${won/STAGES.length*100}"><b>${won}</b><span>of ${STAGES.length}</span></div>
     <div class="shbody"><div class="eyebrow">Story mode</div><b>${all?'Story complete':won?`Next: ${esc(st.title)}`:'The Slayer’s journey'}</b>
       <span class="muted">${all?`${totalStars()} of ${STAGES.length*3} stars`:won?`Battle ${next+1} · ${esc(ARCS[st.arc].title)}`:`${STAGES.length} battles, from Mount Sagiri to the last dawn`}</span></div>
-    <button class="btn small" data-a="storymap">${all?'Star chase':won?'Continue':'Begin'}</button></div>`;
+    <button class="btn small" data-a="storymap">${all?'Star chase':won?'Continue':'Start'}</button></div>`;
 }
 function vSetup(){
   return `
@@ -297,7 +300,8 @@ function vSetup(){
     ${S.tvJoinMsg?`<p class="hint onlinemsg">${esc(S.tvJoinMsg)}</p>`:''}</div>`:''}
   ${artStrip()}
   ${gamesCard()}
-  ${storyWon()?dailyCard()+storyHome():storyHome()+dailyCard()}
+  ${storyHome()}
+  ${dailyCard()}
   <div class="modes">${MODE_CARDS.map(([k,kj,t,sub])=>{ const art=(MODE_ART[k]||[]).filter(id=>ART[id]);
     return `<button class="mode${S.mode===k?' on':''}${art.length?' hasart':''}" data-a="openmode" data-v="${k}">${art.length?`<span class="mart n${art.length}" aria-hidden="true">${art.map(id=>`<img decoding="sync" src="${ART[id]}" alt="">`).join('')}</span>`:''}<span class="mk">${kj}</span><b>${t}</b><small>${sub}</small></button>`; }).join('')}</div>
   <details class="panel" id="howto"><summary>How to play</summary>
@@ -447,7 +451,7 @@ function awayBanner(){
   const h=hostSeat(), next=players().find(p=>p!==h && !(S.away&&S.away[p])), mins=Math.max(1, Math.ceil((S.hostAwaySince+HANDOFF_MS-Date.now())/60000));
   return `<div class="netnote">${nm(h)} has stepped away. The game waits for them${next!==undefined?`; if they’re not back in about ${plural(mins,'minute')}, ${next===S.me?'you take':nm(next)+' takes'} over hosting so the game can go on`:''}.</div>`;
 }
-const asyncHintText = 'You can close the game. It waits on your home screen and says when it’s your turn.';
+const asyncHintText = 'Tap Leave to play something else. This game stays on your home screen and says when it’s your turn.';
 const asyncHint = () => S.oppHere ? `${esc(nm(1-S.me))} is here too, so this is playing live.` : `${esc(nm(1-S.me)||'They')} isn’t in the game right now. ${asyncHintText}`;
 // A simple "waiting for the other phone" screen (online play)
 function waitScreen(eyebrow, title, line){

@@ -240,7 +240,7 @@ const ACTIONS = {
   settab(v){ S.setTab=v; if(v==='stats') loadGlobalStats(); },
   theirs(){ S.showTheirs=!S.showTheirs; },
   install(){ if(INSTALL_EVENT){ INSTALL_EVENT.prompt(); INSTALL_EVENT.userChoice.finally(()=>{ INSTALL_EVENT=null; installInfo(); render(); }); } },
-  installlater(){ try{ localStorage.setItem('squad-draft-install-later', Date.now()) }catch(e){} installInfo(); },
+  installlater(){ INSTALL_LATER=true; },
   backupnow(){ cloudBackup(true); },
   restore(){ cloudRestore(); },
   restoreok(){ cloudApply(); },
