@@ -38,7 +38,7 @@ hr('1. THE GAME IN ONE MINUTE');
 out(`- Two sides draft a squad of fighters on a points budget, then battle in rounds.
 - Each round, every fighter secretly picks ATTACK, DEFEND or their SPECIAL. Then everything resolves.
 - Last side with anyone standing wins. A match stopped at round 40 is a draw.
-- Modes: Local Multiplayer (one phone passed around, 2–4 players), Online (2 players: one game that plays live while both
+- Modes: Same Phone (one phone passed around, 2–4 players), Online (2 players: one game that plays live while both
   are in it and waits when one isn't, 6-letter code; 3 or 4 players: everyone at once, 4-letter room code),
   Quickplay (you vs 1–3 computers: Easy/Normal/Hard), Practice (you draft every team, the computers' too, then fight
   them; doesn't count toward records) and Story Mode (${STAGES.length} battles with preset squads).

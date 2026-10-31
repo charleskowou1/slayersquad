@@ -3,7 +3,10 @@
 const esc = s => String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const pc = p => `var(--p${p+1})`;   // player colours: green, wisteria, amber, rose
 const nm = p => esc(titled(S.names[p]));
-const glyphCls = c => (c.legend?'leg':c.mark?'mk':'')+(c.bound==='thread'?' boundthread':c.bound==='pot'?' boundpot':'');
+// The round is worked out before it plays, so a pot or thread only shows once the replay reaches the move that did it
+const boundNow = u => { const p=S.play; if(!u.bound || !p || p.done || !p.steps || !p.steps[p.k]) return u.bound||'';
+  return S.log.slice(p.steps[0][0], p.steps[p.k][1]+1).some(l=>l.kind===u.bound && l.on===u.uid) ? u.bound : ''; };
+const glyphCls = c => { const b=boundNow(c); return (c.legend?'leg':c.mark?'mk':'')+(b?' bound'+b:''); };
 const plural = (n,w) => `${n} ${w}${n===1?'':'s'}`;
 // Character pictures found in img/ (filled in by app.js at startup): card id → file path
 const ART = {};
@@ -18,9 +21,10 @@ const seal = (c, cls='') => `<span class="gl ${glyphCls(c)} ${cls}">${artOf(c)?`
 // First-time tips: a small banner the first time a player reaches each screen. "Got it" hides it for good (TIPS_KEY).
 const TIPS_KEY = 'squad-draft-tips';
 const tipsSeen = () => { try{ return JSON.parse(localStorage.getItem(TIPS_KEY))||[] }catch(e){ return [] } };
-// Tips only show in the story's Prologue (the first battles); after that the player knows the ropes (CK)
+// Tips show in the story's Prologue, and in a new player's first battle in any other mode except online
 const inPrologue = () => S.mode==='story' && STAGES[S.stage] && STAGES[S.stage].arc==='prologue';
-const tip = (id, text) => !inPrologue() || tipsSeen().includes(id) ? '' : `<div class="tip"><span class="tipk">Tip</span><p>${text}</p><button class="btn ghost small" data-a="tipok" data-v="${id}">Got it</button></div>`;
+const firstBattle = () => S.mode!=='online' && !tipsSeen().includes('played');
+const tip = (id, text) => !(inPrologue() || firstBattle()) || tipsSeen().includes(id) ? '' : `<div class="tip"><span class="tipk">Tip</span><p>${text}</p><button class="btn ghost small" data-a="tipok" data-v="${id}">Got it</button></div>`;
 // Game screens get a small ⚙ so music and sound can be changed mid-game (playback pauses while it's open)
 function topbar(eyebrow, title, quit=true){
   return `<header class="top"><div><div class="eyebrow">${eyebrow}</div><div class="title">${title}</div></div>
@@ -137,12 +141,11 @@ function recordsPanel(){
 const MODE_CARDS = [
   ['cpu','機','Quickplay','You vs the computer'],
   ['online','網','Online','2–4 phones'],
-  ['local','二','Local Multiplayer','One phone · 2–4 players'],
+  ['local','二','Same Phone','2–4 players'],
   ['practice','練','Practice','Draft every team yourself'],
-  ['story','物','Story Mode','The Slayer’s journey'],
 ];
 // Faint character art behind each mode card (only pictures that exist are used)
-const MODE_ART = {local:['zenitsu','inosuke'], online:['tanjiro','nezuko'], cpu:['muzan'], practice:['typezero'], story:['tanjiro']};
+const MODE_ART = {local:['zenitsu','inosuke'], online:['tanjiro','nezuko'], cpu:['muzan'], practice:['typezero']};
 // Names for local play: up to four, remembered on this phone
 const localNames = () => { const s=loadNames()||[]; return [playerName()||'Player 1','Player 2','Player 3','Player 4'].map((d,i)=>s[i]||d); };
 const seg = (act, cur, opts) => `<div class="seg">${opts.map(([v,l])=>`<button data-a="${act}" data-v="${v}" class="${String(cur)===String(v)?'on':''}">${l}</button>`).join('')}</div>`;
@@ -280,9 +283,10 @@ function storyHome(){
 }
 function vSetup(){
   return `
-  ${playerName()?'':`<div class="askname"><b>What should we call you?</b><span class="muted">Your name shows when you win, in story mode and online.</span>
-    <div class="namerow"><input id="hname" type="text" maxlength="14" placeholder="Your name" aria-label="Your name"><button class="btn small" data-a="savename" data-v="hname">Save</button></div></div>`}
-  <div class="setbar">${typeof isTV==='function'&&isTV()?'':'<button class="gear tvbtn" data-a="tvstart" aria-label="TV mode" title="TV mode">📺</button>'}<button class="gear tvjoinbtn" data-a="tvjoinopen" aria-label="Join a TV" title="Join a TV">📺</button><button class="gear" data-a="codex" aria-label="Codex" title="Codex">📖</button><button class="gear" data-a="settings" aria-label="Settings" title="Settings">⚙</button></div>
+  ${S.askName?`<div class="scrim"></div><div class="modal"><div class="in askname"><b>What should we call you?</b><span class="muted">Your name shows when you win, in story mode and online.</span>
+    <div class="namerow"><input id="hname" type="text" maxlength="14" placeholder="Your name" aria-label="Your name"><button class="btn small" data-a="savename" data-v="hname">Save</button></div>
+    <button class="btn ghost small" data-a="nameskip">Not now</button></div></div>`:''}
+  <div class="setbar">${typeof isTV==='function'&&isTV()?'':'<button class="gear tvbtn" data-a="tvstart" aria-label="TV mode" title="TV mode">📺 TV mode</button>'}<button class="gear tvjoinbtn" data-a="tvjoinopen" aria-label="Join a TV" title="Join a TV">📺 Join a TV</button><button class="gear" data-a="codex" aria-label="Codex" title="Codex">📖 Codex</button><button class="gear" data-a="settings" aria-label="Settings" title="Settings">⚙ Settings</button></div>
   <div class="hero"><span class="kanji" aria-hidden="true">滅</span>
     <h1>Slayer Squad</h1>
     <div class="credit">Built by Charles Kowou · Inspired by Amelia Gray</div>
@@ -293,13 +297,12 @@ function vSetup(){
     ${S.tvJoinMsg?`<p class="hint onlinemsg">${esc(S.tvJoinMsg)}</p>`:''}</div>`:''}
   ${artStrip()}
   ${gamesCard()}
-  ${dailyCard()}
-  ${storyHome()}
+  ${storyWon()?dailyCard()+storyHome():storyHome()+dailyCard()}
   <div class="modes">${MODE_CARDS.map(([k,kj,t,sub])=>{ const art=(MODE_ART[k]||[]).filter(id=>ART[id]);
     return `<button class="mode${S.mode===k?' on':''}${art.length?' hasart':''}" data-a="openmode" data-v="${k}">${art.length?`<span class="mart n${art.length}" aria-hidden="true">${art.map(id=>`<img decoding="sync" src="${ART[id]}" alt="">`).join('')}</span>`:''}<span class="mk">${kj}</span><b>${t}</b><small>${sub}</small></button>`; }).join('')}</div>
   <details class="panel" id="howto"><summary>How to play</summary>
     <ol class="steps">
-      <li><span class="sk">選</span><div><b>Pick a mode</b>Quickplay vs the computer, Online or Local with friends, or the Story.</div></li>
+      <li><span class="sk">選</span><div><b>Pick a mode</b>Quickplay vs the computer, Online or Same Phone with friends, or the Story.</div></li>
       <li><span class="sk">陣</span><div><b>Draft a squad</b>Take turns picking characters within your points. Tap a card to read it first.</div></li>
       <li><span class="sk">技</span><div><b>Choose moves in secret</b>Each fighter picks Attack, Defend (half damage) or their Special, and a target.</div></li>
       <li><span class="sk">斬</span><div><b>Watch the clash</b>The fastest act first. Health shows as a percent; red means 25% or less.</div></li>
@@ -338,7 +341,7 @@ function vSpin(){
   const dist = q => Math.abs(g.picks[q]-g.secret);
   const status = done
     ? `<div class="spinres" style="color:${pc(g.r)}">${nm(g.r)} picks first</div>
-       <p class="hint gwhy">${g.tie?`A tie at ${plural(dist(g.r),'away')}… a coin flip decided it.`:players().map(q=>`${nm(q)} ${g.picks[q]} (${dist(q)} away)`).join(' · ')}</p>
+       <p class="hint gwhy">${g.tie?`${players().filter(q=>dist(q)===dist(g.r)).map(q=>`${nm(q)} ${g.picks[q]}`).join(' and ')}: a tie, both ${plural(dist(g.r),'away')}. A coin flip decided it.`:players().map(q=>`${nm(q)} ${g.picks[q]} (${dist(q)} away)`).join(' · ')}</p>
        ${ctl?'':actionbar(guest?`<button class="btn" disabled>Waiting for ${nm(hostSeat())} to start…</button>`:`<button class="btn team" data-a="toDraft" style="--bc:${pc(g.r)}">Start the draft</button>`)}`
     : `<div class="spinhint">${mine?`<span style="color:${pc(me)}">${nm(me)}</span>, pick a number`:`Waiting for ${waiting.map(q=>`<span style="color:${pc(q)}">${nm(q)}</span>`).join(' and ')} to pick${onPhones?' on the phone':''}…`}</div>${isAsync()?`<p class="hint">${asyncHint()}</p>`:''}`;
   return `${topbar('Before the draft', 'Who picks first?')}
@@ -356,7 +359,7 @@ function cardHTML(c,p){
     <span class="cart">${ART[c.id]?`<img decoding="sync" src="${ART[c.id]}" alt="">`:`<span class="ck">${c.g}</span>`}</span>
     <span class="cost${c.cost>=12?' big':''}">${c.cost}<small>pts</small></span>
     ${badge?`<span class="badge">${badge}</span>`:''}
-    <span class="cbody"><span class="cn">${esc(c.name)}</span><span class="ct">${esc(c.type)}</span>${statCells(c)}</span>
+    <span class="cbody"><span class="cn">${esc(c.name)}</span><span class="ct">${esc(c.type)}</span>${statCells(c)}<span class="csp">${esc(sigCaption(c))}</span></span>
     ${owner>=0?`<span class="tag" style="background:${pc(owner)}">${nm(owner)}</span>`:ban?`<span class="tag banned">Banned · ${nm(ban.p)}</span>`:''}</button>`;
 }
 function teamBox(q,p){
@@ -568,14 +571,14 @@ function globalPanel(){
     ${rows.length?`<div class="recs"><div class="rec head"><span></span><span>Character</span><span>Win rate</span><span>Picked</span></div>
     ${rows.map(x=>`<div class="rec">${seal(x.c,'sm')}<span class="rn">${esc(x.c.short)}</span><b>${Math.round(x.w/x.p*100)}%</b><span class="muted">${x.d>=10?Math.round(x.r/x.d*100)+'%':'–'}</span></div>`).join('')}</div>`
       :`<div class="muted">Not enough games yet. A character shows up here after ${GLOBAL_MIN} games.</div>`}
-    <div class="hint">From every player's finished games (Local, Online and Quickplay; in Quickplay only your squad counts). Picked = how often players take a character when it's dealt. Anonymous: no names are sent.</div></div>`;
+    <div class="hint">From every player's finished games (Same Phone, Online and Quickplay; in Quickplay only your squad counts). Picked = how often players take a character when it's dealt. Anonymous: no names are sent.</div></div>`;
 }
 function statsTab(){
   const sc=loadScore(), top=Object.entries(sc).sort((a,b)=>b[1]-a[1]);
   return `<div class="setgroup"><div class="tlabel">All-time wins</div>
       <div class="score">${top.length ? top.slice(0,6).map(([k,v])=>`<div><b>${v}</b>${esc(k)}</div>`).join('') : '<div class="muted">No matches yet</div>'}</div></div>
     ${recordsPanel()}
-    <div class="hint">Counts Local, Online and Quickplay games on this phone. Story and Practice battles don't count.</div>
+    <div class="hint">Counts Same Phone, Online and Quickplay games on this phone. Story and Practice battles don't count.</div>
     ${globalPanel()}`;
 }
 // Settings (gear on the main screen): general options only. Match settings live with each mode on the main menu.
@@ -589,7 +592,7 @@ function vSettings(){
       <div class="hint">Shown when you win, in story mode and online. Each phone keeps its own name.</div></div>
     ${inMatch()?'':`<div class="setgroup placeset"><div class="tlabel">Battle background</div>
       ${seg('placecfg',placeChoice(),[['random','Random'],['off','Off'],...Object.keys(PLACE_ART).filter(id=>!/^(dr_|dream|six)/.test(id)).map(id=>[id,placeName(id)])])}
-      <div class="hint">Quickplay, Local, Online and Practice games are fought in front of one of the story places. Story battles always use their own.</div></div>`}
+      <div class="hint">Quickplay, Same Phone, Online and Practice games are fought in front of one of the story places. Story battles always use their own.</div></div>`}
     <div class="setgroup"><div class="tlabel">Playback speed</div>
       ${seg('speed',S.speed||'normal',[['slow','Slow'],['normal','Normal'],['fast','Fast']])}
       <div class="hint">How long each action stays on screen during a round.</div></div>
@@ -600,6 +603,11 @@ function vSettings(){
     <div class="setgroup"><div class="tlabel">Vibration on knockouts</div>${seg('vibe',S.vibeOn===false?'off':'on',[['on','On'],['off','Off']])}
       <div class="hint">Android phones only (iPhones don't allow it).</div></div>
     <div class="hint">Saved on this phone. Players, points, pool and difficulty are set per mode on the main menu.</div>`}
+    <div class="setgroup"><div class="tlabel">Found a bug?</div>
+      ${S.reportOpen?`<textarea id="reportbox" class="reportbox" maxlength="500" rows="4" placeholder="What happened, and what were you doing?" aria-label="Describe the bug">${esc(S.reportText||'')}</textarea>
+      <div class="row"><button class="btn small" data-a="reportsend">Send</button><button class="btn ghost small" data-a="reportopen">Cancel</button></div>
+      <div class="hint">Sends your message and your device type. Nothing else.</div>`:`<button class="btn ghost small" data-a="reportopen">Report a bug</button>`}
+      ${S.reportMsg?`<div class="hint">${esc(S.reportMsg)}</div>`:''}</div>
     ${S.mode==='story' && !['story','setup','modeset'].includes(S.phase)?`<div class="setgroup"><div class="tlabel">Leave this battle</div>
       <div class="row"><button class="btn ghost" data-a="quit" data-v="map">Quit to story map</button><button class="btn ghost" data-a="quit" data-v="home">Quit to home screen</button></div>
       <div class="hint">The battle isn't saved. You can start it again from the story map.</div></div>`:''}
@@ -702,7 +710,8 @@ function vPlan(){
   const enemyMoment=e=>!e.alive ? {hidden:true} : ({aimed:aimers(e), ...(picking?{tgtFor:ou.uid, picked:opl.t===e.uid}:{})});
   const goal = S.mode==='story' && STAGES[S.stage] ? twistText(STAGES[S.stage]) : '';
   const tips = S.round===1 ? tip('moves','For each fighter, pick <b>Attack</b>, <b>Defend</b> (half damage) or their <b>Special</b>, then tap who to hit. When everyone has a move, tap <b>Lock in moves</b>.')
-    : tip('info','Tap any picture to see that fighter’s stats, special and status. A gold <b>Special ready</b> means that enemy can use their special this round.');
+    : S.round===2 ? tip('info','Tap any picture to see that fighter’s stats, special and status. A gold <b>Special ready</b> means that enemy can use their special this round.')
+    : tip('red','Health turns <b>red</b> at 25% or less. Finish them off, or <b>Defend</b> to stay alive.');
   return `${topbar(`Round ${S.round}`, `<span style="color:${pc(p)}">${nm(p)}</span>, choose`)}
     ${tips}${awayBanner()}
     ${goal?`<div class="goal">${esc(goal)}${S.twist&&S.twist.survive?` · ${plural(Math.max(0,S.twist.survive-S.round+1),'round')} to go`:''}</div>`:''}
@@ -765,7 +774,7 @@ const beatFx = (lines, from) => { const name=fxName(lines,from); return name ? `
 // The big moments of a match: the blow that ends it, a team down to its last fighter, Hantengu breaking apart
 function momentOf(lines, to, cur){
   if(lines.some(l=>l.grit)) return {k:'somehow'};
-  const hlp=lines.find(l=>l.helper && SFX_ART['h_'+l.helper]); if(hlp) return {k:'h_'+hlp.helper};
+  const hlp=lines.find(l=>l.helper && SFX_ART['h_'+l.helper]); if(hlp) return {k:'h_'+hlp.helper, on:hlp.on};
   if(lines.some(l=>l.merged)) return {k:'merge'};
   if(lines.some(l=>l.sunrise)) return {k:'sunsweep'};
   if(lines.some(l=>l.kind==='drum')) return {k:'tilt'};
@@ -777,7 +786,7 @@ function momentOf(lines, to, cur){
     if(up.length===1 && ko.some(l=>{ const u=findU(l.on); return u && u.p===p; })) return {k:'lone', u:up[0]}; }
   return null;
 }
-const momentFx = m => !m ? '' : SFX_ART[m.k] ? `<div class="sfx sfx-${m.k}" aria-hidden="true">${SFX_ART[m.k]()}</div>`
+const momentFx = m => !m ? '' : SFX_ART[m.k] ? `<div class="sfx sfx-${m.k}" aria-hidden="true">${SFX_ART[m.k](m)}</div>`
   : m.k==='final' ? '<div class="sfx sfx-final" aria-hidden="true"></div>'
   : `<div class="sfx sfx-lone" aria-hidden="true"><span style="--tc:${pc(m.u.p)}">${seal(m.u,'sm')}<b>${esc(m.u.name)} stands alone</b></span></div>`;
 // One Attack's several strikes as one quick beat: quick lunges, a number per strike
@@ -1061,7 +1070,7 @@ function vScene(){
       ${(()=>{ const all=S.newUnlocks||[], at=Math.min(S.unlockAt||0, all.length-1), id=all[at]; if(!id) return '';   // one at a time: tap for the next
         return `<div class="ulist one"><span class="ucard big" key="${id}">${seal(BYID[id],'lg')}<b>${esc(BYID[id].name)}</b><small>${esc(BYID[id].type)}</small></span></div>
           ${all.length>1?`<span class="udots">${all.map((_,i)=>`<i class="${i===at?'on':i<at?'done':''}"></i>`).join('')}</span>`:''}`; })()}
-      ${S.newUnlocks&&S.newUnlocks.length?'<p class="muted ucap">Now playable in Local, Online, Quickplay and Practice.</p>':''}
+      ${S.newUnlocks&&S.newUnlocks.length?'<p class="muted ucap">Now playable in Same Phone, Online, Quickplay and Practice.</p>':''}
       <button class="btn big" data-a="scenenext">${(S.unlockAt||0)+1<(S.newUnlocks||[]).length?'Next':'Continue'}</button><span class="lbox b" aria-hidden="true"></span></div>`;
   }
   if(S.sceneVs){

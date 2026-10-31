@@ -340,3 +340,12 @@ const LORE = {
   kiriya: ['Everything is going according to plan.', 'Kagaya’s son and heir, who commanded the final battle at eight years old.'],
 };
 const loreOf = c => LORE[c.id] || LORE[c.fam] || null;
+// One short line under each draft card: what the special does at a glance (the full text is on the card's details)
+const SIG_CAPTION = {yoriichi:'Hits all · stops regen', yoriichi_old:'Huge single hit', muzan:'Hits all · heals him', muzan_final:'Hits all · heals him', kokushibo:'Hits all · ignores DEF', doma:'Hits all · ignores DEF',
+  akaza:'Big single hit', gyutaro:'Hits all · poison', daki:'Hits all · through Defend', nakime:'Banishes one enemy', gyokko:'Hit + stun', hantengu:'Hides and heals', kaigaku:'Hits two', enmu:'Delays all specials',
+  rui:'Hit + stun', kyogai:'Stuns one enemy', susamaru:'Hits two', yahaba:'Enemy\'s hits miss', hand:'Big single hit', swamp:'Dodges + hits', giyu:'Team takes no damage', gyomei:'Hits all · ignores DEF',
+  sanemi:'Hits two', muichiro:'Dodges + hits', mitsuri:'Hits all · through Defend', obanai:'Big hit · through Defend', rengoku:'Big single hit', tengen:'Hits all', tengen_retired:'Guards an ally', shinobu:'Poisons one enemy',
+  kanae:'Hit + heals', tanjiro:'Big hit · ignores DEF', tanjiro_demon:'Hits all · ignores DEF', nezuko:'Hits all · ignores DEF', nezuko_awakened:'Hits all · cures poison', zenitsu:'Moves first · double hit', inosuke:'Two random hits',
+  kanao:'Moves early · big hit', genya:'Heals · +2 PWR', tamayo:'Heals ally · cures poison', yushiro:'Hides an ally', sabito:'Ally +2 PWR', typezero:'Ally +2 SPD', urokodaki:'Big single hit', makomo:'Dodges + hits',
+  hinatsuru:'Hit + poison', makio:'Big single hit', suma:'Dodges + random hit', michikatsu:'Stronger every round', hakuji:'Big single hit', tanjuro:'Heals whole team', kagaya:'Awakens Marks · he falls', murata:'Strong single hit'};
+const sigCaption = c => SIG_CAPTION[c.id] || SIG_CAPTION[c.fam] || (c.sig && c.sig.name) || '';

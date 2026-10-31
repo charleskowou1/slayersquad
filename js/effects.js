@@ -53,7 +53,7 @@ const FX_ART = {
 // Big moments for a few specials (CK): drawn over the whole screen on the special's first hit, keyed by character (sk).
 // Akaza's and Doma's are drawn on their targets instead, so the eye stays on the damage. Tengen's plays on every hit, like
 // a drum. Rengoku has one for each special (tiger, then ninth for Ninth Form).
-const SPECIAL_FX = {zenitsu:'bolt', muichiro:'mist', tengen:'drum', inosuke:'claws', tanjiro:'firering', rengoku:'tiger', zohakuten:'dragons', kaigaku:'darkbolt', sanemi:'tornado', gyutaro:'sickles', susamaru:'temari', sekido:'bolt', suma:'kunai', akaza:'annihil', yoriichi:'sunform', yoriichi_old:'sunform',
+const SPECIAL_FX = {zenitsu:'bolt', muichiro:'mist', tengen:'drum', inosuke:'claws', tanjiro:'firering', rengoku:'tiger', zohakuten:'dragons', kaigaku:'darkbolt', sanemi:'tornado', gyutaro:'sickles', susamaru:'temari', sekido:'redbolt', suma:'kunai', akaza:'annihil', yoriichi:'sunform', yoriichi_old:'sunform',
   muzan:'whips', muzan_final:'whips2', gyomei:'flail', mitsuri:'ribbon', obanai:'snake', enmu:'sleep'};
 const whipArt = n => `<svg viewBox="0 0 100 100" preserveAspectRatio="none">${rep(n, i=>`<path style="--d:${i*.06}s" d="M${i%2?104:-4} ${16+i*(70/n)} C30 ${(i*37)%100} 70 ${100-(i*53)%100} ${i%2?-4:104} ${30+(i*29)%50}"/>`)}</svg>`;
 const SFX_ART = {
@@ -85,9 +85,10 @@ const SFX_ART = {
   somehow: () => '<b class="smh">Somehow!</b>',
   h_mice: () => rep(5, i=>`<img class="hrun mice" style="--i:${i}" src="${ART.mice||''}" alt="">`),
   h_crow: () => `<img class="hrun fly" src="${ART.crow||''}" alt="">`,
-  h_chachamaru: () => `<img class="hrun pad" src="${ART.chachamaru||''}" alt=""><b class="hcup">💊</b>`,
-  h_goto: () => `<img class="hrun haul" src="${ART.goto||''}" alt="">`,
-  h_aoi: () => `<b class="hcup tea">🍵</b><span class="hwash"></span>`,
+  h_chachamaru: () => `<img class="hrun pad" src="${ART.chachamaru||''}" alt=""><svg class="hcup" viewBox="0 0 100 50"><g transform="rotate(-20 50 25)"><rect x="8" y="12" width="84" height="26" rx="13" fill="#f4e7c6" stroke="#3b2a1c" stroke-width="2"/><path d="M50 12 H79 a13 13 0 0 1 0 26 H50 Z" fill="#c93c4b" stroke="#3b2a1c" stroke-width="2"/><rect x="16" y="16" width="26" height="4" rx="2" fill="#fff" opacity=".7"/></g></svg>`,
+  h_goto: m => { const u=m&&m.on&&findU(m.on); return `<img class="hrun haul" src="${ART.goto||''}" alt="">${u&&ART[u.id]?`<img class="hrun hauled" src="${ART[u.id]}" alt="">`:''}`; },
+  h_aoi: () => `<svg class="hcup tea" viewBox="0 0 100 80"><path class="steam" d="M38 22 C30 12 46 8 38 -2 M60 22 C52 12 68 8 60 -2" fill="none" stroke="#d7efdc" stroke-width="3" stroke-linecap="round"/><path d="M16 28 H84 C84 56 70 70 50 70 C30 70 16 56 16 28 Z" fill="#e9e2d0" stroke="#3b2a1c" stroke-width="2"/><ellipse cx="50" cy="28" rx="34" ry="8" fill="#7fbf6a" stroke="#3b2a1c" stroke-width="2"/><ellipse cx="50" cy="74" rx="26" ry="4" fill="#8a6a44"/></svg><span class="hwash"></span>`,
+  redbolt: () => rep(3, i=>`<svg class="rb r${i}" viewBox="0 0 40 100" preserveAspectRatio="none"><polyline class="b1" points="20,-4 12,22 26,38 14,58 28,74 18,104"/><polyline class="b2" points="20,-4 12,22 26,38 14,58 28,74 18,104"/></svg>`),
   firering: () => `<span class="firering"><i></i><i></i><i></i></span>`,
 };
 const compassFx = () => `<svg class="compassfx" viewBox="0 0 100 100" aria-hidden="true"><g>${rep(8, i=>`<line x1="50" y1="50" x2="${50+48*Math.cos(i*Math.PI/4)}" y2="${50+48*Math.sin(i*Math.PI/4)}"/>`)}${rep(6, i=>`<polygon points="50,6 54,16 50,26 46,16" transform="rotate(${i*60} 50 50)"/>`)}<circle cx="50" cy="50" r="30"/><circle cx="50" cy="50" r="46"/></g></svg>`;

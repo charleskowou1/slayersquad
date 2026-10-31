@@ -90,7 +90,7 @@ const PLACE_KEY = 'squad-draft-place';
 function placeChoice(){ try{ return localStorage.getItem(PLACE_KEY)||'random' }catch(e){ return 'random' } }
 function pickPlace(){
   const have = typeof PLACE_ART!=='undefined' ? Object.keys(PLACE_ART) : [], c=placeChoice();
-  if(c==='off' || !have.length) return null;
+  if(S.trial || c==='off' || !have.length) return null;
   if(c==='random'){ const ok=have.filter(id=>!/^(dr_|dream|six)/.test(id)); return ok.length ? ok[Math.floor(Math.random()*ok.length)] : null; }
   return have.includes(c) ? c : have[Math.floor(Math.random()*have.length)];
 }

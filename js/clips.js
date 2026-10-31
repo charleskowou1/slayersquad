@@ -101,6 +101,7 @@ const CLIP_SOUNDS = {
   sanemi:  {special: 'sounds/sanemi-special.mp3'},    // "Rising Dust Storm!"
   shinobu: {special: 'sounds/shinobu-special.mp3'},   // "Insect Breathing: Dance of the Bee Sting, True Flutter"
   tanjiro: {special: 'sounds/tanjiro-special.mp3'},   // "Hinokami Kagura! Dance!"
+  tengen:  {special: 'sounds/tengen-special.mp3'},    // "Sound Breathing, Fourth Form: Constant Resounding Slashes"
   zenitsu: {special: 'sounds/zenitsu-special.mp3'},   // "Thunder Breathing, First Form: Thunderclap and Flash"
   zohakuten:{special: 'sounds/zohakuten-special.mp3'},// "You brutal fiends who torment the weak"
   rengoku: {special: 'sounds/rengoku-special.mp3',    // "Fifth Form! Flame Tiger!"
@@ -133,12 +134,16 @@ function clipMoment(line){
   }
   return null;
 }
+// Does the special starting at this beat knock anyone out?
+const specialKOs = u => { const a=S.play.steps[S.play.k][0]; for(let i=a+1;i<S.log.length && S.log[i].fx!=='special';i++) if(S.log[i].ko && S.log[i].by===u.uid) return true; return false; };
 // The clip for one playback step (first line of the step), or null. Records repeat moments in S.clipSeen.
 function clipStep(line){
   if(S.clipsOn===false || !line) return null;
   const m=clipMoment(line); if(!m || !m.u) return null;
   const src=(clipSet(CLIPS,m.u)||{})[m.act]; if(!src) return null;
   const seen=S.clipSeen=S.clipSeen||{}, key=m.u.uid+':'+m.act;
+  // A special plays its full clip and voice the first time in a match, and again only when it knocks someone out or a Mark flares
+  if(line.fx==='special'){ S.play.quick=seen[key]!==undefined && !line.flare && !specialKOs(m.u); if(S.play.quick) return null; seen[key]=S.round; }
   if(CLIP_REPEAT.includes(m.act) && !(CLIP_ALWAYS[m.u.fam||m.u.id]||[]).includes(m.act)){ if(seen[key]!==undefined && S.round-seen[key]<CLIP_GAP) return null; seen[key]=S.round; }
   return {src, act:m.act, uid:m.u.uid, who:m.u.helper?m.u:null, sound:(clipSet(CLIP_SOUNDS,m.u)||{})[m.act]||null, key:`${S.round}-${S.play?S.play.k:0}-${m.u.uid}`};
 }

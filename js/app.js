@@ -24,6 +24,9 @@ function render(){
   if(view==='over' && !scored && (isPractice() || S.mode==='story')){ scored=true;   // story and practice don't count toward stats
     if(S.winner!==0) sfx('lose'); }   // story wins are saved (and celebrated) before the ending scene
   if(view==='over' && !scored && isAsync()){ const g=myGame(S.asyncCode); if(g && g.scored===S.matchNo) scored=true; else setGame(S.asyncCode,{scored:S.matchNo}); }   // a reopened game isn't counted twice
+  if(view==='plan' && S.round===1 && !matchOn){ matchOn=modeKey(); track([`m_${matchOn}_start`, `d_${todayKey()}_games`]); }
+  if(view==='over' && matchOn){ track([`m_${matchOn}_finish`]); matchOn=null; ACTIONS.tipok('played'); }
+  if(view==='setup') matchOn=null;
   if(view==='over' && !scored){ scored=true; postStats(statsGame()); if(S.winner>=0){ const sc=loadScore(); players().filter(q=>sameSide(q,S.winner)).forEach(q=>{ const n=S.names[q]; sc[n]=(sc[n]||0)+1; }); saveScore(sc); } recordMatch();
     sfx(S.winner<0 || (soloView() && !sameSide(S.winner,myP())) ? 'lose' : 'win'); }
   if(view!=='over') scored=false;
@@ -89,7 +92,7 @@ function playRound(){
     if(S.info || S.settings || S.quitAsk){ S._t=setTimeout(step,300); return; }   // paused while an info card, Settings or Quit is open
     if(S.play.k>=S.play.steps.length-1){ S.play.done=true; if(storyEnd() || storyMid()) return; render(); return; }
     S.play.k++; const [a,b]=S.play.steps[S.play.k], lines=S.log.slice(a,b+1), line=lines[0];
-    S.play.clip = b>a || quickMotion() ? null : clipStep(line);   // a move clip for this beat, if the fighter has one
+    S.play.quick=false; S.play.clip = b>a || quickMotion() ? null : clipStep(line);   // a move clip for this beat, if the fighter has one
     if(lines.some(l=>l.ko) && navigator.vibrate && S.vibeOn!==false) navigator.vibrate([90,50,160]);
     const flurry=b>a && line.move==='attack', special=fxName(lines,a), m=momentOf(lines,b,S.log[b]);
     const noise=()=>{ if(flurry) lines.forEach((l,i)=>setTimeout(()=>sfxForLine(l),i*280)); else if(b>a){ sfx('bighit'); if(lines.some(l=>l.ko)) setTimeout(()=>sfx('ko'),250); } else if(S.play.clip && S.play.clip.sound) clipSound(S.play.clip.sound); else sfxForLine(line); };
@@ -98,7 +101,7 @@ function playRound(){
     const extra=(special==='sunform'?1300:0)+(!m?0:m.k==='final'?600:m.k==='lone'?500:0);
     const t = extra*pace() + (flurry ? (quickMotion()?400:(1300+320*lines.length)*pace()) : b>a ? groupTime(lines) : line.fx==='awaken' ? Math.max(readTime(line), 3600*pace()) : readTime(line));
     const d=S.play.clip&&CLIP_DUR[S.play.clip.src], full=d&&d>=CLIP_LOOP&&S.speed!=='fast' ? Math.min(CLIP_MAX, d*1000+400) : CLIP_MIN*pace();
-    S._t=setTimeout(step, S.play.clip ? Math.max(t, full) : t);   // a clip beat stays up long enough to watch
+    S._t=setTimeout(step, S.play.clip ? Math.max(t, full) : S.play.quick ? t*.55 : t);   // a clip beat stays up long enough to watch
   };
   sfx('gong'); clearTimeout(S._t); S._t=setTimeout(step, quickMotion() ? 250 : 1500*pace());   // the "Round N · Fight!" intro
 }
@@ -225,7 +228,13 @@ const ACTIONS = {
   // Your name (Settings, or the home screen's one-time question): saved on this phone and used straight away
   savename(v){ const el=document.getElementById(v), n=el&&el.value.trim(); if(!n) return; savePlayerName(n); S.names[0]=playerName();
     const ns=loadNames(); if(ns && (ns[0]==='CK'||!ns[0])){ ns[0]=playerName(); saveNames(ns); }
+    if(S.askName) return nameGo();
     S.nameSaved=true; setTimeout(()=>{ S.nameSaved=false; render(); },1500); },
+  nameskip(){ NAME_SKIPPED=true; nameGo(); },
+  reportopen(){ S.reportOpen=!S.reportOpen; S.reportMsg=''; },
+  reportsend(){ const el=document.getElementById('reportbox'), msg=el&&el.value.trim(); if(!msg) return;
+    S.reportText=msg; S.reportMsg='Sending…';
+    sendReport(msg).then(()=>{ S.reportText=''; S.reportOpen=false; S.reportMsg='Sent. Thank you!'; }).catch(()=>{ S.reportMsg='That didn’t send. Check your connection and try again.'; }).finally(render); },
   quit(v){ S.settings=false; S.quitAsk=false; S.play=null; clearTimeout(S._t); if(v==='map') ACTIONS.storymap(); else ACTIONS.home(); window.scrollTo(0,0); },   // story: leave a battle from Settings
   placecfg(v){ try{ localStorage.setItem(PLACE_KEY,v) }catch(e){} },   // Settings → Battle background
   settab(v){ S.setTab=v; if(v==='stats') loadGlobalStats(); },
@@ -329,13 +338,18 @@ const ACTIONS = {
 const hushSound = () => { try{ if(AC && AC.state==='running') AC.suspend(); }catch(e){} };
 document.addEventListener('visibilitychange', ()=>{ if(document.hidden) hushSound(); else if(AC && AC.state!=='running') try{ AC.resume(); }catch(e){} });
 window.addEventListener('pagehide', hushSound);
+// A new player is asked their name when they first start something, not before they've seen the game
+let NAME_SKIPPED=false;
+const nameGo = () => { const [a,v]=S.askName; S.askName=null; ACTIONS[a](v); };
 document.addEventListener('click',e=>{
   unlockSound();   // phones only allow sound after a tap
   const b=e.target.closest('[data-a]'); if(!b||b.disabled) return;
   const fn=ACTIONS[b.dataset.a]; if(!fn) return;
+  if(['storymap','daily','openmode'].includes(b.dataset.a) && S.phase==='setup' && !playerName() && !NAME_SKIPPED && !(typeof isTV==='function'&&isTV())){
+    S.askName=[b.dataset.a,b.dataset.v]; render(); const el=document.getElementById('hname'); if(el) el.focus(); return; }
   fn(b.dataset.v,b); render();
 });
-document.addEventListener('keydown',e=>{ if(e.key==='Escape' && (S.sel||S.info||S.settings||S.quitAsk)){ S.sel=null; S.info=null; S.settings=false; S.quitAsk=false; render(); } });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape' && (S.sel||S.info||S.settings||S.quitAsk||S.askName)){ S.askName=null; S.sel=null; S.info=null; S.settings=false; S.quitAsk=false; render(); } });
 
 // Character pictures: for each card look for img/<id>.jpg (or .png / .webp). A Mark card without its own picture
 // borrows its base character's (giyu_mark → giyu); other versions borrow too (tengen_retired → tengen). No picture: kanji.
@@ -604,6 +618,30 @@ function statsGame(){
   return {pool:S.pool||[], poolType:S.poolType, teams:players().map(p=>S.teams[p].filter(u=>!u.spawn).map(u=>u.id)), helpers:players().map(p=>(S.picks[p]||[]).filter(isHelper)),
     won:players().map(p=>S.winner>=0 && sameSide(S.winner,p)), humans: S.mode==='cpu' ? [0] : players()};
 }
+// Anonymous counters for CK's admin page: no names, just how often things happen. Skipped on his own browser.
+let matchOn=null;
+const modeKey = () => (typeof isTV==='function'&&isTV()?'tv_':'')+(S.mode==='online'?'online'+S.n:S.mode);
+function track(keys){
+  try{ if(!FIREBASE_CONFIG || !navigator.onLine || navigator.webdriver || location.hostname==='localhost' || localStorage.getItem('squad-draft-admin')) return; }catch(e){ return; }
+  firebaseReady().then(db=>{ const inc=firebase.database.ServerValue.increment(1), up={}; keys.forEach(k=>up[k]=inc); return db.ref('track').update(up); }).catch(()=>{});
+}
+function trackOpen(){
+  const day=todayKey(), keys=[`d_${day}_opens`]; let t={}; try{ t=JSON.parse(localStorage.getItem('squad-draft-track'))||{} }catch(e){}
+  if(t.day!==day) keys.push(`d_${day}_players`);
+  if(!t.day){ const ua=navigator.userAgent||''; keys.push('players', `d_${day}_new`, 'dev_'+(/iphone|ipad|ipod/i.test(ua)?'ios':/android/i.test(ua)?'android':'computer')); }
+  try{ localStorage.setItem('squad-draft-track',JSON.stringify({day})) }catch(e){}
+  track(keys);
+}
+setTimeout(trackOpen, 5000);
+const gameVersion = async () => { try{ return ((await caches.keys()).find(k=>k.startsWith('squad-draft-v'))||'').replace('squad-draft-v','') }catch(e){ return '' } };
+async function sendReport(msg, auto){
+  const db=await firebaseReady();
+  await db.ref('reports').push({at:Date.now(), msg:String(msg).slice(0,500), v:await gameVersion(), ua:(navigator.userAgent||'').slice(0,200), where:String(S.mode+' / '+S.phase).slice(0,60), auto:auto?1:0});
+}
+// Crashes report themselves (at most 3 each time the game is open)
+let CRASHES=0;
+window.addEventListener('error',e=>{ if(!e.filename || CRASHES>=3 || navigator.webdriver || location.hostname==='localhost' || !navigator.onLine) return; CRASHES++;
+  sendReport(`${e.message} (${String(e.filename).split('/').pop()}:${e.lineno})`, true).catch(()=>{}); });
 function postStats(g){
   if(!g || !FIREBASE_CONFIG || !navigator.onLine) return;
   firebaseReady().then(db=>{

@@ -18,7 +18,8 @@ function seededRng(str){ let h=1779033703^str.length; for(let i=0;i<str.length;i
   return ()=>{ h|=0; h=h+0x6D2B79F5|0; let t=Math.imul(h^h>>>15,1|h); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
 // The enemy: a random team within `pts` points, up to 4 fighters, one version per character
 function dailyEnemy(rng, cards, pts){
-  const pool=cards.filter(c=>c.cost<=pts).sort(()=>rng()-.5), team=[], fams=new Set(); let left=pts;
+  const pool=cards.filter(c=>c.cost<=pts), team=[], fams=new Set(); let left=pts;
+  for(let i=pool.length-1;i>0;i--){ const j=Math.floor(rng()*(i+1)); [pool[i],pool[j]]=[pool[j],pool[i]]; }   // a real shuffle: a random sort comes out differently on iPhone and Android
   for(const c of pool){ if(team.length>=4) break; if(c.cost<=left && !fams.has(c.fam)){ team.push(c.id); fams.add(c.fam); left-=c.cost; } }
   return team.length>=1 ? team : null;
 }
@@ -42,7 +43,7 @@ function dailyDraft(ch, open){
 // One test of the challenge: a strong computer drafts from the starting characters, then both sides fight
 const starterCard = c => typeof lockable!=='function' || !lockable(c);
 function dailyTrial(ch){
-  const keep=S; S={names:['You','Foe']};
+  const keep=S; S={names:['You','Foe'], unlockAll:true, trial:true};   // the same for every player: no saved progress, no background roll
   dailyDraft(ch, starterCard);
   let k=0; while(S.phase==='draft' && k++<40) cpuDraftStep('hard');
   if(S.phase==='draft'){ S.locked=[true,true]; startBattle(); }

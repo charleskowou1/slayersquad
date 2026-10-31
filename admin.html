@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Slayer Squad Admin</title><meta name="robots" content="noindex,nofollow">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<style>
+:root{--bg:#14110e;--panel:#211b16;--line:#3a3028;--fg:#f0e4cd;--muted:#a79a86;--gold:#d6a54d;--accent:#e0573b;--green:#57c98a}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,-apple-system,sans-serif}
+main{max-width:960px;margin:0 auto;padding:20px 16px 60px}h1{margin:0;font:800 1.7rem Georgia,serif}h2{margin:0 0 10px;font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+.sub{color:var(--muted);margin:2px 0 18px}.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:12px}
+.tile,section{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}.tile b{display:block;font-size:1.7rem;line-height:1.1}.tile span{color:var(--muted);font-size:.8rem}
+section{margin-bottom:12px;overflow-x:auto}.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}.grid2 section{margin:0}.grid2{margin-bottom:12px}
+.bars{display:flex;align-items:flex-end;gap:4px;height:130px}.bars div{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;font-size:.66rem;color:var(--muted)}
+.bars i{display:block;width:100%;min-height:2px;border-radius:3px 3px 0 0;background:var(--gold)}
+.row{display:grid;grid-template-columns:minmax(90px,150px) 1fr 74px;gap:8px;align-items:center;padding:3px 0;font-size:.86rem}.row u{display:block;height:8px;border-radius:4px;background:var(--gold);text-decoration:none}.row small{color:var(--muted);text-align:right}
+.rep{border-top:1px solid var(--line);padding:9px 0}.rep:first-of-type{border:0}.rep small{display:block;color:var(--muted);overflow-wrap:anywhere}.rep p{margin:2px 0 4px;white-space:pre-wrap;overflow-wrap:anywhere}.rep.auto p{color:var(--accent);font-family:ui-monospace,monospace;font-size:.82rem}
+button{font:inherit;color:var(--fg);background:#2d251e;border:1px solid var(--line);border-radius:8px;padding:5px 10px;cursor:pointer}
+pre{margin:8px 0;padding:10px;background:#0e0c0a;border-radius:8px;overflow-x:auto;font-size:.76rem}.warn{border-color:var(--gold)}.muted{color:var(--muted)}
+</style></head><body><main>
+<h1>Slayer Squad Admin</h1><p class="sub" id="sub">Loading…</p><div id="out"></div>
+</main>
+<script src="js/firebase-config.js"></script>
+<script src="js/roster.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/story.js"></script>
+<script src="js/admin.js"></script>
+</body></html>

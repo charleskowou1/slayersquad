@@ -2,6 +2,7 @@
 // (CACHE 'squad-draft-vNN'), which goes up with every push. tools/make-guide.js prints this at the top of the guide.
 // Add a line here with every push (CK, Oct 28, 2026), then rebuild the guide: node tools/make-guide.js
 module.exports = [
+  [99, '2026-10-31', 'Sleeker home screen, the Daily is now the same for everyone, special captions on draft cards, repeat specials play shorter, Tengen\'s voice line, tips for new players, bug reports, link preview, and the rights notice on the splash.'],
   [98, '2026-10-31', '22 new animations: Sanemi\'s tornado, Hantengu hiding, Gyutaro\'s sickles, Susamaru\'s temari, Retired Tengen\'s guard, Kagaya\'s Final Resolve, the back-pocket helpers and more.'],
   [97, '2026-10-30', 'Online: moves no longer repeat between rounds, specials can\'t be spammed, and a timer runs when both players are in; pictures no longer blink on redraw; Yoriichi slashes 13 times; new Obanai animation; Demon King Tanjiro audio fixed.'],
   [96, '2026-10-30', 'Fixed pictures blinking out; 15 voice lines; new Yoriichi animation; The Endless Dream unlocks per battle, gives you its helpers, and has a new final objective (its progress was reset once); Nakime\'s doors on one fighter; thin red threads for Rui.'],

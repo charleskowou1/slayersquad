@@ -818,8 +818,6 @@ details ul b{color:var(--fg)}
 .opps .tiles.simple .bar{min-width:24px}
 .opps .tiles.simple .hp{font-size:.72rem}
 
-/* five mode cards: Story takes the full last row */
-.modes .mode:last-child{grid-column:1/-1}
 
 /* story win: newly unlocked characters */
 .unlocked{display:flex;flex-direction:column;gap:8px;align-items:center;padding:14px;border:1.5px solid var(--gold);border-radius:16px;background:linear-gradient(180deg,rgba(214,165,77,.14),transparent)}
@@ -923,7 +921,6 @@ details ul b{color:var(--fg)}
 .mode .mart.n2 img{width:50%}
 .mode.on .mart{opacity:.55}
 .mode .mk,.mode b,.mode small{text-shadow:0 1px 6px rgba(0,0,0,.7)}
-.modes .mode:last-child .mart{width:45%}
 /* elements with their own gradient keep it, with the grain on top */
 .daily{background:var(--grain),linear-gradient(120deg,rgba(214,165,77,.16),var(--surface) 60%)}
 .daily.done,.daily.loading{background:var(--grain),var(--surface)}
@@ -1867,8 +1864,8 @@ body.tvmode .wrap{min-height:calc(100dvh / var(--tvz,1))}
 .tfx.sixeyes ellipse{fill:rgba(220,50,80,.75);stroke:#ffd25e;stroke-width:.8;filter:drop-shadow(0 0 3px #ff3b52)}
 .tfx.ripple{top:48%;width:170%}
 .tfx.ripple ellipse{fill:none;stroke:#3b2a5c;stroke-width:2.6}
-.stage.by-swamp .st-by .gl{animation:swampdip 1.1s ease-in-out}
-@keyframes swampdip{0%,100%{transform:none}40%{transform:translateY(18px) scaleY(.82);opacity:.45}}
+.stage.by-swamp .st-by .gl,.acard.fly.sinking,.acard.sinking{animation:swampdip 1.6s ease-in-out both}
+@keyframes swampdip{0%,100%{transform:none;opacity:1}28%,68%{transform:translateY(30px) scaleY(.6);opacity:0}}
 .stage.by-suma .st-by .gl{animation:sumatrip .8s ease-out}
 @keyframes sumatrip{0%{transform:none}35%{transform:rotate(14deg) translateY(6px)}70%{transform:rotate(-6deg)}100%{transform:none}}
 .stage.shrinking .st-on .gl{animation:cower 1.8s ease-in-out both}
@@ -1910,3 +1907,27 @@ body.tvmode .wrap{min-height:calc(100dvh / var(--tvz,1))}
 @keyframes cupin{0%{opacity:0;margin-left:-44vw}35%{opacity:1;margin-left:0}80%{opacity:1}100%{opacity:0}}
 .hwash{position:absolute;inset:0;background:radial-gradient(circle at 50% 70%,rgba(110,220,150,.4),transparent 60%);animation:sunup 1.6s ease-out both}
 @media (prefers-reduced-motion:reduce){.stage.shrinking .st-on .gl,.acard.shrinking,.stage.covering .st-by,.ghostcard{animation:none!important}}
+/* Home: labelled buttons, and the name question as a pop-up (CK) */
+.setbar .gear{width:auto;padding:0 10px;border-radius:99px;font-size:.76rem;gap:4px;white-space:nowrap}
+.setbar{margin-bottom:8px}
+.modal .in.askname{margin:0;gap:6px;border-radius:14px}
+.csp{display:block;margin-top:4px;font-size:.62rem;line-height:1.2;color:var(--gold)}
+/* Sekido's staff: three crimson strikes from above */
+.sfx-redbolt{animation:redflash .7s ease-out both}
+.sfx svg.rb{inset:0 auto auto auto;width:16vmin;height:58%}
+.sfx svg.rb.r0{left:12%}.sfx svg.rb.r1{left:calc(50% - 8vmin)}.sfx svg.rb.r2{left:calc(88% - 16vmin)}
+.sfx-redbolt polyline{fill:none;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke;stroke-dasharray:400;stroke-dashoffset:400;animation:boltdraw .8s cubic-bezier(.2,.9,.2,1) both}
+.sfx-redbolt .r1 polyline{animation-delay:.1s}.sfx-redbolt .r2 polyline{animation-delay:.2s}
+.sfx-redbolt .b1{stroke:#ff4a2b;stroke-width:14;filter:blur(5px)}
+.sfx-redbolt .b2{stroke:#ffd9b0;stroke-width:4}
+@keyframes redflash{0%{background:rgba(255,60,30,.16)}100%{background:transparent}}
+/* helpers: drawn pill and tea, Goto carrying the fighter off */
+.sfx svg.hcup{inset:auto;left:50%;top:40%;width:18vmin;height:auto;overflow:visible}
+.sfx svg.hcup.tea{top:auto;bottom:18vh;width:16vmin}
+.hcup .steam{animation:steamup 1.5s ease-in-out infinite}
+@keyframes steamup{0%{opacity:0;transform:translateY(6px)}50%{opacity:.9}100%{opacity:0;transform:translateY(-8px)}}
+.hrun.hauled{bottom:16vh;left:calc(50% - 7vmin);animation:gothauled 1.7s ease-in-out both}
+@keyframes gothauled{0%,40%{transform:none}52%{transform:translateY(-3vh) rotate(-10deg)}100%{transform:translate(62vw,-3vh) rotate(-10deg);opacity:0}}
+.reportbox{width:100%;box-sizing:border-box;margin-bottom:8px;padding:10px;border-radius:10px;border:1px solid var(--line-2);background:rgba(0,0,0,.3);color:var(--fg);font:inherit;resize:vertical}
+/* splash: the fan-game notice */
+.sp-note{position:absolute;left:0;right:0;bottom:calc(16px + env(safe-area-inset-bottom));max-width:440px;margin:0 auto;padding:0 24px;text-align:center;font-size:.68rem;line-height:1.45;letter-spacing:.02em;color:rgba(240,228,205,.55)}

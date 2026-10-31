@@ -464,7 +464,7 @@ const totalStars = () => MAIN_STAGES.reduce((a,st)=>a+stageStars(st.id),0);
 function saveStars(id,met){ const n=met.filter(Boolean).length, s=loadStory(); if(n<=stageStars(id)) return;   // only a better run replaces the best
   s.goals=s.goals||{}; s.stars=s.stars||{}; s.goals[id]=met.map(Boolean); s.stars[id]=n; writeStory(s); }
 const storyWon = () => loadStory().cleared.filter(id=>STAGES.some(s=>s.id===id)).length;
-function saveStoryClear(id){ const s=loadStory(); if(!s.cleared.includes(id)) s.cleared.push(id); writeStory(s); }
+function saveStoryClear(id){ if(typeof track==='function') track([`s_${id}_win`]); const s=loadStory(); if(!s.cleared.includes(id)) s.cleared.push(id); writeStory(s); }
 const stageCleared = i => loadStory().cleared.includes(STAGES[i].id);
 const stageUnlocked = i => i===0 || stageCleared(i-1) || stageCleared(i);
 // The battle to play next: the first unlocked one not won yet (or the last one)
@@ -485,7 +485,7 @@ function twistText(st){
 // Draft replay pool: the Corps and its allies (no demons, no Legends), plus whoever is in this stage's preset squad
 // Start a stage: the scene first, then the battle with the preset squad (or the draft, when replaying with draft)
 function startStage(i, draft=false){
-  const st=STAGES[i];
+  const st=STAGES[i]; if(typeof track==='function') track([`s_${st.id}_try`]);
   Object.assign(S,{stage:i, storyDraft:draft, phase:'scene', sceneAt:0, sceneVs:false, sceneMid:false, sceneOutro:false, showTheirs:false, awaken:st.awaken||null, chain:st.chain||null, n:2, maxTeam:MAXTEAM, budget:stageBudget(st), twist:st.twist?JSON.parse(JSON.stringify(st.twist)):null, startState:st.start||null, boosts:st.boosts||null, phases:st.phases||null, beats:st.beats||null,
     first:0, lastPicker:null, history:[], k:0, sel:null});
   S.names=[playerName()||'Player 1', st.foe];   // this phone's player name (Settings)

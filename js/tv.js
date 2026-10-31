@@ -304,7 +304,7 @@ function boardRoles(b, pos){
   if(first.gone){ add(findU(first.on),'pulled',kDoors); return roles; }
   if(first.shrink){ add(findU(first.on),'shrinking'); return roles; }
   if(first.cover && by && pos.get(first.on)){ fly(by,pos.get(first.on),.85); add(findU(first.on),'fx-guard'); return roles; }
-  { const f=byFx(first); if(f) add(by,'',f); }   // Nakime's biwa: dropped through the floor, off the screen
+  { const f=byFx(first); if(f) add(by,by.sk==='swamp'?'sinking':'',f); }   // Nakime's biwa: dropped through the floor, off the screen
   if(b.flurry && by){   // one Attack's quick strikes: one flight, one total
     const t=findU(first.on), sum=flurryPct(b.lines), style=styleOf(by,'attack');
     if(t && pos.get(t.uid)) fly(by, pos.get(t.uid), .8);
@@ -354,7 +354,7 @@ function vTvBoard(b){
     const inner=`${o.calm&&b.involved.has(u.uid)?waterRing():''}<div class="aart">${artOf(u)?`<img decoding="sync" src="${artOf(u)}" alt="">`:`<span class="ak">${u.g}</span>`}</div>${r.fx}
       <div class="ainfo"><span class="anm">${esc(u.name)}</span><span class="ahp${up&&h<=LOW?' low':''}"><span class="abar"><i class="${from!==h?'drain':''}" style="width:${h}%;--from:${from}%"></i></span><b>${hp>0||o.hp===undefined&&up?h+'%':'KO'}</b></span></div>
       ${!playing&&up?statusMarks(u, u.cd===0&&!u.stun):''}`;
-    return `<div class="acard${state}${r.cls}${back}${o.lost?' lost':''}${o.smolder?' smolder':''}${o.hid?' talisman':''}${u.bound?' bound'+u.bound:''}" style="--tc:${pc(u.p)}${r.dx!==undefined?`;--dx:${r.dx}px;--dy:${r.dy}px`:''}">${dust?`<div class="cr-pic">${inner}</div>${crumblePic(dust,'').replace('<span class="cr-pic"></span>','')}`:cut?`<div class="sl-wrapb">${inner}</div><div class="sl-wrapt">${inner}</div>`:inner}</div>`; };
+    return `<div class="acard${state}${r.cls}${back}${o.lost?' lost':''}${o.smolder?' smolder':''}${o.hid?' talisman':''}${boundNow(u)?' bound'+boundNow(u):''}" style="--tc:${pc(u.p)}${r.dx!==undefined?`;--dx:${r.dx}px;--dy:${r.dy}px`:''}">${dust?`<div class="cr-pic">${inner}</div>${crumblePic(dust,'').replace('<span class="cr-pic"></span>','')}`:cut?`<div class="sl-wrapb">${inner}</div><div class="sl-wrapt">${inner}</div>`:inner}</div>`; };
   const big = beat && !over && b.lines.some(bigHit), kos = beat && !over && b.lines.some(l=>l.fx==='ko'||l.ko);
   const wait=tvWaiting(), goal=S.mode==='story'&&STAGES[S.stage]?twistText(STAGES[S.stage]):'';
   const roundOver = !playing && S.phase==='result';
