@@ -34,6 +34,7 @@ function modesCheck(){
     if(mode!=='random'){ vDraft(); let k=0; while(S.phase==='draft'&&k++<40) cpuDraftStep('hard'); }
     if(S.phase!=='reveal') throw new Error(mode+': no reveal');
     if(mode==='mirror' && S.picks[0].join()!==S.picks[1].join()) throw new Error('mirror: squads differ');
+    if(mode==='random' && S.picks[0].some(a=>S.picks[1].some(b=>BYID[a].fam===BYID[b].fam))) throw new Error('random: same character on both teams');
     if(mode==='rush' && S.picks[0].some(id=>BYID[id].demon)) throw new Error('rush: demon on your team');
     play(); let n=0;
     while(S.series && S.winner===0 && gmFights()>S.series.wave && n++<30){ const up=S.teams[0].filter(u=>u.alive).map(u=>u.hp); gmNext(); if(S.phase!=='reveal' || S.teams[0].some(u=>!u.alive) || S.teams[0].some((u,i)=>u.hp<up[i])) throw new Error(mode+': survivors did not carry over'); if(S.mode==='rush' && S.picks[1].slice(0,RUSH_FIGHTS[S.series.wave-1].length).join()!==RUSH_FIGHTS[S.series.wave-1].join()) throw new Error('rush: wrong fight'); play(); }

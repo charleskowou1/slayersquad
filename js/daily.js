@@ -160,7 +160,8 @@ function gmDraft(mode){
 }
 function gmRandom(){
   Object.assign(S,gmBase('random')); const cards=gmCards();
-  S.picks=[randSquad(S.budget,cards), randSquad(S.budget,cards)]; S.locked=[true,true]; S.pool=[]; startBattle();
+  const a=randSquad(S.budget,cards), fams=new Set(a.map(id=>BYID[id].fam));
+  S.picks=[a, randSquad(S.budget,cards.filter(c=>!fams.has(c.fam)))]; S.locked=[true,true]; S.pool=[]; startBattle();   // no character on both teams, in any version
 }
 const gmStart = mode => mode==='random' ? gmRandom() : gmDraft(mode);
 const gmAgain = () => gmStart(S.mode);   // a fresh draft (CK): refilling a full squad locked it and skipped the draft

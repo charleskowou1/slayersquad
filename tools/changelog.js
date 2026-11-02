@@ -2,6 +2,7 @@
 // (CACHE 'squad-draft-vNN'), which goes up with every push. tools/make-guide.js prints this at the top of the guide.
 // Add a line here with every push (CK, Oct 28, 2026), then rebuild the guide: node tools/make-guide.js
 module.exports = [
+  [105, '2026-11-02', 'Random Squads never deals the same character to both teams, in any version.'],
   [104, '2026-11-02', 'Game Modes in Quickplay: Final Form, Gauntlet, Upper Moon Rush, Random Squads and Mirror Match, with every character open; the real Hantengu feeds Zohakuten +2 PWR a round and hides instead of attacking; two devices on one recovery code now combine their progress, and restoring only adds; Mark Tanjiro has a separate clip for Hinokami Kagura out of the Selfless State.'],
   [103, '2026-11-01', 'Card stats line up across every row in the Codex and draft; on phones, Join a TV, Codex and Settings move to their own row under the game modes.'],
   [102, '2026-11-01', 'Long character cards no longer squash their picture and header; the rest of the v101 fixes: home buttons fully tucked, Battle background dropdown, shorter Latest Updates, voice lines load before the battle.'],
