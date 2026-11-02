@@ -603,7 +603,7 @@ function vSettings(){
       <div class="namerow"><input id="pname" type="text" maxlength="14" value="${esc(playerName())}" placeholder="Your name" aria-label="Your name"><button class="btn small" data-a="savename" data-v="pname">${S.nameSaved?'Saved ✓':'Save'}</button></div>
       <div class="hint">Shown when you win, in story mode and online. Each phone keeps its own name.</div></div>
     ${inMatch()?'':`<div class="setgroup placeset"><div class="tlabel">Battle background</div>
-      ${seg('placecfg',placeChoice(),[['random','Random'],['off','Off'],...Object.keys(PLACE_ART).filter(id=>!/^(dr_|dream|six)/.test(id)).map(id=>[id,placeName(id)])])}
+      <select class="setselect" data-change="placecfg" aria-label="Battle background">${[['random','Random'],['off','Off'],...Object.keys(PLACE_ART).filter(id=>!/^(dr_|dream|six)/.test(id)).map(id=>[id,placeName(id)])].map(([v,l])=>`<option value="${v}"${placeChoice()===v?' selected':''}>${esc(l)}</option>`).join('')}</select>
       <div class="hint">Quickplay, Same Phone, Online and Practice games are fought in front of one of the story places. Story battles always use their own.</div></div>`}
     <div class="setgroup"><div class="tlabel">Playback speed</div>
       ${seg('speed',S.speed||'normal',[['slow','Slow'],['normal','Normal'],['fast','Fast']])}

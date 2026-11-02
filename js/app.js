@@ -61,7 +61,7 @@ function render(){
   warmClips();
   open.forEach(id=>{ const d=document.getElementById(id); if(d) d.open=true; });
   // Opening the home screen on a phone: Slayer Squad comes first, and Join a TV, Codex and Settings sit just above it (scroll up)
-  if(view==='setup' && lastView!=='setup' && window.innerWidth<900 && !(typeof isTV==='function'&&isTV())){ const h=app.querySelector('.hero'), w=app.closest('.wrap'); if(h&&w) window.scrollTo(0, Math.max(0, h.getBoundingClientRect().top+window.scrollY-(parseFloat(getComputedStyle(w).paddingTop)-14))); }
+  if(view==='setup' && lastView!=='setup' && window.innerWidth<900 && !(typeof isTV==='function'&&isTV())){ const b=app.querySelector('.setbar'); if(b) window.scrollTo(0, Math.ceil(b.getBoundingClientRect().bottom+window.scrollY-(parseFloat(getComputedStyle(app).paddingTop)-26))+2); }
   lastView=view;
   if(view==='story' && S.storyScroll){ S.storyScroll=false; const el=app.querySelector('.srow.sel'); if(el) el.scrollIntoView({block:'center'}); else window.scrollTo(0,0); }
   if(!ctl && S.phase==='draft' && S.mode==='cpu' && turn()!==0){ clearTimeout(S._t); S._t=setTimeout(()=>{ if(S.banning) cpuBan(); else cpuDraftStep(S.level); render(); },700); }
@@ -86,6 +86,7 @@ const groupTime = lines => quickMotion() ? 400 : (2400 + 450*lines.filter(l=>GRO
 const CLIP_MIN = 3600, CLIP_MAX = 6000, CLIP_FIRST_MAX = 12000, CLIP_LOOP = 2.2, CLIP_PENDING = new Set(), CLIP_DUR = {};
 function warmClips(){
   if(S.clipsOn===false || !(S.teams||S.picks) || !navigator.onLine) return;
+  matchSounds().forEach(warmSound);
   matchClips().forEach(url=>{ if(CLIP_BLOB[url] || CLIP_PENDING.has(url)) return; CLIP_PENDING.add(url);
     fetch(url).then(r=>r.ok?r.blob():Promise.reject()).then(b=>{ CLIP_BLOB[url]=URL.createObjectURL(b); if(clipIsPic(url)) return;
       const v=document.createElement('video'); v.preload='metadata'; v.muted=true; v.onloadedmetadata=()=>{ CLIP_DUR[url]=v.duration; v.removeAttribute('src'); v.load(); }; v.src=CLIP_BLOB[url];
@@ -359,6 +360,8 @@ document.addEventListener('click',e=>{
     S.askName=[b.dataset.a,b.dataset.v]; render(); const el=document.getElementById('hname'); if(el) el.focus(); return; }
   fn(b.dataset.v,b); render();
 });
+// Dropdowns in Settings
+document.addEventListener('change',e=>{ const fn=e.target.dataset&&ACTIONS[e.target.dataset.change]; if(fn){ fn(e.target.value); render(); } });
 document.addEventListener('keydown',e=>{ if(e.key==='Escape' && (S.sel||S.info||S.settings||S.quitAsk||S.askName)){ S.askName=null; S.sel=null; S.info=null; S.settings=false; S.quitAsk=false; render(); } });
 
 // Character pictures: for each card look for img/<id>.jpg (or .png / .webp). A Mark card without its own picture

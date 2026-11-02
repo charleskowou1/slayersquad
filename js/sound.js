@@ -154,8 +154,12 @@ function clipSound(url){
   if(!sfxOn() || document.hidden) return;
   const go=buf=>{ try{ if(AC.state!=='running') AC.resume(); const s=AC.createBufferSource(); s.buffer=buf; s.connect(SFX_OUT); s.start(); }catch(e){} };
   if(CLIP_AUDIO[url] instanceof AudioBuffer) return go(CLIP_AUDIO[url]);
-  if(CLIP_AUDIO[url]) return;   // still loading
-  CLIP_AUDIO[url]=fetch(url).then(r=>r.arrayBuffer()).then(a=>AC.decodeAudioData(a)).then(b=>{ CLIP_AUDIO[url]=b; go(b); }).catch(()=>{ delete CLIP_AUDIO[url]; });
+  const p=warmSound(url); if(p) p.then(b=>{ if(b) go(b); });
+}
+// Download a clip sound ahead of time, so a voice line starts with its clip instead of after a download
+function warmSound(url){
+  if(!AC || CLIP_AUDIO[url] instanceof AudioBuffer) return null;
+  return CLIP_AUDIO[url] = CLIP_AUDIO[url] || fetch(url).then(r=>r.arrayBuffer()).then(a=>AC.decodeAudioData(a)).then(b=>CLIP_AUDIO[url]=b).catch(()=>{ delete CLIP_AUDIO[url]; });
 }
 function sfxForLine(line){
   if(line.c==='r') return sfx('gong');

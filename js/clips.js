@@ -155,6 +155,8 @@ const clipIsPic = url => /\.(jpe?g|png|webp)$/i.test(url);
 // Downloaded copies (app.js fills this), so a clip starts instantly and isn't fetched again
 const CLIP_BLOB = {};
 const clipSrc = url => CLIP_BLOB[url] || url;
-// Every clip the fighters in this match could use: downloaded as soon as they're drafted (sounds load on first use)
+const matchSounds = () => [...new Set([...(S.teams?allUnits():[]), ...(S.picks||[]).flat().map(id=>BYID[id])]
+  .flatMap(u=>Object.values(clipSet(CLIP_SOUNDS,u)||{})))];
+// Every clip the fighters in this match could use: downloaded as soon as they're drafted (their sounds too, see matchSounds)
 const matchClips = () => [...new Set([...(S.teams?allUnits():[]), ...(S.picks||[]).flat().map(id=>BYID[id])]
   .flatMap(u=>Object.values(clipSet(CLIPS,u)||{})))];
