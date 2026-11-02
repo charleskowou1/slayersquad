@@ -2,6 +2,7 @@
 // (CACHE 'squad-draft-vNN'), which goes up with every push. tools/make-guide.js prints this at the top of the guide.
 // Add a line here with every push (CK, Oct 28, 2026), then rebuild the guide: node tools/make-guide.js
 module.exports = [
+  [108, '2026-11-02', 'Slayer Squad moves to slayersquad.app: the old address offers Move my progress, a one-tap transfer. Play Friends is the main Online tile.'],
   [107, '2026-11-02', 'Random Squads teams now match in cost; tighter tiles and spacing on Home, Quickplay, Online and Same Phone.'],
   [106, '2026-11-02', 'Online rebuilt: Quick Match, Play Friends for 2 to 4 players in one lobby, online Random and Mirror, co-op Final Form and Gauntlet against the computer, quick taunts, and the loser picks first in a rematch. New home screen with a tappable roster, new Quickplay and Same Phone pages (Same Phone is now 2 players), Classic replaces Standard, Random Squads deals 5 to 50 points, new app icon and link preview.'],
   [105, '2026-11-02', 'Random Squads never deals the same character to both teams, in any version.'],
