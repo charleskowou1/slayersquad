@@ -1,0 +1,16 @@
+name = "slayersquad-push"
+main = "index.js"
+compatibility_date = "2024-09-23"
+workers_dev = true
+
+[triggers]
+crons = ["0 * * * *"]
+
+[vars]
+PROJECT_ID = "squad-draft-a6ffe"
+DB_URL = "https://squad-draft-a6ffe-default-rtdb.firebaseio.com"
+SITE = "https://slayersquad.app"
+
+[[kv_namespaces]]
+binding = "KV"
+id = "cca1ec2a0cf549d9ab69458afbbc26c6"

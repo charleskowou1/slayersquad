@@ -289,7 +289,9 @@ const onlinePage = () => `<div class="onlinepage"><label class="pname" style="--
       <button class="btn ghost" data-a="ojoinopen">Back</button></div>`
     :`<div class="gmgrid online">${pickTile('data-a="onew"',true,'友','Play Friends','Invite 2 to 4 players. Battle each other or team up against Muzan.','','inosuke')}
       ${pickTile('data-a="oquick"',false,'速','Quick Match','Play anyone','','tanjiro')}${pickTile('data-a="ojoinopen"',false,'鍵','Enter a Code','Join a friend’s game','','nezuko')}</div>`}
-  ${S.onlineMsg?`<p class="hint onlinemsg">${esc(S.onlineMsg)}</p>`:''}</div>`;
+  ${S.onlineMsg?`<p class="hint onlinemsg">${esc(S.onlineMsg)}</p>`:''}
+  ${typeof pushQuick==='function'&&pushQuick()==='ask'?`<div class="daily slim pushask"><div class="dbody"><div class="dgoal">Get an alert when someone joins?</div><span class="muted">Leave the game and we’ll tell you when your match is ready.</span></div>
+    <button class="btn ghost small" data-a="pushqmno">Not now</button><button class="btn small" data-a="pushall">Turn on</button></div>${S.pushMsg?`<p class="hint warn">${esc(S.pushMsg)}</p>`:''}`:typeof pushQuick==='function'&&pushQuick()==='home'?'<p class="hint">Want an alert when someone joins? Add Slayer Squad to your Home Screen and open it from there.</p>':''}</div>`;
 // A mode's own page (opened from its card on the home screen): its settings and the Start button
 function vModeSet(){
   const [,kj,title,sub]=MODE_CARDS.find(m=>m[0]===S.mode), art=(MODE_ART[S.mode]||[]).filter(id=>ART[id]);
@@ -312,12 +314,12 @@ function installCard(){
 // The moving roster on the home screen: tap a portrait to open that card in the Codex. Locked cards are silhouettes, so there's
 // something to chase, and the count shows how far along you are.
 function rosterRow(){
-  const all=ROSTER.filter(c=>!c.spawn && !c.helper), got=all.filter(c=>isUnlocked(c.id)), shown=all.filter(c=>ART[c.id]), open=shown.filter(c=>isUnlocked(c.id)), shut=shown.filter(c=>!isUnlocked(c.id)).slice(0,8);
-  const list=open.slice(0,24-shut.length), mix=[]; list.forEach((c,i)=>{ mix.push(c); if(i%2 && shut.length) mix.push(shut.shift()); }); mix.push(...shut);
+  const all=ROSTER.filter(c=>!c.spawn && !c.helper), got=all.filter(c=>isUnlocked(c.id)), shown=all.filter(c=>ART[c.id]), open=shown.filter(c=>isUnlocked(c.id)), shut=shown.filter(c=>!isUnlocked(c.id));
+  const mix=[]; open.forEach((c,i)=>{ mix.push(c); if(i%2 && shut.length) mix.push(shut.shift()); }); mix.push(...shut);
   if(mix.length<6) return '';
-  const row=(hide)=>mix.map(c=>{ const lock=!isUnlocked(c.id); return `<button class="rp${lock?' lock':c.mark?' marked':c.demon?' demon':''}" data-a="codexopen" data-v="${c.id}" ${hide?'tabindex="-1" aria-hidden="true"':`aria-label="${lock?'Locked character':esc(c.short)}"`}><img decoding="sync" src="${ART[c.id]}" alt=""><span>${lock?'???':esc(c.short)}</span></button>`; }).join('');
+  const row=mix.map(c=>{ const lock=!isUnlocked(c.id); return `<button class="rp${lock?' lock':c.mark?' marked':c.demon?' demon':''}" data-a="codexopen" data-v="${c.id}" aria-label="${lock?'Locked character':esc(c.short)}"><img loading="lazy" src="${ART[c.id]}" alt=""><span>${lock?'???':esc(c.short)}</span></button>`; }).join('');
   return `<section class="roster"><button class="rosterhead" data-a="codex"><span class="rseal" aria-hidden="true">隊</span><b>Roster</b><span class="rcount">${got.length} of ${all.length} unlocked</span><i class="rbar" aria-hidden="true"><u style="width:${Math.round(got.length/all.length*100)}%"></u></i><em aria-hidden="true">›</em></button>
-    <div class="artstrip"><div class="track">${row(false)}${row(true)}</div></div></section>`;
+    <div class="artstrip"><div class="track">${row}</div></div></section>`;
 }
 function storyHome(){
   const won=storyWon(), next=nextStage(), st=STAGES[next], all=won>=STAGES.length;
@@ -343,6 +345,8 @@ function vSetup(){
     ${S.tvJoinMsg?`<p class="hint onlinemsg">${esc(S.tvJoinMsg)}</p>`:''}</div>`:''}
   ${typeof oldSite==='function'&&oldSite()?`<div class="movecard"><b>We’ve moved to slayersquad.app</b><span>Tap below and your progress comes with you. Then add the new game to your Home Screen. Once you have, you can delete this old one.</span>
     <button class="btn small" data-a="movesite">Move my progress</button>${S.moveMsg?`<small>${esc(S.moveMsg)}</small>`:''}</div>`:''}
+  ${typeof pushAsk==='function'&&pushAsk()?`<div class="daily slim pushask"><div class="dbody"><div class="dgoal">Get game alerts?</div><span class="muted">Your move, Quick Match and the Daily Challenge.</span></div>
+    <button class="btn ghost small" data-a="pushno">Not now</button><button class="btn small" data-a="pushall">Turn on</button></div>${S.pushMsg?`<p class="hint warn">${esc(S.pushMsg)}</p>`:''}`:''}
   ${rosterRow()}
   ${gamesCard()}
   ${storyHome()}
@@ -521,14 +525,14 @@ function vLobby(){
       <p class="hint">${asyncHintText}</p></div>
     ${actionbar('<button class="btn" data-a="home">Back to the home screen</button>')}`;
   const L=S.lobby||{}, host=iAmHost(), seats=L.seats||[], taken=seats.filter(x=>x&&x.on).length, ok=taken>=1 && seats.slice(0,taken).every(x=>x&&x.on), n=taken+1, c=S.cfg||loadModeCfg('online');
-  const seat=(i,name,on)=>`<div class="seat${on?' on':''}" style="--tc:${pc(i)}"><span class="sn">${i+1}</span><b>${on?esc(name):'Open'}</b>${i===0?'<small>host</small>':i===S.me&&!host?'<small>you</small>':''}</div>`;
+  const seat=(i,name,on)=>`<div class="seat${on?' on':''}" style="--tc:${pc(i)}"><span class="sn">${i+1}</span><b>${on?esc(name):'Open'}</b>${i===0?'<small>host</small>':i===S.me&&!host?'<small>you</small>':''}${host&&on&&i?`<button class="kickbtn" data-a="kick" data-v="${i}" aria-label="Remove ${esc(name)}">×</button>`:''}</div>`;
   const how=n<2?'Waiting for friends. Up to 4 can join.':(c.gm==='final'||c.gm==='gauntlet')?`${plural(n,'player')} on one team.`:n===2?'2 players: play live, or take turns whenever you like.':n===3?'3 players: a free-for-all, and everyone plays at the same time.':c.duo?'4 players: 2v2, and everyone plays at the same time.':'4 players: a free-for-all, and everyone plays at the same time.';
   const gm=c.gm==='mirror'?'none':c.gm||'none', coop=gm==='final'||gm==='gauntlet';
   return `${topbar('Online game', host?'Invite your friends':'You’re in')}
     <div class="lobby">
       <div class="tlabel">Game code</div><div class="roomcode">${esc(L.code||'····')}</div>
-      ${host?`<button class="btn ghost small" data-a="copyroom">${S.copied?'Copied ✓':'Copy code'}</button>
-      <p class="muted">Friends tap Online → Enter a Code.</p>`:`<p class="muted">Waiting for ${nm(0)} to start…</p>`}
+      ${host?`<button class="btn small" data-a="shareroom">${S.copied?'Link copied ✓':'Invite friends'}</button>
+      <p class="muted">Send the link, or have them tap Online → Enter a Code.</p>`:`<p class="muted">Waiting for ${nm(0)} to start…</p>`}
       <div class="seats">${[0,1,2,3].map(i=>i===0?seat(0,S.lobbyHost||S.names[0],true):seat(i,(seats[i-1]||{}).name,(seats[i-1]||{}).on)).join('')}</div>
       <p class="hint">${how}</p>
       ${S.onlineMsg?`<p class="hint onlinemsg">${esc(S.onlineMsg)}</p>`:''}
@@ -620,6 +624,15 @@ function vReady(){
     <p class="muted">Put the phone where everyone can see it.</p>
     <button class="btn" data-a="fight">Start the battle</button></div>`;
 }
+// Alerts (a tab in Settings): each kind has its own switch, so turning one off leaves the others alone
+function alertsTab(){
+  if(typeof pushOn!=='function' || !pushOn()) return '<div class="setgroup"><p class="hint">Alerts work at slayersquad.app. Move your progress there first.</p></div>';
+  if(!pushCan()) return '<div class="setgroup"><p class="hint">On iPhone and iPad, add Slayer Squad to your Home Screen first (iOS 16.4 or newer), then open it from there.</p></div>';
+  if(Notification.permission==='denied') return '<div class="setgroup"><p class="hint warn">Notifications are blocked for this game. Allow them in your phone’s settings, then come back here.</p></div>';
+  const st=pushState(), row=(act,on,title,line)=>`<div class="setgroup"><div class="tlabel">${title}</div><span class="hint">${line}</span>${seg(act,on?'on':'off',[['off','Off'],['on','On']])}</div>`;
+  return `${row('pushturns',st.turns,'Your move','When it’s your turn in an online game.')}${row('pushping',st.ping,'Quick Match','When someone’s looking for a match.')}${row('pushdaily',st.daily,'Daily Challenge','Every day at 12pm your time.')}
+    ${S.pushMsg?`<p class="hint warn">${esc(S.pushMsg)}</p>`:''}`;
+}
 // Save (a tab in Settings): the cloud backup's recovery code, when it last backed up, and restoring on this phone
 function saveTab(){
   const c=typeof loadCloud==='function'?loadCloud():{}, st=typeof CLOUD!=='undefined'?CLOUD.status:'';
@@ -659,8 +672,8 @@ function vSettings(){
   return `<div class="scrim" data-a="unsel"></div><div class="modal"><div class="in" role="dialog" aria-modal="true" aria-label="Settings">
     <button class="x" data-a="unsel" aria-label="Close">×</button>
     <h2>Settings</h2>
-    ${seg('settab',S.setTab||'general',[['general','General'],['stats','Stats'],['save','Save']])}
-    ${S.setTab==='stats'?statsTab():S.setTab==='save'?saveTab():`<div class="setgroup"><div class="tlabel">Your name</div>
+    ${seg('settab',S.setTab||'general',[['general','General'],['alerts','Alerts'],['stats','Stats'],['save','Save']])}
+    ${S.setTab==='alerts'?alertsTab():S.setTab==='stats'?statsTab():S.setTab==='save'?saveTab():`<div class="setgroup"><div class="tlabel">Your name</div>
       <div class="namerow"><input id="pname" type="text" maxlength="14" value="${esc(playerName())}" placeholder="Your name" aria-label="Your name"><button class="btn small" data-a="savename" data-v="pname">${S.nameSaved?'Saved ✓':'Save'}</button></div>
       <div class="hint">Shown when you win, in story mode and online. Each phone keeps its own name.</div></div>
     ${inMatch()?'':`<div class="setgroup placeset"><div class="tlabel">Battle background</div>

@@ -2029,9 +2029,9 @@ details.panel[open]>summary{margin-bottom:12px}
 .rbar{flex:1;min-width:30px;height:5px;border-radius:999px;background:rgba(255,255,255,.1);overflow:hidden}
 .rbar u{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--accent),var(--gold));text-decoration:none}
 .rosterhead em{color:var(--muted);font-style:normal;font-size:1.2rem;line-height:1}
-.artstrip{overflow:hidden;-webkit-mask-image:linear-gradient(to right,transparent,#000 6%,#000 94%,transparent);mask-image:linear-gradient(to right,transparent,#000 6%,#000 94%,transparent)}
-.artstrip .track{display:flex;gap:9px;width:max-content;padding:4px 6px;animation:marquee 90s linear infinite}
-.artstrip:active .track,.artstrip:hover .track{animation-play-state:paused}
+.artstrip{overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;-webkit-mask-image:linear-gradient(to right,transparent,#000 6%,#000 94%,transparent);mask-image:linear-gradient(to right,transparent,#000 6%,#000 94%,transparent)}
+.artstrip::-webkit-scrollbar{display:none}
+.artstrip .track{display:flex;gap:9px;width:max-content;padding:4px 16px}
 .rp{position:relative;display:flex;flex-direction:column;flex:none;width:68px;padding:3px 3px 0;border:0;border-radius:6px;background:var(--paper);color:var(--paper-ink);box-shadow:0 5px 12px rgba(0,0,0,.5);transform:rotate(1.4deg)}
 .rp:nth-child(even){transform:rotate(-1.4deg)}
 .rp::after{content:"";position:absolute;top:-3px;left:50%;width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 1px 2px rgba(0,0,0,.6);transform:translateX(-50%)}
@@ -2045,7 +2045,6 @@ details.panel[open]>summary{margin-bottom:12px}
 .rp span{padding:3px 1px 4px;font-size:.62rem;font-weight:800;line-height:1.1;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rp.lock img{filter:grayscale(1) brightness(.3) blur(3px)}
 .rp.lock::before{content:"?";position:absolute;inset:3px 3px 20px;z-index:1;display:grid;place-items:center;font-family:var(--display);font-size:1.6rem;font-weight:800;color:var(--ink-2)}
-@media (prefers-reduced-motion:reduce){.artstrip{overflow-x:auto}.artstrip .track{animation:none}}
 .vsside strong{position:absolute;left:10px;right:10px;bottom:11px;font-family:var(--display);font-size:1.35rem;font-weight:800;line-height:1.3}
 .gmgrid.qp .gmtile:not(.hero){aspect-ratio:3/2}
 .gmgrid.qp .gmtile.hero{height:124px}
@@ -2064,3 +2063,5 @@ details.panel[open]>summary{margin-bottom:12px}
 .daily.slim .eyebrow{font-size:.64rem}
 .daily.slim .dgoal{max-width:none;font-size:.95rem;line-height:1.2;text-shadow:none}
 .gmgrid.home .gmtile.hero{aspect-ratio:auto;height:128px}
+.kickbtn{margin-left:auto;width:30px;height:30px;padding:0;border:1px solid var(--line-2);border-radius:8px;background:transparent;color:var(--muted);font-size:1.1rem;line-height:1}
+.pushask .muted{font-size:.76rem;line-height:1.25}

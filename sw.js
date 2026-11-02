@@ -1,6 +1,6 @@
 // Offline support. Keeps a copy of the game on the phone so it opens without a connection.
 // When online it always fetches the newest files first, so updates show up on the next open.
-const CACHE = 'squad-draft-v109';
+const CACHE = 'squad-draft-v110';
 const SHELL = ['./', 'index.html', 'css/style.css', 'js/roster.js', 'js/engine.js', 'js/story.js', 'js/daily.js', 'js/online.js', 'js/firebase-config.js', 'js/notes.js', 'js/effects.js', 'js/clips.js', 'js/updates.js', 'js/views.js', 'js/sound.js', 'js/app.js', 'js/tv.js',
   'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png'];
 const FONT_HOSTS = ['fonts.googleapis.com', 'fonts.gstatic.com'];
@@ -37,4 +37,13 @@ self.addEventListener('fetch', e => {
       .catch(() => caches.match(e.request, {ignoreSearch: true})
         .then(hit => hit || (e.request.mode === 'navigate' ? caches.match('index.html') : Response.error())))
   );
+});
+// Notifications sent by worker/index.js
+self.addEventListener('push', e => {
+  let m={}; try{ m=e.data.json(); }catch(x){}
+  e.waitUntil(self.registration.showNotification(m.title||'Slayer Squad', {body:m.body||'', icon:'icons/icon-192.png', badge:'icons/icon-192.png', data:{url:m.url||'/'}, tag:m.url||'slayer'}));
+});
+self.addEventListener('notificationclick', e => {
+  e.notification.close(); const url=new URL(e.notification.data.url||'/', self.location.origin).href;
+  e.waitUntil(self.clients.matchAll({type:'window', includeUncontrolled:true}).then(list => { const c=list[0]; return c ? c.navigate(url).then(w=>(w||c).focus()) : self.clients.openWindow(url); }));
 });

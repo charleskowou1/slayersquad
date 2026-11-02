@@ -20,6 +20,16 @@ function playVid(v){
 }, {passive:true}));
 // Opening Latest Updates clears its New badge until the next version
 document.addEventListener('toggle',e=>{ if(e.target.id!=='updates' || !e.target.open) return; try{ localStorage.setItem('squad-draft-seen-update',LATEST_UPDATE.version); }catch(x){} const d=e.target.querySelector('.newdot'); if(d) d.remove(); },true);
+// The home roster drifts on its own and you can swipe it; touching it pauses the drift for a few seconds. A redraw keeps its place.
+const ROSTER_ROW = {x:0, dir:1, until:0, on:false};
+function rosterKeep(){ const el=document.querySelector('.artstrip'); if(!el) return; el.scrollLeft=ROSTER_ROW.x; if(!ROSTER_ROW.on && !matchMedia('(prefers-reduced-motion:reduce)').matches){ ROSTER_ROW.on=true; requestAnimationFrame(rosterDrift); } }
+function rosterDrift(){
+  const el=document.querySelector('.artstrip'), R=ROSTER_ROW; if(!el){ R.on=false; return; }
+  if(Date.now()<R.until) R.x=el.scrollLeft;
+  else { const end=el.scrollWidth-el.clientWidth; R.x+=R.dir*.35; if(R.x>=end){ R.x=end; R.dir=-1; } if(R.x<=0){ R.x=0; R.dir=1; } el.scrollLeft=R.x; }
+  requestAnimationFrame(rosterDrift);
+}
+['touchstart','touchmove','wheel','pointerdown','scroll'].forEach(ev=>document.addEventListener(ev,e=>{ if(ev==='scroll' && Date.now()>=ROSTER_ROW.until) return; if(e.target.closest && e.target.closest('.artstrip')) ROSTER_ROW.until=Date.now()+4000; },{passive:true, capture:true}));
 function render(){
   if(isOnline()) S.planFor=S.me;
   const ctl=typeof isCtl==='function' && isCtl(), view = ctl ? ctlViewName() : viewName();   // a phone controlling the TV shows only its moves
@@ -53,6 +63,7 @@ function render(){
   document.body.classList.toggle('placebg', !!place);
   if(place) document.body.style.setProperty('--placebg', `url('${place}')`);
   cloudCheck();   // back up saved progress a few seconds after it changes
+  queueMicrotask(rosterKeep);
   music(ctl ? null : musicFor(view));   // the TV plays the music, not the controller phone   // each kind of screen has its own theme (cross-fades; nothing happens if it's already playing)   // wide landscape layout (tablets) for Local games
   const vids=new Map([...app.querySelectorAll('video[data-k],img[data-k]')].map(v=>[v.dataset.k,v]));   // a clip already playing keeps playing
   // reuse the picture elements already on screen: a redraw never has to decode them again, so nothing blinks
@@ -213,7 +224,8 @@ const ACTIONS = {
   unquit(){ S.quitAsk=false; },
   redeal(){ if(typeof isCtl==='function' && isCtl()) return ctlSend({a:'redeal'}); if(isOnline() && !iAmHost()) return; S.pool=buildPool(); S.sel=null; },
   onew(){ onlineCreate(); },
-  copyroom(){ try{ navigator.clipboard.writeText(S.lobby.code); S.copied=true; setTimeout(()=>{ S.copied=false; render(); },1500); }catch(e){} },
+  shareroom(){ shareInvite(); },
+  kick(v){ if(iAmHost() && S.phase==='lobby') ONLINE.net.kick(+v); },
   ocreate(){ onlineCreate(); },
   // TV mode (js/tv.js): this laptop shows the game on the big screen; a phone joins its code as the controller
   tvstart(){ tvStart(); },
@@ -233,6 +245,12 @@ const ACTIONS = {
     const f=GAME_WATCH[v]; if(f){ f(); delete GAME_WATCH[v]; } if(g && g.qm && st && st.phase==='lobby') quickCancel(v); dropGame(v); gamesBadge(); },
   oquick(){ keepNames(); quickMatch(); },
   movesite(){ moveSite(); },
+  pushall(){ pushSet('all',true); },
+  pushqmno(){ S.qmWait=false; },
+  pushno(){ pushSave({...pushState(), declined:true}); },
+  pushdaily(v){ pushSet('daily',v==='on'); },
+  pushturns(v){ pushSet('turns',v==='on'); },
+  pushping(v){ pushSet('ping',v==='on'); },
   cfggm(v){ keepNames(); setCfg('gm',v); },
   taunt(v){ sendTaunt(v); },
   tauntopen(){ S.tauntOpen=!S.tauntOpen; },
@@ -243,7 +261,7 @@ const ACTIONS = {
   // open a card's detail (from the grid or from a name in a pool note); any card in the pool can be viewed
   sel(v){ if(S.mode==='cpu' && turn()!==0) return;
     if(S.pool.includes(v) || ((S.mode==='daily'||S.mode==='story') && S.picks[1].includes(v))) S.sel=v; },   // the set enemy team can be studied
-  unsel(){ S.sel=null; S.info=null; S.settings=false; S.codexSel=null; },
+  unsel(){ S.sel=null; S.info=null; S.settings=false; S.codexSel=null; if(S.codexHome){ S.codexHome=false; S.phase='setup'; } },
   settings(){ S.settings=true; },
   // Your name (Settings, or the home screen's one-time question): saved on this phone and used straight away
   savename(v){ const el=document.getElementById(v), n=el&&el.value.trim(); if(!n) return; savePlayerName(n); S.names[0]=playerName();
@@ -267,10 +285,10 @@ const ACTIONS = {
   copyround(){ const ml=S.matchLog||[]; if(ml.length) copyText(roundText(ml[ml.length-1])); },
   copylog(){ copyText(battleLogText()); },
   tipok(v){ try{ const t=JSON.parse(localStorage.getItem(TIPS_KEY))||[]; t.push(v); localStorage.setItem(TIPS_KEY,JSON.stringify([...new Set(t)])); }catch(e){} },
-  codex(){ keepNames(); S.phase='codex'; S.codexSel=null; window.scrollTo(0,0); },
+  codex(){ keepNames(); S.phase='codex'; S.codexSel=null; S.codexHome=false; window.scrollTo(0,0); },
   codexf(v){ S.codexF=v; },
   codexsel(v){ S.codexSel=v; },
-  codexopen(v){ keepNames(); S.phase='codex'; S.codexSel=v; window.scrollTo(0,0); },
+  codexopen(v){ keepNames(); S.phase='codex'; S.codexSel=v; S.codexHome=true; window.scrollTo(0,0); },   // from the home roster: closing the card goes back home
   daily(){ keepNames(); clearTimeout(S._t); S.play=null; S.final=false; startDaily(); window.scrollTo(0,0); },
   info(v){ S.info=v; },
   fight(){ fight(); newPlanTurn(); },
@@ -451,14 +469,20 @@ async function firebaseNet(role){
       await room.set({created:Date.now(), host:{name, on:true}, hostSeat:0}); presence(); return true; },
     // a guest takes the first free seat (1–3); returns the room and the seat number
     async join(code, name){ room=db.ref('rooms/'+code); const snap=await room.get(); if(!snap.exists()) throw new Error('No game with that code.');
-      const v=snap.val();
-      const res=await room.child('seats').transaction(seats=>{ seats=seats||{}; for(let i=1;i<=3;i++){ if(!seats[i]||!seats[i].on){ seats[i]={name,on:true}; seat=i; return seats; } } return; });
+      const v=snap.val(); if(v.kicked && v.kicked[PHONE_ID]) throw new Error('The host removed you from this game.');
+      const res=await room.child('seats').transaction(seats=>{ seats=seats||{}; for(let i=1;i<=3;i++){ if(!seats[i]||!seats[i].on){ seats[i]={name,on:true,id:PHONE_ID}; seat=i; return seats; } } return; });
       if(!res.committed || !seat) throw new Error('That game is full (4 players).');
       presence(); return {room:v, seat}; },
     publish(json, q){ room.child('state/'+q).set(json); },
     send(msg){ room.child('acts').push(JSON.parse(JSON.stringify(msg))); },
     // 2 players: the room hands over to an own-pace game, and the guest follows
     move(code){ return room.child('moved').set(code); },
+    // host: remove a guest from the lobby. Their phone id is remembered, so the same link won't let them back in.
+    async kick(i){ const id=(await room.child('seats/'+i+'/id').get()).val(); if(id) await room.child('kicked/'+id).set(true); await room.child('seats/'+i).remove(); },
+    onKicked(cb){ return listen(room.child('kicked/'+PHONE_ID),'value',s=>{ if(s.val()) cb(); }); },
+    // this phone is out or moving seats: stop listening and don't mark the seat as away, so it stays free
+    quiet(){ offs.forEach(f=>f()); offs.length=0; if(room) room.child(seat===0?'host/on':'seats/'+seat+'/on').onDisconnect().cancel(); },
+    release(){ this.quiet(); return room.child('seats/'+seat).remove(); },
     onMoved(cb){ return listen(room.child('moved'),'value',s=>{ if(s.val()) cb(s.val()); }); },   // Firebase rejects undefined (e.g. a Defend move's empty target)
     onState(cb){ return listen(room.child('state/'+seat),'value',s=>{ if(s.exists()) cb(s.val()); }); },
     // the host's queue of actions: an action is removed only once the host has taken it (cb returns true)
@@ -488,7 +512,7 @@ function listenAsGuest(){
 // presence of every seat (true = connected); used for "(away)" labels and the hand-off timer
 function watchPresence(){
   ONLINE.net.onHost(v=>{ S.away=Object.assign({},S.away,{0: !(v&&v.on)}); presenceChanged(); });
-  ONLINE.net.onSeats(seats=>{ if(S.phase==='lobby') S.lobby.seats=seats; const a=Object.assign({},S.away); seats.forEach((x,i)=>{ a[i+1]= !!x && !x.on; }); S.away=a; presenceChanged(); });
+  ONLINE.net.onSeats(seats=>{ if(S.phase==='lobby'){ S.lobby.seats=seats; closeGap(seats); } const a=Object.assign({},S.away); seats.forEach((x,i)=>{ a[i+1]= !!x && !x.on; }); S.away=a; presenceChanged(); });
   ONLINE.net.onHostSeat(h=>{ const was=iAmHost(); S.hostSeat=h; if(iAmHost()) listenAsHost(); else if(was || !ONLINE.offState) listenAsGuest(); presenceChanged(); });
 }
 // While the host is away mid-match, the first player still here takes over after HANDOFF_MS
@@ -521,17 +545,27 @@ async function onlineCreate(){
     render();
   }catch(e){ S.onlineMsg=e.message||'Could not connect.'; render(); }
 }
+// Guests who sit behind a gap move up: a game can't start with an empty seat in the middle (a kicked player's)
+function closeGap(seats){
+  if(iAmHost() || S.phase!=='lobby' || S.reseating || !seats.slice(0,S.me-1).some(x=>!x)) return;
+  S.reseating=true; clearTimeout(HANDOFF); HANDOFF=null;
+  const code=S.lobby.code, name=(seats[S.me-1]||{}).name||playerName()||'Player'; ONLINE.net.release().then(()=>joinRoom(code,name)).finally(()=>{ S.reseating=false; });
+}
+function kickedOut(){ ONLINE.net.quiet(); ONLINE.net=null; ONLINE.offActs=ONLINE.offState=null; clearTimeout(HANDOFF); HANDOFF=null; Object.assign(S,{phase:'modeset', joinOpen:false, onlineMsg:'The host removed you from that game.'}); render(); }
 async function onlineJoin(){
   const el=document.getElementById('ocode'), code=((el&&el.value)||'').trim().toUpperCase(); S.joinCode=code;
   if(/^[A-Z]{6}$/.test(code)) return asyncJoin(code);
   if(/^[A-Z]{4}$/.test(code) && await tvRoom(code)) return ctlJoin(code);   // a TV's code: this phone becomes its controller
   if(!/^[A-Z]{4}$/.test(code)){ S.onlineMsg='Type the code from the other phone (4 or 6 letters).'; return render(); }
   const name=titled(myName()); S.names[0]=name; S.onlineMsg='Joining…'; render();
+  await joinRoom(code,name);
+}
+async function joinRoom(code,name){
   try{
     const net=await firebaseNet('guest'), {room, seat}=await net.join(code,name);
     ONLINE.net=net; ONLINE.offActs=ONLINE.offState=null; ONLINE.tookFrom=[];
     Object.assign(S,{me:seat, planFor:seat, hostSeat:room.hostSeat||0, away:{}, names:[(room.host&&room.host.name)||'Host', name], lobbyHost:(room.host&&room.host.name)||'Host', lobby:{code, seats:[]}, phase:'lobby', onlineMsg:''});
-    listenAsGuest(); watchPresence(); net.onMoved(c=>enterGame(c,seat));
+    listenAsGuest(); watchPresence(); net.onMoved(c=>enterGame(c,seat)); net.onKicked(kickedOut);
     render();
   }catch(e){ S.onlineMsg=e.message||'Could not join.'; render(); }
 }
@@ -564,7 +598,7 @@ function asyncNet(db, code){
     // apply this phone's action in one transaction; resolves true if it changed the game
     send(msg){ let res=null;
       return ref.transaction(g=>{ res=null; if(!g || !g.s) return g; const r=asyncApply(g.s, msg); if(!r) return; res=r; return Object.assign({}, g, {s:r.json, meta:r.meta}); })
-        .then(t=>{ if(t.committed && res && res.ended) postStats({...res.ended, humans:res.ended.humans}); return t.committed && !!res; })
+        .then(t=>{ if(t.committed && res && res.ended) postStats({...res.ended, humans:res.ended.humans}); if(t.committed && res) pushTurn(code,msg.p); return t.committed && !!res; })
         .catch(e=>{ S.onlineMsg=netError(e); render(); return false; }); },
     onGame(cb){ const f=s=>{ const v=s.val(); if(v && v.s) cb(v); else if(!v){ setGame(code,{gone:true}); } }; ref.on('value',f); offs.push(()=>ref.off('value',f)); },
     // this phone is in the game right now (the other phone shows it, so a game can play live or wait); the server clears it if the phone drops
@@ -595,8 +629,8 @@ async function quickMatch(){
     const took=await take(null); if(took) return asyncJoin(took);
     const code=await newAsyncGame(db, QM_CFG, name), late=await take(code);
     if(late){ await db.ref('games/'+code).remove(); return asyncJoin(late); }
-    setGame(code,{seat:0, qm:true}); watchGames();
-    S.onlineMsg='You’re in the queue. You can leave now: your match will be on your home screen when someone joins.'; render();
+    setGame(code,{seat:0, qm:true}); watchGames(); pushGame(code,0); pushMatch(code);
+    S.qmWait=true; S.onlineMsg='You’re in the queue. You can leave now: your match will be on your home screen when someone joins.'; render();
   }catch(e){ S.onlineMsg=netError(e); render(); }
 }
 async function quickCancel(code){ try{ const db=await firebaseReady(); await db.ref('games/'+QUEUE).transaction(v=>v && v.code===code ? null : v); await db.ref('games/'+code).remove(); }catch(e){} }
@@ -639,7 +673,7 @@ async function openGame(code){
     clearTimeout(S._t);
     Object.assign(S,{mode:'online', async:true, asyncCode:code, me:g.seat, planFor:g.seat, hostSeat:-1, away:{}, phase:'lobby', lobby:{code, seats:[]},
       onlineMsg:'', asyncWatching:false, play:null, final:false, localOver:false, plans:null, helperPlan:null, lastPlans:null, sel:null, info:null});
-    ONLINE.net=asyncNet(db, code); ONLINE.full=null; ONLINE.offActs=ONLINE.offState=null; ONLINE.net.here(db, g.seat);
+    pushGame(code,g.seat); ONLINE.net=asyncNet(db, code); ONLINE.full=null; ONLINE.offActs=ONLINE.offState=null; ONLINE.net.here(db, g.seat);
     ONLINE.net.onGame(v=>{ if(!isAsync() || S.asyncCode!==code) return; ONLINE.full=v.s; S.oppHere=!!(v.here&&v.here[1-g.seat]); setGame(code,{meta:v.meta, gone:false});
       if(v.taunt && v.taunt.p!==g.seat) showTaunt(v.taunt);
       if(!S.asyncWatching){ asyncShow(); render(); } });
@@ -709,6 +743,7 @@ function trackOpen(){
 }
 setTimeout(trackOpen, 5000);
 setTimeout(arriveFromMove, 800);
+setTimeout(arriveFromInvite, 300);
 const gameVersion = async () => { try{ return ((await caches.keys()).find(k=>k.startsWith('squad-draft-v'))||'').replace('squad-draft-v','') }catch(e){ return '' } };
 async function sendReport(msg, auto){
   const db=await firebaseReady();
@@ -745,7 +780,7 @@ async function loadGlobalStats(){
    writes over the rev it last saw. Anything else is another device's save, and the two are combined (mergeSaves) so neither
    loses anything and the player never has to choose. Restoring combines the same way, so a code can only add progress. */
 const CLOUD_KEY = 'squad-draft-cloud', CODE_ABC = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
-const NOT_BACKED = ['squad-draft-cloud','squad-draft-data','squad-draft-install-later'];
+const NOT_BACKED = ['squad-draft-cloud','squad-draft-data','squad-draft-install-later','squad-draft-push'];
 const loadCloud = () => { try{ return JSON.parse(localStorage.getItem(CLOUD_KEY))||{} }catch(e){ return {} } };
 const saveCloud = c => { try{ localStorage.setItem(CLOUD_KEY, JSON.stringify(c)) }catch(e){} };
 const newSaveCode = () => Array.from({length:12},()=>CODE_ABC[Math.floor(Math.random()*CODE_ABC.length)]).join('');
@@ -815,6 +850,59 @@ async function arriveFromMove(){
   history.replaceState(null,'',location.pathname);   // the code doesn't stay in the address bar or browser history
   const ok=raw.length===12 && await restoreCode(raw); note(ok ? 'Welcome to slayersquad.app! Your progress came with you.' : 'We couldn’t bring your progress over. Enter your code in Settings → Save.'); render();
 }
+/* Invite links: slayersquad.app/join/?c=CODE shows its own link preview, then opens the game at ?join=CODE and joins that room. Players who've never named themselves see the code
+   filled in and only have to tap Join. */
+const inviteLink = code => `${NEW_SITE}join/?c=${code}`;   // join/ is a tiny page with its own link preview that forwards to ?join=
+async function shareInvite(){
+  const url=inviteLink(S.lobby.code);
+  try{ if(navigator.share){ await navigator.share({title:'Slayer Squad', text:`Join my Slayer Squad game. Code: ${S.lobby.code}`, url}); return; } }catch(e){ if(e&&e.name==='AbortError') return; }
+  try{ await navigator.clipboard.writeText(url); S.copied=true; setTimeout(()=>{ S.copied=false; render(); },1500); render(); }catch(e){}
+}
+function arriveFromInvite(){
+  const q=new URLSearchParams(location.search), open=(q.get('open')||'').toUpperCase().replace(/[^A-Z]/g,'');
+  if(open){ history.replaceState(null,'',location.pathname); if(myGame(open)) openGame(open); return; }   // tapped a "your move" notification
+  const code=(q.get('join')||'').toUpperCase().replace(/[^A-Z]/g,''); if(!/^([A-Z]{4}|[A-Z]{6})$/.test(code)) return;
+  history.replaceState(null,'',location.pathname);
+  ACTIONS.mode('online'); Object.assign(S,{phase:'modeset', joinOpen:true, joinCode:code, askName:null, onlineMsg:playerName()?'':'Add your name, then tap Join.'}); render();
+  if(playerName()) setTimeout(onlineJoin);
+}
+/* Notifications (worker/ is the service; it's the only thing that can send them). PUSH empty = the feature is off.
+   squad-draft-push: {id, turns, ping} on this device. Players choose each kind; the worker holds the subscription, not Firebase. */
+const PUSH = {url:'https://slayersquad-push.charleskowou1.workers.dev', key:'BAE6ugC3T67nVBPOzH_qJFdDSFSAUzaLbty-hw00sjfLiOch3j3T8P5jpM-mPuaCdgXhwrCG1eK82Wfyq_n3BGk'};
+const PUSH_KEY = 'squad-draft-push';
+const pushState = () => { try{ return JSON.parse(localStorage.getItem(PUSH_KEY))||{}; }catch(e){ return {}; } };
+const pushSave = v => { try{ localStorage.setItem(PUSH_KEY,JSON.stringify(v)); }catch(e){} };
+const pushOn = () => !!PUSH.url && !oldSite();
+const pushCan = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+async function pushPost(path, body){
+  const db=await firebaseReady(), token=await firebase.auth().currentUser.getIdToken();
+  const r=await fetch(`${PUSH.url}/${path}`, {method:'POST', body:JSON.stringify({...body, token})}); return r.json();
+}
+// The home screen's one-tap offer: browsers won't let a game switch alerts on by itself, so this is as close as it gets
+const pushAsk = () => pushOn() && pushCan() && Notification.permission==='default' && !pushState().id && !pushState().declined;
+// Waiting in Quick Match is when alerts matter most, so ask again here, even after a Not now. 'home' = iPhone in Safari: it needs the Home Screen app first.
+const pushQuick = () => !S.qmWait || !pushOn() || pushState().turns ? '' : !pushCan() ? 'home' : Notification.permission==='denied' ? '' : 'ask';
+const keyBytes = s => Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/').padEnd(Math.ceil(s.length/4)*4,'=')), c=>c.charCodeAt(0));
+// Turn one kind on or off. The first time, the phone asks for permission.
+async function pushSet(kind, on){
+  const st={...pushState(), ...(kind==='all'?{turns:on,ping:on,daily:on}:{[kind]:on})}; S.pushMsg='';
+  try{
+    if(!st.turns && !st.ping && !st.daily){ if(st.id) await pushPost('unsubscribe',{id:st.id}); const reg=await navigator.serviceWorker.ready, sub=await reg.pushManager.getSubscription(); if(sub) await sub.unsubscribe(); pushSave({}); return render(); }
+    if(await Notification.requestPermission()!=='granted'){ S.pushMsg='Notifications are blocked. Allow them in your phone’s settings, then try again.'; return render(); }
+    const reg=await navigator.serviceWorker.ready, sub=await reg.pushManager.getSubscription() || await reg.pushManager.subscribe({userVisibleOnly:true, applicationServerKey:keyBytes(PUSH.key)});
+    const r=await pushSend(sub,st); if(!r.id) throw new Error('no id');
+    st.id=r.id; st.sent=Date.now(); pushSave(st); if(st.turns) loadGames().forEach(g=>pushGame(g.code,g.seat));
+  }catch(e){ S.pushMsg='Could not change notifications. Try again in a moment.'; }
+  render();
+}
+const pushSend = (sub,st) => pushPost('subscribe',{sub:sub.toJSON(), ping:!!st.ping, daily:!!st.daily, tz:Intl.DateTimeFormat().resolvedOptions().timeZone});
+// The service forgets a phone after 90 days of silence, so an active player checks in every week (this also follows them to a new time zone)
+async function pushRefresh(){ const st=pushState(); if(!pushOn() || !pushCan() || !st.id || Date.now()-(st.sent||0)<7*864e5 || Notification.permission!=='granted') return;
+  try{ const reg=await navigator.serviceWorker.ready, sub=await reg.pushManager.getSubscription(); if(sub && (await pushSend(sub,st)).id){ st.sent=Date.now(); pushSave(st); } }catch(e){} }
+setTimeout(pushRefresh, 6000);
+async function pushGame(code, seat){ const st=pushState(); if(!pushOn() || !st.turns || !st.id) return; const g=myGame(code); if(!g || g.pushed) return; setGame(code,{pushed:true}); try{ await pushPost('game',{code,seat,id:st.id}); }catch(e){} }
+function pushTurn(code, seat){ if(pushOn() && !S.oppHere) pushPost('turn',{code,seat}).catch(()=>{}); }
+function pushMatch(code){ if(pushOn()) pushPost('match',{code,id:pushState().id}).catch(()=>{}); }
 function note(text){ const el=document.createElement('div'); el.className='tauntpop'; el.setAttribute('role','status'); el.textContent=text; document.body.appendChild(el); setTimeout(()=>el.remove(),6000); }
 S.vol=loadVolumes(); S.speed=loadSpeed(); try{ S.vibeOn=localStorage.getItem('squad-draft-vibe')!=='off'; S.clipsOn=localStorage.getItem('squad-draft-clips')!=='off'; S.clipRepeat=localStorage.getItem('squad-draft-clip-repeat')||'first'; S.tauntsOn=localStorage.getItem('squad-draft-taunts')!=='off' }catch(e){}
 // One-time reset of The Endless Dream only (CK, Oct 30, 2026, after it changed): the main story and stars stay
