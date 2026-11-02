@@ -539,7 +539,7 @@ async function onlineJoin(){
 // turns later. 3 or 4 stay in the live room, where everyone plays at once.
 async function startRoom(){
   const c=S.cfg||loadModeCfg('online'); if(S.coop){ coopStart(); newPlanTurn(); return render(); }
-  S.gm=c.gm&&c.gm!=='none'?c.gm:undefined;
+  S.gm=c.gm==='random'?'random':undefined;
   if(S.n===2) return roomToGame(c);
   if(S.gm){ dealMatch(); newPlanTurn(); } else toSpin();
   render();
@@ -575,7 +575,7 @@ function asyncNet(db, code){
 }
 // A new 2-player game in the lobby, with this player in seat 0. Returns its code.
 async function newAsyncGame(db, c, name){
-  const now=Date.now(), state=JSON.stringify({phase:'lobby', n:2, names:[name], budget:c.budget, poolType:c.poolType, maxTeam:c.maxTeam, bansOn:!!c.bans, gm:c.gm&&c.gm!=='none'?c.gm:undefined, async:true, hostSeat:-1, duo:false, matchNo:0});
+  const now=Date.now(), state=JSON.stringify({phase:'lobby', n:2, names:[name], budget:c.budget, poolType:c.poolType, maxTeam:c.maxTeam, bansOn:!!c.bans, gm:c.gm==='random'?'random':undefined, async:true, hostSeat:-1, duo:false, matchNo:0});
   let code=null;
   for(let i=0;i<8 && !code;i++){ const k=newGameCode(), r=await db.ref('games/'+k).transaction(v=>v ? undefined : {created:now, s:state, meta:{names:[name], matchNo:0, phase:'lobby', turn:[], round:0, roundId:0, final:false, winner:null, updated:now}}); if(r.committed) code=k; }
   if(!code) throw new Error('Could not make a game code. Try again.');

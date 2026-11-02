@@ -1,6 +1,6 @@
 // Offline support. Keeps a copy of the game on the phone so it opens without a connection.
 // When online it always fetches the newest files first, so updates show up on the next open.
-const CACHE = 'squad-draft-v108';
+const CACHE = 'squad-draft-v109';
 const SHELL = ['./', 'index.html', 'css/style.css', 'js/roster.js', 'js/engine.js', 'js/story.js', 'js/daily.js', 'js/online.js', 'js/firebase-config.js', 'js/notes.js', 'js/effects.js', 'js/clips.js', 'js/updates.js', 'js/views.js', 'js/sound.js', 'js/app.js', 'js/tv.js',
   'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png'];
 const FONT_HOSTS = ['fonts.googleapis.com', 'fonts.gstatic.com'];

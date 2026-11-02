@@ -244,7 +244,7 @@ const pickTile = (attrs, hero, kj, title, line, stat, art) => `<button class="gm
 function gmList(){
   const stat=id=>{ const r=gmStats(id); return !r.played?'':id==='gauntlet'?`Best ${plural(r.best,'wave')}`:id==='rush'?`Best ${r.best} of ${RUSH_FIGHTS.length}`:triesText(r); };
   return `<div class="gmgrid qp">${pickTile('data-a="qpmode" data-v="classic"',true,'戦','Classic','Choose your difficulty, points and pool.','','rengoku')}${gmTile('final','終','Final Form','Muzan picks the Upper Moons to beat you. Harder than Hard.',stat('final'),'muzan_final')}
-    ${Object.entries(GM).map(([id,m])=>gmTile(id,m.kj,m.title,m.line,stat(id),m.art)).join('')}</div>`;
+    ${Object.entries(GM).map(([id,m])=>gmTile(id,m.kj,m.title,m.line,stat(id),m.art)).join('')}${pickTile('data-a="openmode" data-v="practice"',false,'練','Practice','Draft every team yourself','','typezero')}</div>`;
 }
 const fightName = () => { const g=S.series; return !g?gmName():S.mode==='rush'?`Fight ${g.wave} of ${RUSH_FIGHTS.length}`:`Wave ${g.wave}`; };
 function vReveal(){
@@ -265,19 +265,14 @@ function gmResult(w){
     return `<p class="dres ${w===0?'ok':''}">${more?`${esc(fightName())} cleared.`:S.mode==='rush'&&w===0?'You beat every one of them.':S.mode==='rush'?`You won ${done} of ${RUSH_FIGHTS.length} fights.`:`You cleared ${plural(done,'wave')}.`}${more?'':` <span class="muted">Best: ${r.best}</span>`}</p>`; }
   return `<p class="dres ${w===0?'ok':''}">${w===0?(S.mode==='final'?'You beat Muzan.':'You win.'):S.mode==='final'?'Muzan wins.':'They win.'} <span class="muted">${triesText(r)}</span></p>`;
 }
-const gmNote = w => S.mode==='final' ? (w===0?'He’ll choose differently next time.':'Change your squad and his picks change too.') : S.series ? (w===0 && gmFights()>S.series.wave?`Survivors recover ${Math.round(GM_HEAL*100)}% and their specials are ready.`:'Try a different squad.') : S.mode==='mirror' ? 'Same squads. The only difference was the moves.' : 'A new hand every time.';
+const gmNote = w => S.mode==='final' ? (w===0?'He’ll choose differently next time.':'Change your squad and his picks change too.') : S.series ? (w===0 && gmFights()>S.series.wave?`Survivors recover ${Math.round(GM_HEAL*100)}% and their specials are ready.`:'Try a different squad.') : 'A new hand every time.';
 const dawnText = () => { const n=FINAL_SUNRISE-S.round; return n>0?`Sunrise in ${plural(n,'round')}.`:'The sun is up. Hold on.'; };
 function dailyCard(){
   const ch=DAILY_CACHE&&DAILY_CACHE.day===todayKey()?DAILY_CACHE:null, done=dailyDone(), streak=dailyStreak();
-  if(!ch) return `<div class="daily loading"><div><div class="eyebrow">Daily challenge</div><div class="muted">Preparing today's battle…</div></div></div>`;
-  const lead=ch.enemy.slice().sort((a,b)=>BYID[b].cost-BYID[a].cost)[0], date=new Date().toLocaleDateString(undefined,{weekday:'short', month:'short', day:'numeric'});
-  return `<div class="daily${done?' done':''}">
-    ${ART[lead]?`<span class="dart" aria-hidden="true"><img decoding="sync" src="${ART[lead]}" alt=""></span>`:''}
-    <div class="dtop"><div><div class="eyebrow">Daily challenge · ${esc(date)}</div>
-      ${streak?`<span class="dstreak">🔥 ${plural(streak,'day')} in a row</span>`:''}</div></div>
-    <div class="dgoal">${esc(DAILY_GOALS[ch.goal.type](ch.goal))}</div>
-    <div class="dfoot"><div class="dsq"><span class="svs">vs</span>${ch.enemy.map(id=>seal(BYID[id],'sm')).join('')}</div>
-      <button class="btn small${done?' ghost':''}" data-a="daily">${done?'✓ Done · Replay':'Take it on'}</button></div></div>`;
+  if(!ch) return `<div class="daily slim loading"><div class="eyebrow">Daily challenge</div></div>`;
+  return `<div class="daily slim${done?' done':''}"><div class="dbody"><div class="eyebrow">Daily challenge${streak?` · 🔥 ${streak}`:''}</div>
+      <div class="dgoal">${esc(DAILY_GOALS[ch.goal.type](ch.goal))}</div></div>
+    <button class="btn small${done?' ghost':''}" data-a="daily">${done?'✓ Done':'Play'}</button></div>`;
 }
 // Own-pace online games on the home screen: who against, and whether it's your turn (your turn first, then newest)
 function gamesCard(){
@@ -299,7 +294,7 @@ const onlinePage = () => `<div class="onlinepage"><label class="pname" style="--
 function vModeSet(){
   const [,kj,title,sub]=MODE_CARDS.find(m=>m[0]===S.mode), art=(MODE_ART[S.mode]||[]).filter(id=>ART[id]);
   return `<header class="top"><div><div class="eyebrow">${esc(S.mode==='cpu'?'You vs the computer':sub)}</div><div class="title">${S.qpClassic&&S.mode==='cpu'?'Classic':esc(title)}</div></div>
-      <div class="topbtns"><button class="btn ghost small gearmini" data-a="settings" aria-label="Settings">⚙</button><button class="btn ghost small" ${S.qpClassic&&S.mode==='cpu'?'data-a="qpmode" data-v="list"':'data-a="home"'}>Back</button></div></header>
+      <div class="topbtns"><button class="btn ghost small gearmini" data-a="settings" aria-label="Settings">⚙</button><button class="btn ghost small" ${S.qpClassic&&S.mode==='cpu'?'data-a="qpmode" data-v="list"':S.mode==='practice'?'data-a="openmode" data-v="cpu"':'data-a="home"'}>Back</button></div></header>
     ${art.length&&S.mode!=='online'&&S.mode!=='local'&&S.mode!=='cpu'?`<div class="modehero" aria-hidden="true"><span class="mk">${kj}</span>${art.map(id=>`<img decoding="sync" src="${ART[id]}" alt="">`).join('')}</div>`:''}
     ${S.mode==='online'?onlinePage():S.mode==='local'?`<div class="localpage">${modeSettings()}</div>`:S.mode==='cpu'&&!S.qpClassic?gmList():S.mode==='cpu'?`<div class="localpage">${modeSettings()}</div>`:`<div class="panel modepanel">${modeSettings()}</div>`}`;
 }
@@ -346,13 +341,13 @@ function vSetup(){
   ${S.tvJoinOpen?`<div class="panel tvjoinpanel"><b>Join a TV</b><ol class="tvsteps"><li>On a smart TV, open its web browser and go to slayersquad.app. Or connect a laptop to your TV with an HDMI cable or AirPlay and open the game there.</li><li>Click the 📺 button at the top of the game.</li><li>A 4-letter code appears on the TV. Type it here.</li></ol><span class="muted">This phone becomes your controller. A second phone can join with the same code for 2 players.</span>
     <div class="joinrow"><input id="tvcode" type="text" maxlength="4" autocapitalize="characters" autocomplete="off" placeholder="CODE" value="${esc(S.tvJoinCode||'')}" aria-label="TV code"><button class="btn" data-a="tvjoin">Join</button></div>
     ${S.tvJoinMsg?`<p class="hint onlinemsg">${esc(S.tvJoinMsg)}</p>`:''}</div>`:''}
-  ${typeof oldSite==='function'&&oldSite()?`<div class="movecard"><b>We’ve moved to slayersquad.app</b><span>Your progress comes with you. It takes one tap, and nothing gets lost.</span>
+  ${typeof oldSite==='function'&&oldSite()?`<div class="movecard"><b>We’ve moved to slayersquad.app</b><span>Tap below and your progress comes with you. Then add the new game to your Home Screen. Once you have, you can delete this old one.</span>
     <button class="btn small" data-a="movesite">Move my progress</button>${S.moveMsg?`<small>${esc(S.moveMsg)}</small>`:''}</div>`:''}
   ${rosterRow()}
   ${gamesCard()}
   ${storyHome()}
   ${dailyCard()}
-  <div class="gmgrid home">${MODE_CARDS.map(([k,kj,t,sub])=>pickTile(`data-a="openmode" data-v="${k}"`,false,kj,t,sub,'',(MODE_ART[k]||[])[0])).join('')}</div>
+  <div class="gmgrid home">${MODE_CARDS.filter(m=>m[0]!=='practice').map(([k,kj,t,sub])=>pickTile(`data-a="openmode" data-v="${k}"`,k==='cpu',kj,t,sub,'',{cpu:'muzan',online:'giyu_mark'}[k]||(MODE_ART[k]||[])[0])).join('')}</div>
   <details class="panel" id="howto"><summary>How to play</summary>
     <ol class="steps">
       <li><span class="sk">選</span><div><b>Pick a mode</b>Quickplay vs the computer, Online or Same Phone with friends, or the Story.</div></li>
@@ -528,7 +523,7 @@ function vLobby(){
   const L=S.lobby||{}, host=iAmHost(), seats=L.seats||[], taken=seats.filter(x=>x&&x.on).length, ok=taken>=1 && seats.slice(0,taken).every(x=>x&&x.on), n=taken+1, c=S.cfg||loadModeCfg('online');
   const seat=(i,name,on)=>`<div class="seat${on?' on':''}" style="--tc:${pc(i)}"><span class="sn">${i+1}</span><b>${on?esc(name):'Open'}</b>${i===0?'<small>host</small>':i===S.me&&!host?'<small>you</small>':''}</div>`;
   const how=n<2?'Waiting for friends. Up to 4 can join.':(c.gm==='final'||c.gm==='gauntlet')?`${plural(n,'player')} on one team.`:n===2?'2 players: play live, or take turns whenever you like.':n===3?'3 players: a free-for-all, and everyone plays at the same time.':c.duo?'4 players: 2v2, and everyone plays at the same time.':'4 players: a free-for-all, and everyone plays at the same time.';
-  const gm=c.gm||'none', coop=gm==='final'||gm==='gauntlet';
+  const gm=c.gm==='mirror'?'none':c.gm||'none', coop=gm==='final'||gm==='gauntlet';
   return `${topbar('Online game', host?'Invite your friends':'You’re in')}
     <div class="lobby">
       <div class="tlabel">Game code</div><div class="roomcode">${esc(L.code||'····')}</div>
@@ -537,9 +532,9 @@ function vLobby(){
       <div class="seats">${[0,1,2,3].map(i=>i===0?seat(0,S.lobbyHost||S.names[0],true):seat(i,(seats[i-1]||{}).name,(seats[i-1]||{}).on)).join('')}</div>
       <p class="hint">${how}</p>
       ${S.onlineMsg?`<p class="hint onlinemsg">${esc(S.onlineMsg)}</p>`:''}
-      ${host?`<div class="setline"><span class="tlabel">Against each other</span>${seg('cfggm',gm,[['none','Draft'],['random','Random'],['mirror','Mirror']])}</div>
+      ${host?`<div class="setline"><span class="tlabel">Against each other</span>${seg('cfggm',gm,[['none','Draft'],['random','Random']])}</div>
       <div class="setline"><span class="tlabel">Team up against the computer</span>${seg('cfggm',gm,[['final','Final Form'],['gauntlet','Gauntlet']])}</div>
-      <p class="hint">${gm==='random'?'Everyone is dealt a random team from 5 to 50 points, with no character on two teams.':gm==='mirror'?'Everyone gets the same random team. Only your moves can win it.':gm==='final'?'You all face Muzan and the Upper Moons he picks. Everyone plays live, and he grows with your group.':gm==='gauntlet'?'Survive wave after wave together. Everyone plays live, and damage carries over.':'Take turns picking your squads.'}</p>
+      <p class="hint">${gm==='random'?'Everyone is dealt a random team from 5 to 50 points, with no character on two teams.':gm==='final'?'You all face Muzan and the Upper Moons he picks. Everyone plays live, and he grows with your group.':gm==='gauntlet'?'Survive wave after wave together. Everyone plays live, and damage carries over.':'Take turns picking your squads.'}</p>
       ${n===4&&!coop?`<div class="setline"><span class="tlabel">With 4 players</span>${seg('cfgduo',c.duo?'on':'off',[['off','Free-for-all'],['on','2v2 teams']])}</div>`:''}
       ${gm==='none'?`<details class="subset" id="onlineset"><summary>Draft settings <span class="muted">· ${budgetName(c.budget)}${c.budget<UNLIMITED?' pts':' points'} · ${poolName(c.poolType)}</span></summary>
         <div class="setline"><span class="tlabel">Points per team</span>${seg('cfgbudget',c.budget,BUDGETS.map(b=>[b,budgetName(b)]))}</div>

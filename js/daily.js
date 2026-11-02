@@ -119,7 +119,6 @@ const GM = {
   gauntlet:{title:'Gauntlet', blurb:'One squad, wave after wave. Damage carries over. How far can you get?', kj:'連', line:'Survive wave after wave', budget:30, foe:'The wave', art:'tanjiro'},
   rush:{title:'Upper Moon Rush', blurb:'Slayers only. Beat the Upper Moons one by one, then Muzan. Damage carries over.', kj:'月', line:'Eight fights to Muzan', budget:35, foe:'Upper Moons', art:'kokushibo'},
   random:{title:'Random Squads', blurb:'Both teams are dealt at random, from 5 to 50 points. No draft: just play your hand.', kj:'運', line:'No draft, just your hand', budget:20, foe:'Computer', art:'zenitsu'},
-  mirror:{title:'Mirror Match', blurb:'The computer copies your squad exactly. Only your moves can win it.', kj:'鏡', line:'Same squad, better moves', budget:20, foe:'Your reflection', art:'typezero'},
 };
 const RUSH_FIGHTS = [['kaigaku'],['gyokko'],['gyutaro','daki'],['hantengu'],['akaza'],['doma'],['kokushibo'],['muzan_final']];
 const RUSH_DEMONS = ['enmu','rui','kyogai','susamaru','yahaba','hand','swamp'], RUSH_ESCORT = 3, GM_HEAL = .2;   // what survivors get back between fights in a run
@@ -146,7 +145,6 @@ function gmEnemy(){
   if(S.coop==='final') return finalPicks(S.picks.flat(), COOP_UPPERS[coopHumans()]);
   if(S.coop) return randSquad(Math.round(waveBudget(S.series.wave)*COOP_WAVE[coopHumans()]), gmCards().filter(c=>c.cost<=waveBudget(S.series.wave)), MAXTEAM+coopHumans()-1);
   if(S.mode==='final') return finalPicks(S.picks[0]);
-  if(S.mode==='mirror') return S.picks[0].slice();
   if(S.mode==='rush'){ const w=S.series.wave;   // alone they get swarmed (the computer cleared 100%): each brings lesser demons, more every fight
     return RUSH_FIGHTS[w-1].concat(randSquad(RUSH_ESCORT*w, RUSH_DEMONS.map(id=>BYID[id]))); }
   S.level=S.series.wave<3?'normal':'hard';
@@ -164,9 +162,9 @@ function gmDraft(mode){
 function gmRandom(){
   Object.assign(S,gmBase('random')); S.picks=dealSquads('random'); S.locked=[true,true]; S.pool=[]; startBattle();
 }
-// Two squads dealt without a draft (online too): Random never puts a character on both teams, in any version; Mirror gives both the same one
+// Two squads dealt without a draft (online too): Random never puts a character on both teams, in any version. 'mirror' stays only for online games started before CK removed it
 function dealSquads(mode, n=2){
-  const budget=mode==='random' ? 5+Math.floor(Math.random()*46) : GM[mode].budget;   // Random: any size of game, 5 to 50 points (CK); every team gets the same
+  const budget=mode==='random' ? 5+Math.floor(Math.random()*46) : 20;   // Random: any size of game, 5 to 50 points (CK); every team gets the same
   S.budget=budget;
   const cost=t=>t.reduce((a,id)=>a+BYID[id].cost,0), deal=()=>{ const fams=new Set(), out=[];
     for(let i=0;i<n;i++){ const q=mode==='mirror'&&i ? out[0].slice() : randSquad(budget, gmCards().filter(c=>!fams.has(c.fam))); q.forEach(id=>fams.add(BYID[id].fam)); out.push(q); }

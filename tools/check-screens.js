@@ -29,11 +29,10 @@ function finalCheck(){
 // Game Modes: every mode from its card to its end screen, including a run's next fight
 function modesCheck(){
   S.unlockAll=true; const play=()=>{ vReveal(); S.phase='plan'; vPlan(); let k=0; while(S.phase!=='over' && k++<200){ cpuBothSides('hard',S.level); resolve(); if(S.phase==='result') S.round++; if(S.phase==='plan') vPlan(); } if(S.phase!=='over') throw new Error(S.mode+': battle never ended'); gmRecord(S.winner===0); winHero(); overBar(); };
-  for(let g=0;g<80;g++){ const mode=Object.keys(GM)[g%4]; S={phase:'setup',mode:'cpu',names:['A'],vol:{sfx:0,music:0},speed:1,unlockAll:true}; useModeCfg('cpu'); vModeSet(); gmStart(mode);
+  for(let g=0;g<80;g++){ const mode=Object.keys(GM)[g%3]; S={phase:'setup',mode:'cpu',names:['A'],vol:{sfx:0,music:0},speed:1,unlockAll:true}; useModeCfg('cpu'); vModeSet(); gmStart(mode);
     if(!S.unlockAll) throw new Error(mode+': not every character open');
     if(mode!=='random'){ vDraft(); let k=0; while(S.phase==='draft'&&k++<40) cpuDraftStep('hard'); }
     if(S.phase!=='reveal') throw new Error(mode+': no reveal');
-    if(mode==='mirror' && S.picks[0].join()!==S.picks[1].join()) throw new Error('mirror: squads differ');
     if(mode==='random' && (S.budget<5 || S.budget>50 || S.picks.some(t=>!t.length || t.reduce((x,id)=>x+BYID[id].cost,0)>S.budget))) throw new Error('random: bad deal at '+S.budget);
     if(mode==='random'){ S.qpClassic=true; S.mode='cpu'; useModeCfg('cpu'); if(!vModeSet().includes('cfglevel')) throw new Error('Classic: no settings'); S.qpClassic=false; S.mode=mode; }
     if(mode==='random' && S.picks[0].some(a=>S.picks[1].some(b=>BYID[a].fam===BYID[b].fam))) throw new Error('random: same character on both teams');

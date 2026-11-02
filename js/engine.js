@@ -112,7 +112,7 @@ const allUnits = () => (S.teams||[]).flat();
 const rnd = a => a[Math.floor(Math.random()*a.length)];
 // Playing against the computer (normal vs-computer games and story mode); the screen belongs to player 1
 // Quickplay's Game Modes (js/daily.js): solo modes with their own draft and a reveal before each fight
-const GAME_MODES = ['final','gauntlet','rush','random','mirror'], gameMode = () => GAME_MODES.includes(S.mode);
+const GAME_MODES = ['final','gauntlet','rush','random'], gameMode = () => GAME_MODES.includes(S.mode);
 const vsCpu = () => S.mode==='cpu' || S.mode==='story' || S.mode==='practice' || S.mode==='daily' || gameMode();
 // Practice: you draft for every team (the computers' picks too), then fight the computers. Doesn't count toward records.
 const isPractice = () => S.mode==='practice';
