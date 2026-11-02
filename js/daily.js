@@ -93,3 +93,80 @@ function startDaily(){
   dailyDraft(ch, c=>S.unlockAll || typeof isUnlocked!=='function' || isUnlocked(c.id));
   S.names=[name, 'Daily challenger'];
 }
+
+/* ---------- Final Form ----------
+   Very hard and endlessly replayable (CK, Nov 2, 2026: players were beating Hard). You draft Marked slayers and Corps
+   support; Muzan then answers with Final Muzan and three Upper Moons chosen to counter your squad, with a little chance so no
+   two runs match. His side hits harder (FINAL_POW) and his moves have no noise. Dawn comes early (FINAL_SUNRISE). */
+const FINAL_SUPPORT = ['kagaya','murata','zenitsu','inosuke','kanao','genya','hinatsuru','makio','suma','urokodaki','tengen_retired'];
+// Which of your cards each Upper Moon does best against (from the simulator). Nakime and Kaigaku made the fight easier, so he leaves them out.
+const FINAL_COUNTERS = {hantengu:['giyu_mark','gyomei_mark','kagaya','urokodaki'], doma:['tanjiro_mark','hinatsuru','makio','murata'], kokushibo:['giyu_mark','murata','urokodaki'],
+  akaza:['obanai_mark','makio','suma','genya'], gyutaro:['inosuke','kanao','zenitsu','tengen_retired'], gyokko:['mitsuri_mark','tanjiro_mark','obanai_mark']};
+function finalPicks(team){
+  const left=Object.keys(FINAL_COUNTERS), out=['muzan_final'], score=id=>FINAL_COUNTERS[id].filter(c=>team.includes(c)).length*4 + BYID[id].cost*.3 + Math.random()*4;
+  while(out.length<4) out.push(left.splice(left.indexOf(left.slice().sort((a,b)=>score(b)-score(a))[0]),1)[0]);
+  return out;
+}
+function finalTaunt(team, foes){
+  for(const id of foes.slice(1)){ const c=(FINAL_COUNTERS[id]||[]).find(x=>team.includes(x)); if(c) return `${BYID[c].short}? ${BYID[id].short} will deal with that one.`; }
+  return 'You came all this way to die before dawn.';
+}
+
+/* ---------- Game Modes (Quickplay → Game Modes) ----------
+   Solo modes sharing one flow: your own draft (or none), the enemy revealed afterwards (startBattle → gmEnemy, phase 'reveal').
+   Gauntlet and Upper Moon Rush are runs: S.series.wave counts the fights, and survivors carry into the next one (gmNext). */
+const GM = {
+  gauntlet:{title:'Gauntlet', blurb:'One squad, wave after wave. Damage carries over. How far can you get?', kj:'連', line:'Survive wave after wave', budget:30, foe:'The wave', art:'tanjiro'},
+  rush:{title:'Upper Moon Rush', blurb:'Slayers only. Beat the Upper Moons one by one, then Muzan. Damage carries over.', kj:'月', line:'Eight fights to Muzan', budget:35, foe:'Upper Moons', art:'kokushibo'},
+  random:{title:'Random Squads', blurb:'Both teams are dealt at random. No draft: just play your hand.', kj:'運', line:'No draft, just your hand', budget:20, foe:'Computer', art:'zenitsu'},
+  mirror:{title:'Mirror Match', blurb:'The computer copies your squad exactly. Only your moves can win it.', kj:'鏡', line:'Same squad, better moves', budget:20, foe:'Your reflection', art:'typezero'},
+};
+const RUSH_FIGHTS = [['kaigaku'],['gyokko'],['gyutaro','daki'],['hantengu'],['akaza'],['doma'],['kokushibo'],['muzan_final']];
+const RUSH_DEMONS = ['enmu','rui','kyogai','susamaru','yahaba','hand','swamp'], RUSH_ESCORT = 3, GM_HEAL = .2;   // what survivors get back between fights in a run
+const GM_KEY = 'squad-draft-modes';   // {mode: {won, played, best}}
+const gmStats = mode => { try{ return (JSON.parse(localStorage.getItem(GM_KEY))||{})[mode]||{won:0, played:0, best:0}; }catch(e){ return {won:0, played:0, best:0}; } };
+function gmRecord(won){
+  const m=S.mode, r=gmStats(m), g=S.series, more=won && g && gmFights()>g.wave;
+  if(!more){ r.played++; if(won) r.won++; }   // a run counts once, when it ends, but its best is saved after every fight, so leaving mid-run keeps it
+  if(g) r.best=Math.max(r.best, won?g.wave:g.wave-1);
+  try{ const all=JSON.parse(localStorage.getItem(GM_KEY))||{}; all[m]=r; localStorage.setItem(GM_KEY,JSON.stringify(all)); }catch(e){}
+}
+const gmFights = () => S.mode==='rush' ? RUSH_FIGHTS.length : Infinity;
+const gmName = () => S.mode==='final' ? 'Final Form' : GM[S.mode].title;
+// A random squad: any card that fits, one version per character
+function randSquad(budget, cards){
+  const out=[], fams=new Set(); let left=budget;
+  cards.slice().sort(()=>Math.random()-.5).forEach(c=>{ if(out.length<MAXTEAM && c.cost<=left && !fams.has(c.fam)){ out.push(c.id); fams.add(c.fam); left-=c.cost; } });
+  return out;
+}
+const gmCards = () => ROSTER.filter(c=>!c.spawn && !c.helper);
+// Gauntlet: each wave is a bigger random squad, and the computer stops making mistakes from wave 3
+const waveBudget = w => 6+4*w;
+function gmEnemy(){
+  if(S.mode==='final') return finalPicks(S.picks[0]);
+  if(S.mode==='mirror') return S.picks[0].slice();
+  if(S.mode==='rush'){ const w=S.series.wave;   // alone they get swarmed (the computer cleared 100%): each brings lesser demons, more every fight
+    return RUSH_FIGHTS[w-1].concat(randSquad(RUSH_ESCORT*w, RUSH_DEMONS.map(id=>BYID[id]))); }
+  S.level=S.series.wave<3?'normal':'hard';
+  return randSquad(waveBudget(S.series.wave), gmCards().filter(c=>c.cost<=waveBudget(S.series.wave)));
+}
+const gmBase = mode => ({mode, unlockAll:true, n:2, duo:false, maxTeam:MAXTEAM, bansOn:false, banning:false, bans:[], budget:mode==='final'?FINAL_BUDGET:GM[mode].budget, level:'hard', poolType:'random', sideWar:false,
+  phase:'draft', first:0, lastPicker:null, history:[], k:0, sel:null, picks:[[],[]], locked:[false,true], showTheirs:false, heldCalm:0, series:mode==='gauntlet'||mode==='rush'?{wave:1}:null,
+  names:[playerName()||'Player 1', mode==='final'?'Muzan':GM[mode].foe]});
+function gmDraft(mode){
+  Object.assign(S,gmBase(mode));
+  S.pool=ROSTER.filter(mode==='final' ? c=>(c.mark&&!c.demon&&!c.spawn)||FINAL_SUPPORT.includes(c.id) : c=>!c.spawn && !c.helper && !(mode==='rush'&&c.demon)).map(c=>c.id)
+    .sort((a,b)=>BYID[b].cost-BYID[a].cost || BYID[a].name.localeCompare(BYID[b].name)).concat(dealHelpers());
+}
+function gmRandom(){
+  Object.assign(S,gmBase('random')); const cards=gmCards();
+  S.picks=[randSquad(S.budget,cards), randSquad(S.budget,cards)]; S.locked=[true,true]; S.pool=[]; startBattle();
+}
+const gmStart = mode => mode==='random' ? gmRandom() : gmDraft(mode);
+const gmAgain = () => gmStart(S.mode);   // a fresh draft (CK): refilling a full squad locked it and skipped the draft
+// The next fight of a run: survivors keep their damage, heal a little and have their specials ready
+function gmNext(){
+  const keep=S.teams[0].filter(u=>u.alive), g=S.series; g.wave++;
+  keep.forEach(u=>{ u.hp=Math.min(u.max, u.hp+Math.ceil(u.max*GM_HEAL)); u.cd=0; u.poison=null; u.stun=u.stunNext=false; u.devoured=0; u.defending=u.evade=false; });
+  S.picks[1]=[]; startBattle(); S.teams[0]=keep;
+}

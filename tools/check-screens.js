@@ -6,6 +6,42 @@ const ctx = loadGame(['roster.js', 'engine.js', 'story.js', 'daily.js', 'online.
 // the TV battle board (js/tv.js) for 2-team games: every playback beat, and the waiting board, as a 2-player TV match
 const TVT={code:'TEST', phones:{a:{name:'A'}, b:{name:'B'}}, seats:['a','b'], names:{a:'A', b:'B'}, saves:{}};
 function tvBoardCheck(b){ const keep=[S.tv,S.tvDuo]; S.tv=TVT; S.tvDuo=!b; try{ vTvBoard(b); tvWaiting(); vTvHome(); tvChoices('tvhome'); tvChoices('story'); globalThis.TVN=(globalThis.TVN||0)+1; } finally { [S.tv,S.tvDuo]=keep; } }
+// Final Form: draft, auto-lock on a full squad, reveal, sun clock, the end screen and refilling the squad
+function finalCheck(){
+  for(let g=0;g<60;g++){
+    S={phase:'setup',mode:'cpu',names:['A'],vol:{sfx:0,music:0},speed:1}; useModeCfg('cpu'); S.qpFinal=true; if(!vModeSet().includes('gamemode') || vSetup().includes('gamemode')) throw new Error('Final Form: wrong screen'); gmDraft('final');
+    if(S.pool.some(id=>BYID[id].demon && !BYID[id].helper)) throw new Error('Final Form: demon in the pool');
+    if(S.pool.some(id=>BYID[id].fam==='yoriichi')) throw new Error('Final Form: Yoriichi in the pool');
+    vDraft(); let k=0; while(S.phase==='draft' && k++<40){ cpuDraftStep('hard'); if(S.phase==='draft') vDraft(); }
+    if(S.phase!=='reveal') throw new Error('Final Form: no reveal after the draft');
+    if(!selflessOpen() || !sig2Open(BYID.zenitsu)) throw new Error('Final Form: specials still locked');
+    { const z=mkUnit('zohakuten',1); if(z.pow<=BYID.zohakuten.pow) throw new Error('Final Form: spawned forms not buffed'); }
+    const foes=S.picks[1]; if(foes[0]!=='muzan_final' || foes.length!==4 || new Set(foes).size!==4 || foes.slice(1).some(id=>!BYID[id].upper)) throw new Error('Final Form: bad enemy team '+foes);
+    if(S.teams[1][0].pow<Math.round(BYID.muzan_final.pow*(1+FINAL_POW))) throw new Error('Final Form: no buff'); vReveal();
+    if(sunRise()!==FINAL_SUNRISE) throw new Error('Final Form: wrong sunrise'); S.phase='plan'; vPlan();
+    k=0; while(S.phase!=='over' && k++<200){ cpuBothSides(); resolve(); if(S.phase==='result') S.round++; if(S.phase==='plan') vPlan(); }
+    if(S.phase!=='over') throw new Error('Final Form: battle never ended'); gmRecord(S.winner===0); winHero(); overBar();
+    gmAgain(); if(S.phase!=='draft' || S.picks[0].length) throw new Error('Try again did not open a fresh draft');
+    S.mode='cpu'; if(sunRise()!==SUNRISE_ROUND) throw new Error('sunrise moved outside Final Form');
+  }
+  return 'Final Form: 60 runs passed.';
+}
+// Game Modes: every mode from its card to its end screen, including a run's next fight
+function modesCheck(){
+  S.unlockAll=true; const play=()=>{ vReveal(); S.phase='plan'; vPlan(); let k=0; while(S.phase!=='over' && k++<200){ cpuBothSides('hard',S.level); resolve(); if(S.phase==='result') S.round++; if(S.phase==='plan') vPlan(); } if(S.phase!=='over') throw new Error(S.mode+': battle never ended'); gmRecord(S.winner===0); winHero(); overBar(); };
+  for(let g=0;g<80;g++){ const mode=Object.keys(GM)[g%4]; S={phase:'setup',mode:'cpu',names:['A'],vol:{sfx:0,music:0},speed:1,unlockAll:true}; useModeCfg('cpu'); S.qpFinal=true; vModeSet(); gmStart(mode);
+    if(!S.unlockAll) throw new Error(mode+': not every character open');
+    if(mode!=='random'){ vDraft(); let k=0; while(S.phase==='draft'&&k++<40) cpuDraftStep('hard'); }
+    if(S.phase!=='reveal') throw new Error(mode+': no reveal');
+    if(mode==='mirror' && S.picks[0].join()!==S.picks[1].join()) throw new Error('mirror: squads differ');
+    if(mode==='rush' && S.picks[0].some(id=>BYID[id].demon)) throw new Error('rush: demon on your team');
+    play(); let n=0;
+    while(S.series && S.winner===0 && gmFights()>S.series.wave && n++<30){ const up=S.teams[0].filter(u=>u.alive).map(u=>u.hp); gmNext(); if(S.phase!=='reveal' || S.teams[0].some(u=>!u.alive) || S.teams[0].some((u,i)=>u.hp<up[i])) throw new Error(mode+': survivors did not carry over'); if(S.mode==='rush' && S.picks[1].slice(0,RUSH_FIGHTS[S.series.wave-1].length).join()!==RUSH_FIGHTS[S.series.wave-1].join()) throw new Error('rush: wrong fight'); play(); }
+    if(!S.teams[0].length) throw new Error(mode+': empty team');
+    gmAgain(); if(mode==='random' ? S.phase!=='reveal' : S.phase!=='draft' || S.picks[0].length) throw new Error(mode+': try again did not restart');
+  }
+  return 'Game Modes: 80 runs passed.';
+}
 function check(games){
   let errors=0, first='';
   // every character gets a test clip for every moment, so each clip beat gets drawn
@@ -88,3 +124,5 @@ function check(games){
 }
 `);
 console.log(ctx.check(300));
+console.log(ctx.finalCheck());
+console.log(ctx.modesCheck());

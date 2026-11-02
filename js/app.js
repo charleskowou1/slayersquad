@@ -1,7 +1,7 @@
 /* ================= APP =================
    Rendering and taps. The only file that touches the DOM. */
 const app = document.getElementById('app'), sheet = document.getElementById('sheet');
-const VIEWS = {ceremony:vCeremony, order:vOrder, credits:vCredits, setup:vSetup, modeset:vModeSet, codex:vCodex, lobby:vLobby, story:vStory, scene:vScene, scout:vScout, spin:vSpin, draft:vDraft, pass:vPass, plan:vPlan, ready:vReady, result:vResult, over:vOver};
+const VIEWS = {reveal:vReveal, ceremony:vCeremony, order:vOrder, credits:vCredits, setup:vSetup, modeset:vModeSet, codex:vCodex, lobby:vLobby, story:vStory, scene:vScene, scout:vScout, spin:vSpin, draft:vDraft, pass:vPass, plan:vPlan, ready:vReady, result:vResult, over:vOver};
 const quickMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 let scored = false, spinShown = null;   // spinShown: the number game already revealed on this screen (for its ding)
 // which screen to draw: online, each phone shows the win screen on its own; a crow re-plan reuses the move screen
@@ -22,6 +22,7 @@ function render(){
   if(isOnline()) S.planFor=S.me;
   const ctl=typeof isCtl==='function' && isCtl(), view = ctl ? ctlViewName() : viewName();   // a phone controlling the TV shows only its moves
   if(view==='over' && !scored && S.mode==='daily'){ scored=true; S.dailyMet=dailyMet(S.daily); if(S.dailyMet) markDaily(S.daily.day); sfx(S.dailyMet?'win':'lose'); }   // no stats
+  if(view==='over' && !scored && gameMode()){ scored=true; gmRecord(S.winner===0); if(S.winner===0) track([`m_${S.mode}_win`]); sfx(S.winner===0?'win':'lose'); }   // no shared stats: these aren't fair matchups
   if(view==='over' && !scored && (isPractice() || S.mode==='story')){ scored=true;   // story and practice don't count toward stats
     if(S.winner!==0) sfx('lose'); }   // story wins are saved (and celebrated) before the ending scene
   if(view==='over' && !scored && isAsync()){ const g=myGame(S.asyncCode); if(g && g.scored===S.matchNo) scored=true; else setGame(S.asyncCode,{scored:S.matchNo}); }   // a reopened game isn't counted twice
@@ -38,12 +39,12 @@ function render(){
   const st=S.mode==='story' && STAGES[S.stage], fighting=['plan','result','pass','scout','ready'].includes(view);
   // the sun climbs over the battle: Until Dawn (story) over its rounds; every other battle in the 4 rounds before
   // sunrise (round SUNRISE_ROUND), then it burns hotter each round after (--heat)
-  const before=4, sky=fighting && !!S.teams && (st ? !!st.sunrise : S.round>SUNRISE_ROUND-before);
+  const before=4, sky=fighting && !!S.teams && (st ? !!st.sunrise : S.round>sunRise()-before);
   document.body.classList.toggle('dawn', sky);
   document.body.classList.toggle('sunrisetheme', !!hashiraTitle());
-  if(sky){ const n=st?st.twist.survive:before, from=st?1:SUNRISE_ROUND-before;
+  if(sky){ const n=st?st.twist.survive:before, from=st?1:sunRise()-before;
     document.body.style.setProperty('--dawn', Math.max(0, Math.min(1, (S.round-from)/(st?n-1:before))).toFixed(3));
-    document.body.style.setProperty('--heat', st ? 0 : Math.max(0, Math.min(1, (S.round-SUNRISE_ROUND)/4)).toFixed(3)); }
+    document.body.style.setProperty('--heat', st ? 0 : Math.max(0, Math.min(1, (S.round-sunRise())/4)).toFixed(3)); }
   // Story battles fight in front of the battle's place picture (img/places/, the same one as its cutscenes)
   const place=['plan','result','pass','scout','ready','over'].includes(view) && (st ? PLACE_ART[st.id]||PLACE_ART[st.arc] : S.place && PLACE_ART[S.place]);   // story: the battle's place; other modes: the match's
   document.body.classList.toggle('placebg', !!place);
@@ -187,11 +188,15 @@ const ACTIONS = {
   start: startDraft,
   home(){ setCampaign('main'); if(UPDATE_READY) return location.reload(); clearTimeout(S._t); clearTimeout(HANDOFF); HANDOFF=null; if(ONLINE.net){ ONLINE.net.leave(); ONLINE.net=null; ONLINE.last=null; ONLINE.offActs=ONLINE.offState=null; }
     if(S.ctl) ctlStop();
-    const tv=S.tv, mode=S.mode==='daily'?'cpu':S.mode; S={tv, phase:tv?'tvhome':'setup',mode,vol:S.vol,speed:S.speed,vibeOn:S.vibeOn,clipsOn:S.clipsOn,clipRepeat:S.clipRepeat,install:S.install,names:mode==='local'?localNames():[S.names[S.me||0]||S.names[0]]}; useModeCfg(mode); },
+    const tv=S.tv, mode=S.mode==='daily'||gameMode()?'cpu':S.mode; S={tv, phase:tv?'tvhome':'setup',mode,vol:S.vol,speed:S.speed,vibeOn:S.vibeOn,clipsOn:S.clipsOn,clipRepeat:S.clipRepeat,install:S.install,names:mode==='local'?localNames():[S.names[S.me||0]||S.names[0]]}; useModeCfg(mode); },
   clips(v){ S.clipsOn=v==='on'; try{ localStorage.setItem('squad-draft-clips',v) }catch(e){} },
   cliprepeat(v){ S.clipRepeat=v; try{ localStorage.setItem('squad-draft-clip-repeat',v) }catch(e){} },
   vibe(v){ S.vibeOn=v==='on'; try{ localStorage.setItem('squad-draft-vibe',v) }catch(e){} },
-  rematch(){ if(isOnline()) return onlineRematch(); if(isPractice()) return newDraft(0); toSpin(); },
+  gamemode(v){ gmStart(v); window.scrollTo(0,0); },
+  nextfight(){ gmNext(); window.scrollTo(0,0); },
+  qpmode(v){ keepNames(); S.qpFinal=v==='final'; },   // Quickplay: choose the kind of game first, so no settings get thrown away
+  finalfight(){ S.phase='plan'; },
+  rematch(){ if(isOnline()) return onlineRematch(); if(gameMode()) return gmAgain(); if(isPractice()) return newDraft(0); toSpin(); },
   // who picks first: take a number (a phone controlling a TV sends it; online the host applies it; vs the computer it
   // answers straight after you)
   guess(v){ if(typeof isCtl==='function' && isCtl()) return ctlSend({a:'guess', n:+v});
@@ -249,8 +254,6 @@ const ACTIONS = {
   installlater(){ INSTALL_LATER=true; },
   backupnow(){ cloudBackup(true); },
   restore(){ cloudRestore(); },
-  restoreok(){ cloudApply(); },
-  unrestore(){ S.restoreFound=null; },
   copycode(){ const c=showCode(loadCloud().code); try{ navigator.clipboard.writeText(c); S.copied=true; setTimeout(()=>{ S.copied=false; render(); },1500); }catch(e){} },
   copyround(){ const ml=S.matchLog||[]; if(ml.length) copyText(roundText(ml[ml.length-1])); },
   copylog(){ copyText(battleLogText()); },
@@ -351,7 +354,7 @@ document.addEventListener('click',e=>{
   unlockSound();   // phones only allow sound after a tap
   const b=e.target.closest('[data-a]'); if(!b||b.disabled) return;
   const fn=ACTIONS[b.dataset.a]; if(!fn) return;
-  if(['storymap','daily','openmode'].includes(b.dataset.a) && S.phase==='setup' && !playerName() && !NAME_SKIPPED && !(typeof isTV==='function'&&isTV())){
+  if(['storymap','daily','gamemode','openmode'].includes(b.dataset.a) && S.phase==='setup' && !playerName() && !NAME_SKIPPED && !(typeof isTV==='function'&&isTV())){
     S.askName=[b.dataset.a,b.dataset.v]; render(); const el=document.getElementById('hname'); if(el) el.focus(); return; }
   fn(b.dataset.v,b); render();
 });
@@ -621,7 +624,7 @@ function gamesBadge(){
 // The match that just ended, as the stats count it (null = not counted: Story, Practice, the daily challenge, and
 // online games, which are counted once by the phone that hosts / ended them)
 function statsGame(){
-  if(S.mode==='story' || S.mode==='daily' || isPractice() || !S.teams) return null;
+  if(S.mode==='story' || S.mode==='daily' || gameMode() || isPractice() || !S.teams) return null;
   if(isOnline() && (isAsync() || !iAmHost())) return null;
   return {pool:S.pool||[], poolType:S.poolType, teams:players().map(p=>S.teams[p].filter(u=>!u.spawn).map(u=>u.id)), helpers:players().map(p=>(S.picks[p]||[]).filter(isHelper)),
     won:players().map(p=>S.winner>=0 && sameSide(S.winner,p)), humans: S.mode==='cpu' ? [0] : players()};
@@ -672,7 +675,10 @@ async function loadGlobalStats(){
    Every 'squad-draft…' setting and save on this phone (story, stars, stats, records, daily streak, names, settings) is
    copied to Firebase at saves/<CODE> a few seconds after it changes. The code (like KMRT-7Q2X-9HEA) is shown in
    Settings → Save; typing it on another phone (or after clearing the browser) restores everything.
-   Needs the 'saves' rule in the Firebase console (see CLAUDE.md). Until then backups fail quietly and Settings says so. */
+   Needs the 'saves' rule in the Firebase console (see CLAUDE.md). Until then backups fail quietly and Settings says so.
+   Two devices can share a code (restoring takes the code with it), so each write carries a random 'rev' and a device only
+   writes over the rev it last saw. Anything else is another device's save, and the two are combined (mergeSaves) so neither
+   loses anything and the player never has to choose. Restoring combines the same way, so a code can only add progress. */
 const CLOUD_KEY = 'squad-draft-cloud', CODE_ABC = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const NOT_BACKED = ['squad-draft-cloud','squad-draft-data','squad-draft-install-later'];
 const loadCloud = () => { try{ return JSON.parse(localStorage.getItem(CLOUD_KEY))||{} }catch(e){ return {} } };
@@ -682,6 +688,23 @@ const showCode = c => c ? c.match(/.{4}/g).join('-') : '';
 function saveData(){ const d={}; try{ Object.keys(localStorage).filter(k=>k.startsWith('squad-draft') && !NOT_BACKED.includes(k)).sort().forEach(k=>{ d[k]=localStorage.getItem(k); }); }catch(e){} return d; }
 // worth backing up once there's real progress (not a brand-new phone)
 const hasProgress = d => ['squad-draft-story-v2','squad-draft-records','squad-draft-score','squad-draft-daily'].some(k=>d[k] && d[k]!=='{}' && d[k]!=='{"cleared":[]}');
+// what a save holds, in players' words, for choosing between two of them
+const saveJSON = (d,k) => { try{ return JSON.parse(d[k])||{}; }catch(e){ return {}; } };
+const saveSummary = d => { const s=saveJSON(d,'squad-draft-story-v2'); return `${plural((s.cleared||[]).length,'story battle')}, ${plural(Object.values(s.stars||{}).reduce((a,b)=>a+b,0),'star')}`; };
+// Two saves combined: every battle, the best stars, the fuller record per fighter and name, every daily done. Settings stay this device's.
+function mergeSaves(mine, theirs){
+  const out={...theirs, ...mine}, both=k=>[saveJSON(mine,k), saveJSON(theirs,k)], put=(k,v)=>{ if(k in out) out[k]=JSON.stringify(v); };
+  { const [a,b]=both('squad-draft-story-v2'); put('squad-draft-story-v2', mergeStory(b,a)); }
+  { const [a,b]=both('squad-draft-records'), r={...b}; Object.entries(a).forEach(([id,v])=>{ if(!r[id] || v[0]>=r[id][0]) r[id]=v; }); put('squad-draft-records', r); }
+  { const [a,b]=both('squad-draft-score'), r={...b}; Object.entries(a).forEach(([n,v])=>{ r[n]=Math.max(v, r[n]||0); }); put('squad-draft-score', r); }
+  { const [a,b]=both('squad-draft-daily'); put('squad-draft-daily', {...b, ...a, done:[...new Set([...(a.done||[]), ...(b.done||[])])].sort().slice(-400)}); }
+  { const [a,b]=both('squad-draft-modes'), r={...b}; Object.entries(a).forEach(([m,v])=>{ const o=r[m]||{}; r[m]={won:Math.max(v.won||0,o.won||0), played:Math.max(v.played||0,o.played||0), best:Math.max(v.best||0,o.best||0)}; }); put('squad-draft-modes', r); }
+  return out;
+}
+const writeSave = d => { try{ Object.entries(d).forEach(([k,v])=>localStorage.setItem(k,v)); }catch(e){} };
+const sameSave = (a,b) => JSON.stringify(Object.keys(a).sort().map(k=>[k,a[k]]))===JSON.stringify(Object.keys(b).sort().map(k=>[k,b[k]]));
+// has another device saved to this code since this one last did? (Saves from before 'rev' existed go by the time.)
+const anotherDevice = (r,c) => r.rev||c.rev ? r.rev!==c.rev : r.at>(c.last||0);
 let CLOUD = {timer:null, last:'', busy:false, status:''};
 function cloudCheck(){   // called after every redraw: schedule a backup when the saved data changed
   if(!FIREBASE_CONFIG) return; const d=saveData(), j=JSON.stringify(d);
@@ -690,15 +713,18 @@ function cloudCheck(){   // called after every redraw: schedule a backup when th
 }
 async function cloudBackup(force){
   if(CLOUD.busy || (!navigator.onLine && !force)) return; CLOUD.busy=true;
-  const d=saveData(), j=JSON.stringify(d), c=loadCloud();
+  let d=saveData(); const c=loadCloud();
   try{
     const db=await firebaseReady(); if(!c.code){ c.code=newSaveCode(); }
-    await db.ref('saves/'+c.code).set({v:1, at:Date.now(), data:d});
-    c.last=Date.now(); saveCloud(c); CLOUD.last=j; CLOUD.status='';
+    const r=(await db.ref('saves/'+c.code).get()).val(), merged=r && r.data && !sameSave(r.data,d) && anotherDevice(r,c);
+    if(merged){ d=mergeSaves(d, r.data); writeSave(d); }
+    c.rev=newSaveCode(); await db.ref('saves/'+c.code).set({v:1, at:Date.now(), rev:c.rev, data:d});
+    c.last=Date.now(); saveCloud(c); CLOUD.last=JSON.stringify(saveData()); CLOUD.status='';
+    if(merged && S.phase==='setup') render();
   }catch(e){ CLOUD.status = /permission/i.test(e.message||'') ? 'rules' : 'offline'; }
   CLOUD.busy=false; if(S.settings && S.setTab==='save') render();
 }
-// Restore: first tap looks the code up, the second confirms (it replaces this phone's progress), then the game reloads
+// Restore: looks the code up and adds that save to this device; nothing here is lost. This device then uses that code.
 async function cloudRestore(){
   const el=document.getElementById('restorecode'), raw=((el&&el.value)||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
   S.restoreCode=raw;
@@ -706,15 +732,10 @@ async function cloudRestore(){
   S.restoreMsg='Looking it up…'; render();
   try{ const db=await firebaseReady(), snap=await db.ref('saves/'+raw).get();
     if(!snap.exists()){ S.restoreMsg='No backup with that code.'; return render(); }
-    S.restoreFound={code:raw, at:snap.val().at, data:snap.val().data}; S.restoreMsg='';
+    const r=snap.val(), d=mergeSaves(saveData(), r.data||{}); writeSave(d); saveCloud({code:raw, last:r.at, rev:r.rev}); CLOUD.last='';
+    S.restoreCode=''; S.restoreMsg=`Done! This device now has ${saveSummary(d)}.`;
   }catch(e){ S.restoreMsg=/permission/i.test(e.message||'')?"Cloud backup isn't switched on yet.":'Could not connect. Check your internet.'; }
   render();
-}
-function cloudApply(){
-  const f=S.restoreFound; if(!f) return;
-  try{ Object.keys(localStorage).filter(k=>k.startsWith('squad-draft') && !NOT_BACKED.includes(k)).forEach(k=>localStorage.removeItem(k));
-    Object.entries(f.data||{}).forEach(([k,v])=>localStorage.setItem(k,v)); saveCloud({code:f.code, last:f.at}); }catch(e){}
-  location.reload();
 }
 S.vol=loadVolumes(); S.speed=loadSpeed(); try{ S.vibeOn=localStorage.getItem('squad-draft-vibe')!=='off'; S.clipsOn=localStorage.getItem('squad-draft-clips')!=='off'; S.clipRepeat=localStorage.getItem('squad-draft-clip-repeat')||'first' }catch(e){}
 // One-time reset of The Endless Dream only (CK, Oct 30, 2026, after it changed): the main story and stars stay

@@ -56,16 +56,17 @@ add({id:'gyokko',name:'Gyokko',short:'Gyokko',g:'壺',type:'Upper Moon 5',demon:
 add({id:'hantengu',name:'Hantengu',short:'Hantengu',g:'怯',type:'Upper Moon 4',demon:true,upper:true,cost:9,hp:14,pow:0,spd:9,def:4,regen:1,noDefend:true,
   basic:{name:'Cower',tag:'takes half damage',k:'怯',kind:'self',cower:true,desc:'Instead of attacking: he cowers and takes half damage this round.'},
   splits:['sekido','karaku','aizetsu','urogi'],
-  passive:'Splitting Emotions: he never attacks. When he falls he splits into Sekido, Karaku, Aizetsu and Urogi. When the last of them falls, they merge into Zohakuten and the real Hantengu comes back. Zohakuten can\'t fall until the real Hantengu does, and when he falls, Zohakuten falls with him.',
+  passive:'Splitting Emotions: he never attacks. When he falls he splits into Sekido, Karaku, Aizetsu and Urogi. When the last of them falls, they merge into Zohakuten and the real Hantengu comes back, feeding Zohakuten +2 PWR a round. Zohakuten can\'t fall until the real Hantengu does, and when he falls, Zohakuten falls with him.',
   sig:{name:'Cowering Hide',desc:'Moves first. Hides: attacks miss him this round, and he heals 6.',cd:3,kind:'self',prio:3}});
 // Zohakuten: Hantengu's last form. The four emotions merge into him when the last one falls (never dealt).
 add({id:'zohakuten',spawn:true,name:'Zohakuten (Hatred)',short:'Zohakuten',g:'憎',type:'Hantengu merged · Hatred',demon:true,cost:0,hp:28,pow:12,spd:9,def:4,regen:2,anchor:'hantengu_true',
   passive:"Hantengu's Hatred: he can't fall while the real Hantengu lives. He stops at 1 HP.",
   sig:{name:'Wood Dragons',desc:'Every enemy takes PWR−4, even through Defend.',cd:3,kind:'all'}});
 // The real Hantengu: comes back beside Zohakuten. Cut him down and Zohakuten falls with him.
-add({id:'hantengu_true',fam:'hantengu',spawn:true,name:'Hantengu (True Form)',short:'Hantengu',g:'怯',type:'Hantengu · True Form',demon:true,cost:0,hp:14,pow:9,spd:11,def:8,regen:1,
-  passive:'The real one: Zohakuten can\'t fall while he lives, and falls the moment he does.',
-  sig:{name:'Terror of the Weak',desc:'Strike for PWR+6, ignores DEF.',cd:3,kind:'single'}});
+add({id:'hantengu_true',fam:'hantengu',spawn:true,name:'Hantengu (True Form)',short:'Hantengu',g:'怯',type:'Hantengu · True Form',demon:true,cost:0,hp:14,pow:0,spd:11,def:8,regen:1,
+  basic:{name:'Hatred',tag:'Zohakuten +2 PWR',k:'憎',kind:'self',feed:true,desc:'Instead of attacking: feeds Zohakuten, who keeps +2 PWR for the rest of the match. It adds up every round.'},
+  passive:'The real one: he never attacks. Zohakuten can\'t fall while he lives, and falls the moment he does.',
+  sig:{name:'Cowering Hide',desc:'Moves first. Hides: attacks miss him this round, and he heals 6.',cd:3,kind:'self',prio:3}});
 add({id:'sekido',spawn:true,name:'Sekido (Anger)',short:'Sekido',g:'怒',type:'Hantengu split · Anger',demon:true,cost:0,hp:8,pow:7,spd:8,def:3,regen:1,
   merge:'zohakuten',
   sig:{name:'Lightning Staff',desc:'Every enemy takes 4, ignores DEF.',cd:3,kind:'all'}});
@@ -237,7 +238,7 @@ const SPECIAL_TAGS = {
   makomo:'dodge + hit', hinatsuru:'hit + poison', makio:'strong hit', suma:'dodge + random hit', michikatsu:'hit grows each round', hakuji:'strong hit', tanjuro:'team heals 3', dojo_fighter:'strong hit',
   yoriichi:'hit all, stops regen', yoriichi_old:'huge hit, ignores DEF',
   muzan:'hit all, heal self', muzan_final:'hit all, heal self', kokushibo:'hit all enemies', doma:'hit all enemies',
-  akaza:'big hit', gyutaro:'hit all + poison', daki:'hit all enemies', nakime:'send an enemy away', zohakuten:'hit all, through Defend', hantengu_true:'huge hit, ignores DEF',
+  akaza:'big hit', gyutaro:'hit all + poison', daki:'hit all enemies', nakime:'send an enemy away', zohakuten:'hit all, through Defend', hantengu_true:'hide + heal self',
   susamaru:'hit two enemies', yahaba:"enemy's hits miss", kanae:'hit + heal ally', tanjiro_demon:'hit all enemies', nezuko_awakened:'hit all + cure poison',
   typezero:'ally +2 SPD', hotaru:'reload a special', hantengu:'hide + heal self', gyokko:'hit + stun', kaigaku:'hit two enemies',
   sekido:'hit all enemies', karaku:'strong hit', aizetsu:'strong hit', urogi:'fast hit',

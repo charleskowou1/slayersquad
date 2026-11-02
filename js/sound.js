@@ -271,6 +271,6 @@ function musicFor(view){
   if(view==='story') return 'calm';
   if(view==='credits' || (view==='scene' && S.sceneFinale)) return 'calm';   // the story finale and end credits
   if(view==='scene') return st ? ARC_MOOD[st.arc]||'calm' : 'calm';
-  if(['plan','pass','ready','result','scout'].includes(view)) return 'battle';
+  if(['plan','pass','ready','result','scout','reveal'].includes(view)) return 'battle';
   return null;   // the win screen: just the win / lose fanfare
 }

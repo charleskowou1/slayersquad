@@ -40,7 +40,7 @@ out(`- Two sides draft a squad of fighters on a points budget, then battle in ro
 - Last side with anyone standing wins. A match stopped at round 40 is a draw.
 - Modes: Same Phone (one phone passed around, 2–4 players), Online (2 players: one game that plays live while both
   are in it and waits when one isn't, 6-letter code; 3 or 4 players: everyone at once, 4-letter room code),
-  Quickplay (you vs 1–3 computers: Easy/Normal/Hard), Practice (you draft every team, the computers' too, then fight
+  Quickplay (you vs 1–3 computers: Easy/Normal/Hard, or its Game Modes: Gauntlet (one 30-point squad against bigger random waves; survivors keep their damage, recover 20% and have specials ready), Upper Moon Rush (35 points, slayers only; eight fights from Kaigaku to Final Muzan, each with more lesser demons, survivors carry over the same way), Random Squads (both teams dealt at random, 20 points), Mirror Match (the computer copies your 20-point squad)), Final Form (also under Game Modes; the hardest mode, replayable: 45 points of Marked slayers and Corps support; after you lock in, Muzan answers with Final Muzan and three Upper Moons chosen to counter your squad, all at +15% PWR, playing their best moves; the sun rises in round 7 instead of 10, and at sunrise the demons gain +50% PWR and can no longer Defend. Marks have all their specials here, unlocked or not), Practice (you draft every team, the computers' too, then fight
   them; doesn't count toward records) and Story Mode (${STAGES.length} battles with preset squads).
 - Each mode (not Story) also sets MAX FIGHTERS PER TEAM, 1–6 (default 6). 1 = one-on-one duels.
 - 2v2 TEAMS (4 players): players 1 & 3 vs 2 & 4 (Quickplay: you + an allied computer vs two). Each player drafts
@@ -61,7 +61,7 @@ out(`- Two sides draft a squad of fighters on a points budget, then battle in ro
 hr('2. THE DRAFT');
 out(`- Budget: 10, 20 (default), 30 or Unlimited points per side (set per mode on the main menu). With Unlimited only the fighter limit stops a team.
 - Team size: 1 to 6 fighters. You can lock your team at any time ("Lock team"); you auto-lock if nothing is affordable.
-- Who picks first: a character thinks of a number from 1 to 9; each player takes a different number (the computer picks at random); the closest picks first (a tie is a coin flip). Then snake order: A, B, B, A, A, B, B, A…
+- Who picks first: a character thinks of a number from 1 to 9; each player takes a different number (the computer picks at random); the closest picks first (on a tie, the players call heads or tails). Then snake order: A, B, B, A, A, B, B, A…
   Once one side locks, the other keeps picking until they lock or can't afford anything.
 - Each character has versions (base, Mark ✦, or Yoriichi prime/age 85, Tengen/Retired Tengen, Muzan/Final Form).
   Only ONE version of a character can be drafted per match, by either side. Taking Giyu rules out Giyu ✦ for everyone.
@@ -144,7 +144,8 @@ Special rules on single cards:
   Awakened Nezuko, Retired Tengen, Final-Form Muzan.
 - Hantengu never attacks. His Cower takes half damage. When he falls, all four emotions appear (Sekido, Karaku, Aizetsu,
   Urogi; small). When the last emotion falls, Zohakuten (28 HP) and the real Hantengu (14 HP, 8 DEF) appear. Zohakuten stops
-  at 1 HP while the real Hantengu lives. When the real Hantengu falls, Zohakuten falls with him. Aim for him.`);
+  at 1 HP while the real Hantengu lives. The real Hantengu never attacks: each round his Hatred adds +2 PWR to Zohakuten for good,
+  or he hides and heals 6. When he falls, Zohakuten falls with him. Reach him fast.`);
 
 hr('5. EVERY CHARACTER');
 out(`Order: most expensive first. Line 2 = cost | HP | PWR | SPD | DEF | regen per round. Hantengu's split forms are listed last; they can't be drafted.`);
@@ -188,7 +189,7 @@ out(`- Vs Computer difficulty: Easy (simple, random-ish), Normal (smart but slop
 - Online clock: 1 minute per pick, 1 minute to watch a round, 2 minutes for moves. When time runs out the computer picks, and fighters block (those who can't block attack). In 2-player games it only runs while both players are in the game.
 - Online with 2 players: no need to be on at the same time, but it plays live if you are. Each phone drafts or locks in
   moves when it's that player's turn; a resolved round plays back right away, or the next time that player opens the game. The home screen lists
-  these games and says whose turn it is. Both phones play the number game to decide who picks first; a tie is a coin flip.
+  these games and says whose turn it is. Both phones play the number game to decide who picks first; on a tie, the players call heads or tails.
 - Daily challenge: the same set enemy team, points and goal for everyone that day; you draft from your unlocked
   characters. Goals: win, win within N rounds, or win with a named character still standing. For that last goal the
   named character is already on your squad when the draft opens (its points already spent).

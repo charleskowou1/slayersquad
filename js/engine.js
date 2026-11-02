@@ -108,7 +108,9 @@ const allPicks = () => (S.picks||[]).flat();
 const allUnits = () => (S.teams||[]).flat();
 const rnd = a => a[Math.floor(Math.random()*a.length)];
 // Playing against the computer (normal vs-computer games and story mode); the screen belongs to player 1
-const vsCpu = () => S.mode==='cpu' || S.mode==='story' || S.mode==='practice' || S.mode==='daily';
+// Quickplay's Game Modes (js/daily.js): solo modes with their own draft and a reveal before each fight
+const GAME_MODES = ['final','gauntlet','rush','random','mirror'], gameMode = () => GAME_MODES.includes(S.mode);
+const vsCpu = () => S.mode==='cpu' || S.mode==='story' || S.mode==='practice' || S.mode==='daily' || gameMode();
 // Practice: you draft for every team (the computers' picks too), then fight the computers. Doesn't count toward records.
 const isPractice = () => S.mode==='practice';
 // One person per screen (vs computer, story, online): label sides "You" / "Opponent" from that person's view
@@ -301,7 +303,9 @@ function cpuDraftStep(level='hard'){
 
 /* ---------- battle setup ---------- */
 let UID=0;
-function mkUnit(id,p){ const c=BYID[id]; return {uid:'u'+(UID++),id,fam:c.fam,sk:c.sk,p,name:c.short,g:c.g,hp:c.hp,max:c.hp,pow:c.pow,spd:c.spd,def:c.def,
+// Final Form: Muzan's side, including forms that appear mid-battle (Zohakuten)
+const finalUp = (v,p) => S.mode==='final' && p===1 ? Math.round(v*(1+FINAL_POW)) : v;
+function mkUnit(id,p){ const c=BYID[id]; return {uid:'u'+(UID++),id,fam:c.fam,sk:c.sk,p,name:c.short,g:c.g,hp:c.hp,max:c.hp,pow:finalUp(c.pow,p),spd:c.spd,def:c.def,
   regen:c.regen||0,revive:c.revive||0,demon:!!c.demon,mark:!!c.mark,legend:!!c.legend,strikes:c.strikes||1,cap:c.cap||0,taken:0,grit:c.id==='murata',
   sunproof:!!c.sunproof,noPoison:!!c.noPoison,vowed:false,noDefend:!!c.noDefend,basic:c.basic||null,anchor:c.anchor||null,
   sig:c.sig,cd:0,alive:true,spawn:!!c.spawn,splits:c.splits||null,merge:c.merge||null,poison:null,stun:false,stunNext:false,defending:false,evade:false,sunburn:false}; }
@@ -336,6 +340,7 @@ function synergies(p){
 }
 function startBattle(){
   S.n=S.picks.length;
+  if(gameMode() && !S.picks[1].length) S.picks[1]=gmEnemy();   // the enemy is chosen once your squad is locked (js/daily.js)
   S.teams=players().map(p=>fighterIds(p).map(id=>mkUnit(id,p)));
   S.helpers=players().map(p=>S.picks[p].filter(isHelper)); S.helperPlan=players().map(()=>[]); S.scoutQueue=[]; S.scouting=false; S.clipSeen={};   // move clips: repeat moments shown this match (js/clips.js)
   S.place = S.mode==='story' ? null : pickPlace();   // the background for this match (story battles use their own)
@@ -351,7 +356,7 @@ function startBattle(){
   // story: an enemy that starts the fight already hurt (part 2 of a two-part fight)
   Object.entries(S.startState||{}).forEach(([id,st])=>S.teams[1].filter(u=>u.id===id).forEach(u=>{
     if(st.hp) u.hp=Math.ceil(u.max*st.hp); if(st.devoured) u.devoured=st.devoured; if(st.poison) u.poison={...st.poison}; }));
-  S.phase = S.mode==='local' && !S.tvDuo ? 'pass' : 'plan';   // TV 2-player: each phone picks in secret, no passing
+  S.phase = gameMode() ? 'reveal' : S.mode==='local' && !S.tvDuo ? 'pass' : 'plan';   // TV 2-player: each phone picks in secret, no passing
 }
 const alive = p => S.teams[p].filter(u=>u.alive);
 const findU = uid => allUnits().find(u=>u.uid===uid);
@@ -361,7 +366,7 @@ const foes = p => enemiesOf(p).flatMap(q=>alive(q));
 const friends = p => players().filter(q=>sameSide(p,q)).flatMap(q=>alive(q));
 
 // The special a "Name: Special!" log line was for (line.sig = its id; none = the card's first special)
-function sigOfLine(u, line){ const c=BYID[u.id]||{}, id=line&&line.sig; return !id ? c.sig||u.sig : id==='selfless' ? SELFLESS : c.sig2&&c.sig2.id===id ? c.sig2 : u.sig; }
+function sigOfLine(u, line){ const c=BYID[u.id]||{}, id=line&&line.sig; return !id || id==='unblock' ? c.sig||u.sig : id==='selfless' ? SELFLESS : c.sig2&&c.sig2.id===id ? c.sig2 : u.sig; }
 // Mark Tanjiro's Selfless State is open once Destructive Death is won (story.js decides; simulations always have it)
 const selflessOpen = () => !!S.unlockAll || typeof selflessUnlocked!=='function' || selflessUnlocked();
 const canSelfless = u => BYID[u.id] && BYID[u.id].selfless && !u.selflessUsed && selflessOpen();
@@ -435,7 +440,6 @@ const SIG_EST = {
   urogi: u=>({base:u.pow+2}),
   daki: u=>({all:true, base:u.pow-3}),
   zohakuten: u=>({all:true, base:u.pow-4, o:{pierce:true}}),
-  hantengu_true: u=>({base:u.pow+6, o:{ignoreDef:true}}),
   susamaru: u=>({base:u.pow-1, bonus:1.6}),          // also hits a second enemy
   kanae: u=>({base:u.pow+3, bonus:1.15}),             // plus a small heal
   tanjiro_demon: u=>({all:true, base:u.pow-4, o:{ignoreDef:true}}),
@@ -470,12 +474,13 @@ function repeatPlans(p){
 const FFA_FOCUS = 150;
 function cpuPlan(p, level='hard'){
   if(level==='easy') return cpuPlanEasy(p);
-  const noise=LEVELS[level].noise;
+  const noise=S.mode==='final' && p===1 ? 0 : LEVELS[level].noise;   // Muzan never misjudges a move
   const foesNow=foes(p), mine=alive(p), planned={};
   const left = t => t.hp - (planned[t.uid]||0);
   // Hard reads Dead Calm: with Giyu's ready, this round's stance is a fresh roll (fire everything, hold some, or hold
   // most), so a player can't learn when it's safe to shield. Odds = the chance each damage special is held back.
-  const calm = level==='hard' && foesNow.find(f=>f.sk==='giyu' && f.cd===0 && !f.stun), stance=Math.random(), hold = !calm ? 0 : stance<.3 ? 0 : stance<.75 ? .5 : .85;
+  const fin = S.mode==='final' && p===1;   // Muzan: reads Dead Calm, goes for your strongest, and only guards a fighter about to fall
+  const calm = level==='hard' && foesNow.find(f=>f.sk==='giyu' && f.cd===0 && !f.stun), stance=Math.random(), hold = !calm ? 0 : fin ? (S.heldCalm===S.round-1 ? .75 : .9) : stance<.3 ? 0 : stance<.75 ? .5 : .85;
   let guards=0;
   const threat = t => t.pow*t.strikes + (t.cd===0?4:0) + (t.sk==='kagaya' && t.cd===0 ? 8*markReady(t).length : 0) + (calm===t?5:0);   // Kagaya about to awaken Marks; Giyu about to shield
   // free-for-all: gang up on the team that's ahead (most health × power left), like real players would
@@ -483,7 +488,7 @@ function cpuPlan(p, level='hard'){
   const lead = t => nPlayers()>2 ? FFA_FOCUS*power(t.p)/top : 0;
   const held = t => t.anchor && foesNow.some(f=>f.id===t.anchor), root = t => foesNow.some(f=>f.anchor===t.id);   // Zohakuten can't fall while the real Hantengu lives
   const score = (t,d) => { const l=left(t); if(l<=0) return 0; d=Math.min(d,l); if(held(t)) return d/t.max*15; return d/t.max*100 + (d>=l ? 40+threat(t) : 0) + (d>0?lead(t):0) + (root(t)?30:0); };
-  const best = (base,o) => foesNow.reduce((b,t)=>{ const s=score(t,estHit(t,base,o))+threat(t)*.5+Math.random()*noise; return s>b.s?{t,s}:b; },{t:foesNow[0],s:-1}).t;
+  const best = (base,o) => foesNow.reduce((b,t)=>{ const s=score(t,estHit(t,base,o))+threat(t)*(fin?2:.5)+Math.random()*(fin?12:noise); return s>b.s?{t,s}:b; },{t:foesNow[0],s:-1}).t;
   const pctHurt = m => m.hp/m.max;
   mine.forEach(u=>{
     if(u.stun) return;
@@ -491,6 +496,7 @@ function cpuPlan(p, level='hard'){
     let plan={type:'attack', t:at.uid, v:score(at,atD), hits:[[at,atD]]};
     // Nakime's Biwa Strum: slow down the most dangerous enemy. Kagaya's Words of Resolve: heal the team.
     if(u.basic && u.basic.cower) plan={type:'attack', v:12};
+    else if(u.basic && u.basic.feed) plan={type:'attack', v:30};
     else if(u.basic && u.basic.kind==='self') plan={type:'attack', v: mine.reduce((a,m)=>a+Math.min(2,m.max-m.hp)/m.max*100,0)};
     else if(u.basic){ const t=calm && Math.random()<.6 ? calm : foesNow.slice().sort((a,b)=>threat(b)-threat(a))[0]; plan={type:'attack', t:t.uid, v:8, hits:[]}; }   // Biwa Strum on Giyu: his Dead Calm comes too late
     // Selfless State: Save a teammate who's in danger, otherwise attack (he can't be hit anyway)
@@ -513,7 +519,7 @@ function cpuPlan(p, level='hard'){
           case 'yushiro': sp={type:'special', t:hurt.uid, v: pctHurt(hurt)<.4 ? 45 : 0}; break;
           case 'sabito': { const t=mine.slice().sort((a,b)=>b.pow*b.strikes-a.pow*a.strikes)[0]; sp={type:'special', t:t.uid, v: S.round<=4 ? 35 : 15}; break; }
           case 'tengen_retired': sp={type:'special', t:hurt.uid, v: pctHurt(hurt)<.5 ? 30 : 0}; break;
-          case 'hantengu': sp={type:'special', v: u.hp<u.max*.7 ? 35 : 10}; break;
+          case 'hantengu': case 'hantengu_true': sp={type:'special', v: u.hp<u.max*.7 ? 35 : 10}; break;
           case 'kagaya': { const n=markReady(u).length; sp={type:'special', v: n ? 30+25*n : -999}; break; }
           case 'enmu': sp={type:'special', v: foesNow.filter(f=>f.cd<=1).length*14}; break;
           case 'shinobu': { const t=foesNow.slice().sort((a,b)=>(!!a.noPoison-!!b.noPoison)||(b.demon-a.demon)||(b.hp-a.hp))[0]; sp={type:'special', t:t.uid, v: t.poison||t.noPoison ? 0 : t.demon ? 45 : 25}; break; }
@@ -523,14 +529,14 @@ function cpuPlan(p, level='hard'){
           case 'kyogai': { const t=foesNow.slice().sort((a,b)=>threat(b)-threat(a))[0]; sp={type:'special', t:t.uid, v:12+threat(t)}; break; }
         }
       }
-      if(sp && e && Math.random()<hold) sp=null;   // saved for a round the shield is down
+      if(sp && e && Math.random()<hold){ sp=null; if(fin) S.heldCalm=S.round; }   // saved for a round the shield is down (a player who kept Dead Calm ready and unused froze a 90% hold: one squad won 31%, so he's less patient after a round)
       if(sp && sp.v+Math.random()*noise > plan.v+Math.random()*noise) plan=sp;
     }
     // could fall this round with nothing better to do: guard (never more than half the team, so it keeps attacking)
-    if(!u.noDefend && !u.selfless && plan.type!=='save' && guards<Math.ceil(mine.length/2)){
+    if(!u.noDefend && !u.selfless && plan.type!=='save' && guards<(fin?1:Math.ceil(mine.length/2))){
       const danger=foesNow.map(f=>estHit(u,f.pow+(f.cd===0?4:0))*f.strikes).sort((a,b)=>b-a).slice(0,2).reduce((a,d)=>a+d,0);
       const [worth,odds]=level==='hard'?[45,.6]:[30,.4];
-      if(plan.v<worth && (danger>=u.hp || u.hp<=u.max*.25) && Math.random()<odds){ plan={type:'defend'}; guards++; }
+      if(plan.v<worth && (danger>=u.hp || (!fin && u.hp<=u.max*.25)) && !(fin&&u.spawn) && Math.random()<odds){ plan={type:'defend'}; guards++; }
     }
     (plan.hits||[]).forEach(([t,d])=>{ planned[t.uid]=(planned[t.uid]||0)+d; });
     S.plans[p][u.uid]={type:plan.type, t:plan.t};
@@ -607,7 +613,7 @@ const hisHer = u => u.fam==='typezero' ? 'its' : HER_FAMS.includes(u.fam) ? 'her
 function stunT(t, kind){ if(t&&t.alive&&!S.shield[t.p]&&!t.evade&&!hidden(t)&&!t.saved){ t.stunNext=true; if(kind) t.bound=kind; L(`${t.name} will lose ${hisHer(t)} turn next round.`,'k',{...fx('stun',null,t), kind}); } }
 function special(u,pl){
   const s=u.sig, en=()=>aimsTeam(u) ? aimedTeam(u,pl) : foes(u.p);
-  L(`${u.name}: ${s.name}!`,'x',{...fx('special',u,null), sig:s.id||null, flare:!!u.mark && !u.flared});   // a Mark flares the first time it's used
+  L(`${u.name}: ${s.name}!`,'x',{...fx('special',u,null), sig:s.id||(u.unblock?'unblock':null), flare:!!u.mark && !u.flared});   // a Mark flares the first time it's used
   if(u.mark) u.flared=true;
   if(s.id==='selfless'){   // Mark Tanjiro: untouchable until Hinokami Kagura is ready again (end of round, below)
     u.selfless=true; u.selflessUsed=true; u.saveUsed=false; u.reveal=false; u.stun=false; u.stunNext=false; u.late=false; u.away=false; u.astray=false;
@@ -670,8 +676,7 @@ function special(u,pl){
     case 'karaku': hit(u,target(u,pl.t),u.pow+3); break;
     case 'aizetsu': hit(u,target(u,pl.t),u.pow+4); break;
     case 'urogi': hit(u,target(u,pl.t),u.pow+2); break;
-    case 'hantengu_true': hit(u,target(u,pl.t),u.pow+6,{ignoreDef:true}); break;
-    case 'hantengu': { u.evade=true; const h=Math.min(6,u.max-u.hp); u.hp+=h; L(`Hantengu shrinks into hiding and heals ${gained(u,h)}.`,'h',{...fx('heal',null,u), shrink:true}); break; }
+    case 'hantengu': case 'hantengu_true': { u.evade=true; const h=Math.min(6,u.max-u.hp); u.hp+=h; L(`Hantengu shrinks into hiding and heals ${gained(u,h)}.`,'h',{...fx('heal',null,u), shrink:true}); break; }
     case 'kaigaku': { const t=target(u,pl.t); hit(u,t,u.pow+3); const o=en().filter(e=>e!==t); if(o.length) hit(u,rnd(o),4,{ignoreDef:true}); break; }
     case 'enmu': en().forEach(e=>{ if(S.shield[e.p]||e.evade||hidden(e)) return; e.cd+=2; }); L('The enemy team falls into a deep sleep. Their specials are 2 rounds further away.','k',fx('stun',u,null)); break;
     case 'urokodaki': hit(u,target(u,pl.t),u.pow+3); break;
@@ -836,6 +841,8 @@ function resolve(){
     if(x.pl.type==='stunned'){ L(`${u.name} can't move.`,'',fx('stun',null,u)); continue; }
     if(u.away){ L(u.carried ? `${u.name} is being carried to safety.` : `${u.name} is lost in the Infinity Castle and can't act.`,'',fx('stun',null,u)); continue; }
     if(x.pl.type==='attack' && u.basic && u.basic.cower){ L(`${u.name} cowers.`,'',fx('guard',null,u)); continue; }   // Hantengu never attacks
+    if(x.pl.type==='attack' && u.basic && u.basic.feed){   // the real Hantengu feeds Zohakuten: it adds up, so reach him fast
+      S.teams[u.p].filter(z=>z.alive && z.anchor===u.id).forEach(z=>{ z.pow+=2; L(`${u.name} feeds ${z.name}'s hatred. PWR rises to ${z.pow}.`,'h',fx('special',u,z)); }); continue; }
     if(x.pl.type==='attack' && u.basic && u.basic.kind==='self'){   // Kagaya's Words of Resolve
       const healed=alive(u.p).map(m=>{ const h=Math.min(2,m.max-m.hp); m.hp+=h; return h?`${m.name} ${gained(m,h)}`:''; }).filter(Boolean);
       L(`Kagaya steadies the Corps.${healed.length?' '+healed.join(', ')+'.':''}`,'h',fx('heal',u,null)); continue; }
@@ -852,7 +859,8 @@ function resolve(){
   S.curMove=null;
   // end of round: poison, Shinobu's devour damage, sunrise, regeneration, cooldowns
   const sun=sunUp();
-  if(sun && S.round===SUNRISE_ROUND) L('The sun rises! From now on demons burn every round, hotter each time, and stop regenerating.','h',{...fx('burn',null,null), sunrise:true});
+  if(sun && S.round===sunRise()) L('The sun rises! From now on demons burn every round, hotter each time, and stop regenerating.','h',{...fx('burn',null,null), sunrise:true});
+  if(sun && S.round===sunRise() && S.mode==='final'){ alive(1).forEach(u=>{ u.pow=Math.round(u.pow*(1+FINAL_FRENZY)); u.noDefend=true; }); L('Out of time, the demons throw everything they have left. They hit far harder and can no longer Defend.','k',fx('burn',null,null)); }
   players().forEach(p=>S.teams[p].forEach(u=>{
     if(u.alive && u.poison){ u.hp=Math.max(0,u.hp-u.poison.dmg); L(`Poison hits ${u.name} ${lost(u,u.poison.dmg)}.`,'k',fx('poison',null,u)); fall(u); u.poison.turns--; if(u.poison.turns<=0) u.poison=null; }
     if(u.alive && u.devoured){ u.hp=Math.max(0,u.hp-u.devoured); L(`Shinobu's poison eats away at ${u.name} ${lost(u,u.devoured)}.`,'k',fx('poison',null,u)); fall(u); }
@@ -909,12 +917,14 @@ function roundText(r){
 }
 // Sunrise: long games end. From round SUNRISE_ROUND demons (except the sun-proof) burn SUN_BURN of their max HP every
 // round and stop regenerating. Not in story mode (its own fights are about holding out until dawn).
+const FINAL_BUDGET = 45, FINAL_POW = .15, FINAL_FRENZY = .5, FINAL_SUNRISE = 7;   // Final Form (js/daily.js). His play does most of the work: smarter moves alone took the computer's wins from ~16% to ~5% at +25%; these values give ~14% for the computer and 8–15% for a focus-fire script. Real players win more: CK beat an easier build in 13 rounds by stalling for the sun, hence the dawn frenzy.
 const SUNRISE_ROUND = 10, SUN_BURN = .1;   // round 10 since Oct 27, 2026 (CK: sun in ~10% / 25% / 30% of 10 / 20 / 30-pt games; at 12 it was 5 / 14 / 16%)
 // The burn grows every round the sun is up (CK, Oct 28, 2026): 10% at sunrise, then 15%, 20%, 25%…
-const SUN_GROW = .05, sunBurn = () => SUN_BURN + SUN_GROW*Math.max(0, S.round-SUNRISE_ROUND);
-const sunUp = () => S.mode!=='story' && S.round>=SUNRISE_ROUND;
+const SUN_GROW = .05, sunBurn = () => SUN_BURN + SUN_GROW*Math.max(0, S.round-sunRise());
+const sunRise = () => S.mode==='final' ? FINAL_SUNRISE : SUNRISE_ROUND;   // Final Form races an earlier dawn
+const sunUp = () => S.mode!=='story' && S.round>=sunRise();
 // Nezuko burns on the first morning only, then she has conquered the sun (CK, Oct 30, 2026)
-const sunSafe = u => u.sunproof || (u.fam==='nezuko' && S.round>SUNRISE_ROUND);
+const sunSafe = u => u.sunproof || (u.fam==='nezuko' && S.round>sunRise());
 /* ---------- story beats: protect, boss phases and mid-battle lines (all set by the stage; nothing hidden) ----------
    twist.protect: id      you lose if that fighter on your team falls
    S.phases: [{id, at, pow, spd, def, ready, label, line}]   an enemy powers up once when its health drops to `at`

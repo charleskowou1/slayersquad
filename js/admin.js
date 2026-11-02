@@ -3,7 +3,7 @@
    needs the rules this page prints, which only let CK's browser read them. Opening it also turns tracking off in this browser. */
 const FB='10.12.2', esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const load=src=>new Promise((ok,no)=>{ const s=document.createElement('script'); s.src=src; s.onload=ok; s.onerror=no; document.head.appendChild(s); });
-const MODE_NAMES={cpu:'Quickplay',local:'Same Phone',practice:'Practice',story:'Story',daily:'Daily',online2:'Online 2 players',online3:'Online 3 players',online4:'Online 4 players'};
+const MODE_NAMES={final:'Final Form',gauntlet:'Gauntlet',rush:'Upper Moon Rush',random:'Random Squads',mirror:'Mirror Match',cpu:'Quickplay',local:'Same Phone',practice:'Practice',story:'Story',daily:'Daily',online2:'Online 2 players',online3:'Online 3 players',online4:'Online 4 players'};
 const modeName=k=>(k.startsWith('tv_')?'TV: ':'')+(MODE_NAMES[k.replace('tv_','')]||k);
 const rowsOf=(list,max)=>list.map(([n,v,note])=>`<div class="row"><span>${esc(n)}</span><u style="width:${max?Math.max(1,v/max*100):0}%"></u><small>${note||v}</small></div>`).join('')||'<p class="muted">Nothing yet.</p>';
 function dayKeys(n){ return Array.from({length:n},(_,i)=>{ const d=new Date(); d.setDate(d.getDate()-(n-1-i)); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }); }
@@ -27,7 +27,7 @@ function rulesFor(uid){ const me=`auth != null && auth.uid === '${uid}'`; return
 function draw(uid, t, stats, reports, denied){
   const sum=(a)=>a.reduce((x,y)=>x+y,0), days=dayKeys(14), d=(day,k)=>t[`d_${day}_${k}`]||0, today=days[13];
   const peak=Math.max(1,...days.map(x=>d(x,'players')));
-  const modes=Object.keys(t).map(k=>k.match(/^m_(.+)_start$/)).filter(Boolean).map(m=>m[1]).map(k=>[modeName(k),t[`m_${k}_start`]||0,`${t[`m_${k}_start`]||0} · ${t[`m_${k}_finish`]||0} done`]).sort((a,b)=>b[1]-a[1]);
+  const modes=Object.keys(t).map(k=>k.match(/^m_(.+)_start$/)).filter(Boolean).map(m=>m[1]).map(k=>[modeName(k),t[`m_${k}_start`]||0,`${t[`m_${k}_start`]||0} · ${t[`m_${k}_finish`]||0} done${t[`m_${k}_win`]?` · ${t[`m_${k}_win`]} won`:''}`]).sort((a,b)=>b[1]-a[1]);
   const stages=ALL_STAGES.filter(s=>t[`s_${s.id}_try`]||t[`s_${s.id}_win`]).map(s=>[s.title,t[`s_${s.id}_win`]||0,`${t[`s_${s.id}_win`]||0} of ${t[`s_${s.id}_try`]||0}`]);
   const chars=Object.entries(stats.chars||{}).filter(([id])=>BYID[id]).map(([id,c])=>[BYID[id].name,c.p||0,`${c.p||0} · ${c.p?Math.round((c.w||0)/c.p*100):0}% won`]).sort((a,b)=>b[1]-a[1]).slice(0,12);
   const devs=['ios','android','computer'].map(k=>[{ios:'iPhone / iPad',android:'Android',computer:'Computer'}[k],t['dev_'+k]||0]);
@@ -35,6 +35,9 @@ function draw(uid, t, stats, reports, denied){
   document.getElementById('sub').textContent=`Last 14 days and all-time totals. Updated ${new Date().toLocaleTimeString()}.`;
   document.getElementById('out').innerHTML=`
   ${denied?`<section class="warn"><h2>One setup step</h2><p>Firebase is blocking this page, so players aren't being counted yet. In the Firebase console open Realtime Database → Rules, paste this inside <b>"rules"</b> next to what's there (keep a comma between sections), and click Publish. It lets only this browser read the numbers.</p><pre id="rules">${esc(rulesFor(uid))}</pre><button id="copy">Copy</button></section>`:''}
+  ${denied?'':`<section><h2>Make a progress code</h2><p class="muted">One code for one person. They enter it in Settings → Save. It adds progress and never removes any.</p>
+    <select id="upto">${ALL_STAGES.map((s,i)=>`<option value="${i}"${i===ALL_STAGES.length-1?' selected':''}>${i===ALL_STAGES.length-1?'Whole game':'Through '+esc(s.title)}</option>`).join('')}</select>
+    <button id="mkcode">Make code</button> <b id="newcode"></b></section>`}
   <div class="tiles"><div class="tile"><b>${t.players||0}</b><span>Players ever</span></div><div class="tile"><b>${d(today,'players')}</b><span>Played today</span></div><div class="tile"><b>${sum(days.map(x=>d(x,'new')))}</b><span>New, 14 days</span></div>
     <div class="tile"><b>${sum(days.map(x=>d(x,'games')))}</b><span>Games, 14 days</span></div><div class="tile"><b>${stats.games||0}</b><span>Finished games ever</span></div><div class="tile"><b>${reps.length}</b><span>Bug reports</span></div></div>
   <section><h2>Players each day</h2><div class="bars">${days.map(x=>`<div title="${x}">${d(x,'players')||''}<i style="height:${d(x,'players')/peak*82}%"></i>${x.slice(8)}</div>`).join('')}</div></section>
@@ -45,7 +48,16 @@ function draw(uid, t, stats, reports, denied){
   <section><h2>Most played fighters</h2>${rowsOf(chars,Math.max(0,...chars.map(m=>m[1])))}</section></div>
   <p class="muted">This browser's admin ID: ${esc(uid)}</p>`;
   const c=document.getElementById('copy'); if(c) c.onclick=()=>navigator.clipboard.writeText(rulesFor(uid)).then(()=>{ c.textContent='Copied'; });
+  const mk=document.getElementById('mkcode'); if(mk) mk.onclick=()=>makeCode(+document.getElementById('upto').value);
   document.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>firebase.database().ref('reports/'+b.dataset.del).remove().then(start));
+}
+// A save with every battle up to stage i won at 3 stars, at a new recovery code (unlocks follow from the battles won)
+async function makeCode(i){
+  const ABC='ABCDEFGHJKMNPQRSTUVWXYZ23456789', code=()=>Array.from({length:12},()=>ABC[Math.floor(Math.random()*ABC.length)]).join('');
+  const ids=ALL_STAGES.slice(0,i+1).map(s=>s.id), story={cleared:ids, stars:Object.fromEntries(ids.map(id=>[id,3])), goals:Object.fromEntries(ids.map(id=>[id,[true,true,true]]))};
+  const c=code(), el=document.getElementById('newcode');
+  try{ await firebase.database().ref('saves/'+c).set({v:1, at:Date.now(), rev:code(), data:{[STORY_KEY]:JSON.stringify(story), 'squad-draft-dream-reset':'1'}}); el.textContent=c.match(/.{4}/g).join('-'); }
+  catch(e){ el.textContent='Could not make it: '+e.message; }
 }
 async function start(){
   const get=p=>firebase.database().ref(p).get().then(s=>s.val()||{});
