@@ -2,6 +2,7 @@
 // (CACHE 'squad-draft-vNN'), which goes up with every push. tools/make-guide.js prints this at the top of the guide.
 // Add a line here with every push (CK, Oct 28, 2026), then rebuild the guide: node tools/make-guide.js
 module.exports = [
+  [103, '2026-11-01', 'Card stats line up across every row in the Codex and draft; on phones, Join a TV, Codex and Settings move to their own row under the game modes.'],
   [102, '2026-11-01', 'Long character cards no longer squash their picture and header; the rest of the v101 fixes: home buttons fully tucked, Battle background dropdown, shorter Latest Updates, voice lines load before the battle.'],
   [101, '2026-11-01', 'Hantengu reworked: he never attacks, and Zohakuten can\'t fall until the real Hantengu does; Akaza 10 pts, 43 HP, 15 PWR; players call the coin on a number-game tie; clips play in full the first time, with a Repeat clips setting; Dead Calm\'s water shows only on fighters being attacked; Latest Updates tile; title first on the phone home screen; no audio symbol on the Dynamic Island; new link preview.'],
   [100, '2026-10-31', 'Story sits on top of the home screen with a new picture card, Leave replaces Quit in two-phone games, and the Keep your progress safe card shows every time in a browser.'],

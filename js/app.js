@@ -18,8 +18,6 @@ function playVid(v){
 ['pointerdown','touchend','keydown'].forEach(ev=>document.addEventListener(ev, ()=>{
   PENDING_VIDS.forEach(v=>{ if(!v.isConnected){ PENDING_VIDS.delete(v); return; } const p=v.play(); if(p && p.then) p.then(()=>{ PENDING_VIDS.delete(v); v.classList.remove('vidwait'); }).catch(()=>{}); });
 }, {passive:true}));
-let lastView='';
-try{ history.scrollRestoration='manual'; }catch(e){}
 function render(){
   if(isOnline()) S.planFor=S.me;
   const ctl=typeof isCtl==='function' && isCtl(), view = ctl ? ctlViewName() : viewName();   // a phone controlling the TV shows only its moves
@@ -60,9 +58,6 @@ function render(){
   app.querySelectorAll('video[data-k],img[data-k]').forEach(v=>{ const old=vids.get(v.dataset.k); if(old){ v.replaceWith(old); if(old.tagName==='VIDEO') playVid(old); } else if(v.tagName==='VIDEO'){ v.onended=()=>{ if(v.duration<CLIP_LOOP){ v.currentTime=0; playVid(v); } }; playVid(v); } });
   warmClips();
   open.forEach(id=>{ const d=document.getElementById(id); if(d) d.open=true; });
-  // Opening the home screen on a phone: Slayer Squad comes first, and Join a TV, Codex and Settings sit just above it (scroll up)
-  if(view==='setup' && lastView!=='setup' && window.innerWidth<900 && !(typeof isTV==='function'&&isTV())){ const b=app.querySelector('.setbar'); if(b) window.scrollTo(0, Math.ceil(b.getBoundingClientRect().bottom+window.scrollY-(parseFloat(getComputedStyle(app).paddingTop)-26))+2); }
-  lastView=view;
   if(view==='story' && S.storyScroll){ S.storyScroll=false; const el=app.querySelector('.srow.sel'); if(el) el.scrollIntoView({block:'center'}); else window.scrollTo(0,0); }
   if(!ctl && S.phase==='draft' && S.mode==='cpu' && turn()!==0){ clearTimeout(S._t); S._t=setTimeout(()=>{ if(S.banning) cpuBan(); else cpuDraftStep(S.level); render(); },700); }
   if(!ctl && S.phase==='spin' && S.spin && S.spin.state==='done' && S.spin.cards && spinShown!==S.spin.cards.join()){ spinShown=S.spin.cards.join(); sfx('ding'); }   // the number is revealed

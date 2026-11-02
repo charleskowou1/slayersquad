@@ -155,7 +155,7 @@ details ul b{color:var(--fg)}
 .cart img{width:100%;height:100%;object-fit:cover;object-position:50% 22%;display:block}
 .cart::after{content:"";position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,0) 45%,rgba(26,23,20,.92) 100%)}
 .cart .ck{display:grid;place-items:center;height:100%;font-family:var(--display);font-size:3.2rem;color:var(--paper);opacity:.85}
-.cbody{position:relative;display:flex;flex-direction:column;gap:2px;padding:0 10px 10px;margin-top:-30px;z-index:1}
+.cbody{position:relative;flex:1;display:flex;flex-direction:column;gap:2px;padding:0 10px 10px;margin-top:-30px;z-index:1}   /* flex:1 + .stats margin-top:auto: stats line up across a row */
 .card .cn{font-weight:800;font-size:.95rem;line-height:1.15;text-shadow:0 1px 6px rgba(0,0,0,.8)}
 .card .ct{font-size:.62rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);line-height:1.3;text-shadow:0 1px 4px rgba(0,0,0,.8)}
 .card .stats{padding-top:6px}
@@ -1921,7 +1921,7 @@ body.tvmode .wrap{min-height:calc(100dvh / var(--tvz,1))}
 .setbar .gear{width:auto;padding:0 10px;border-radius:99px;font-size:.76rem;gap:4px;white-space:nowrap}
 .setbar{margin-bottom:8px}
 .modal .in.askname{margin:0;gap:6px;border-radius:14px}
-.csp{display:block;margin-top:4px;font-size:.62rem;line-height:1.2;color:var(--gold)}
+.csp{display:block;margin-top:4px;font-size:.62rem;line-height:1.2;min-height:2.4em;color:var(--gold)}
 /* Sekido's staff: three crimson strikes from above */
 .sfx-redbolt{animation:redflash .7s ease-out both}
 .sfx svg.rb{inset:0 auto auto auto;width:16vmin;height:58%}
@@ -1960,5 +1960,9 @@ body.tvmode .wrap{min-height:calc(100dvh / var(--tvz,1))}
 .updlist b{display:block}
 .coinbtns{display:flex;justify-content:center;gap:10px;margin-top:10px}
 .coinbtns .btn{min-width:120px}
-/* Phones: room to tuck the home buttons above the title (render() in app.js) */
-@media (max-width:899px){ .wrap:has(.hero){min-height:calc(100dvh + 110px)} }
+/* Phones: the title comes first, and Join a TV, Codex and Settings get their own row under the game modes */
+@media (max-width:899px){
+  .wrap > .setbar{order:1;justify-content:stretch;gap:8px;margin:0}
+  .wrap > .modes ~ *{order:2}
+  .setbar .gear,.setbar .gear.tvjoinbtn{flex:1 1 0;height:42px;font-size:.86rem;border-radius:12px;justify-content:center}
+}
