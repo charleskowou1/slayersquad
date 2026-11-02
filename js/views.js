@@ -292,8 +292,8 @@ const onlinePage = () => `<div class="onlinepage"><label class="pname" style="--
   ${S.joinOpen?`<div class="panel onlinebox"><div class="tlabel">Enter a code</div>
       <div class="joinrow"><input id="ocode" type="text" maxlength="6" autocapitalize="characters" autocomplete="off" placeholder="CODE" value="${esc(S.joinCode||'')}" aria-label="Game code"><button class="btn" data-a="ojoin">Join</button></div>
       <button class="btn ghost" data-a="ojoinopen">Back</button></div>`
-    :`<div class="gmgrid online">${pickTile('data-a="oquick"',true,'速','Quick Match','Play anyone. If nobody’s around, you can leave and your match waits on your home screen.','','tanjiro')}
-      ${pickTile('data-a="onew"',false,'友','Play Friends','2 to 4 players','','inosuke')}${pickTile('data-a="ojoinopen"',false,'鍵','Enter a Code','Join a friend’s game','','nezuko')}</div>`}
+    :`<div class="gmgrid online">${pickTile('data-a="onew"',true,'友','Play Friends','Invite 2 to 4 players. Battle each other or team up against Muzan.','','inosuke')}
+      ${pickTile('data-a="oquick"',false,'速','Quick Match','Play anyone','','tanjiro')}${pickTile('data-a="ojoinopen"',false,'鍵','Enter a Code','Join a friend’s game','','nezuko')}</div>`}
   ${S.onlineMsg?`<p class="hint onlinemsg">${esc(S.onlineMsg)}</p>`:''}</div>`;
 // A mode's own page (opened from its card on the home screen): its settings and the Start button
 function vModeSet(){
@@ -343,9 +343,11 @@ function vSetup(){
     <div class="credit">Built by Charles Kowou · Inspired by Amelia Gray</div>
     ${storyWon()||loadGames().length?'':'<p class="muted tagline">Build your squad. Outthink every move.</p>'}</div>
   ${S.tvMsg?`<p class="hint onlinemsg">${esc(S.tvMsg)}</p>`:''}
-  ${S.tvJoinOpen?`<div class="panel tvjoinpanel"><b>Join a TV</b><ol class="tvsteps"><li>On a smart TV, open its web browser and go to charleskowou1.github.io/squad-draft. Or connect a laptop to your TV with an HDMI cable or AirPlay and open the game there.</li><li>Click the 📺 button at the top of the game.</li><li>A 4-letter code appears on the TV. Type it here.</li></ol><span class="muted">This phone becomes your controller. A second phone can join with the same code for 2 players.</span>
+  ${S.tvJoinOpen?`<div class="panel tvjoinpanel"><b>Join a TV</b><ol class="tvsteps"><li>On a smart TV, open its web browser and go to slayersquad.app. Or connect a laptop to your TV with an HDMI cable or AirPlay and open the game there.</li><li>Click the 📺 button at the top of the game.</li><li>A 4-letter code appears on the TV. Type it here.</li></ol><span class="muted">This phone becomes your controller. A second phone can join with the same code for 2 players.</span>
     <div class="joinrow"><input id="tvcode" type="text" maxlength="4" autocapitalize="characters" autocomplete="off" placeholder="CODE" value="${esc(S.tvJoinCode||'')}" aria-label="TV code"><button class="btn" data-a="tvjoin">Join</button></div>
     ${S.tvJoinMsg?`<p class="hint onlinemsg">${esc(S.tvJoinMsg)}</p>`:''}</div>`:''}
+  ${typeof oldSite==='function'&&oldSite()?`<div class="movecard"><b>We’ve moved to slayersquad.app</b><span>Your progress comes with you. It takes one tap, and nothing gets lost.</span>
+    <button class="btn small" data-a="movesite">Move my progress</button>${S.moveMsg?`<small>${esc(S.moveMsg)}</small>`:''}</div>`:''}
   ${rosterRow()}
   ${gamesCard()}
   ${storyHome()}

@@ -1,0 +1,24 @@
+# Publishes slayersquad.app from the separate slayersquad repo. Only runs there: the squad-draft repo keeps its own Pages site,
+# and a CNAME file must never be added, because GitHub would then redirect the old address and strand players' saves.
+name: Publish slayersquad.app
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+jobs:
+  deploy:
+    if: github.repository == 'charleskowou1/slayersquad'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - id: deploy
+        uses: actions/deploy-pages@v4

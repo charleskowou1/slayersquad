@@ -2055,3 +2055,7 @@ details.panel[open]>summary{margin-bottom:12px}
 .gmgrid.home .gmtext small,.gmgrid.qp .gmtext small{font-size:.72rem}
 .storyhome,.daily{padding-block:11px}
 .gmgrid.qp .gmtile.hero:first-child{border:1px solid var(--line-2)}
+.movecard{display:grid;gap:6px;padding:13px 14px;border-radius:14px;border:1.5px solid var(--gold);background:rgba(214,165,77,.1)}
+.movecard b{font-family:var(--display);font-size:1.1rem}
+.movecard span,.movecard small{color:var(--ink-2);font-size:.86rem;line-height:1.35}
+.movecard .btn{justify-self:start}

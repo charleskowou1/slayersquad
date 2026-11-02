@@ -232,6 +232,7 @@ const ACTIONS = {
   agamex(v){ const g=myGame(v), st=g&&g.meta; if(st && !st.final && st.phase!=='lobby' && !confirm('Remove this game? It can’t be finished after that.')) return;
     const f=GAME_WATCH[v]; if(f){ f(); delete GAME_WATCH[v]; } if(g && g.qm && st && st.phase==='lobby') quickCancel(v); dropGame(v); gamesBadge(); },
   oquick(){ keepNames(); quickMatch(); },
+  movesite(){ moveSite(); },
   cfggm(v){ keepNames(); setCfg('gm',v); },
   taunt(v){ sendTaunt(v); },
   tauntopen(){ S.tauntOpen=!S.tauntOpen; },
@@ -707,6 +708,7 @@ function trackOpen(){
   track(keys);
 }
 setTimeout(trackOpen, 5000);
+setTimeout(arriveFromMove, 800);
 const gameVersion = async () => { try{ return ((await caches.keys()).find(k=>k.startsWith('squad-draft-v'))||'').replace('squad-draft-v','') }catch(e){ return '' } };
 async function sendReport(msg, auto){
   const db=await firebaseReady();
@@ -793,13 +795,27 @@ async function cloudRestore(){
   S.restoreCode=raw;
   if(raw.length!==12){ S.restoreMsg='Type the 12-character code (dashes are optional).'; return render(); }
   S.restoreMsg='Looking it up…'; render();
-  try{ const db=await firebaseReady(), snap=await db.ref('saves/'+raw).get();
-    if(!snap.exists()){ S.restoreMsg='No backup with that code.'; return render(); }
-    const r=snap.val(), d=mergeSaves(saveData(), r.data||{}); writeSave(d); saveCloud({code:raw, last:r.at, rev:r.rev}); CLOUD.last='';
-    S.restoreCode=''; S.restoreMsg=`Done! This device now has ${saveSummary(d)}.`;
-  }catch(e){ S.restoreMsg=/permission/i.test(e.message||'')?"Cloud backup isn't switched on yet.":'Could not connect. Check your internet.'; }
-  render();
+  await restoreCode(raw); render();
 }
+async function restoreCode(raw){
+  try{ const db=await firebaseReady(), snap=await db.ref('saves/'+raw).get();
+    if(!snap.exists()){ S.restoreMsg='No backup with that code.'; return false; }
+    const r=snap.val(), d=mergeSaves(saveData(), r.data||{}); writeSave(d); saveCloud({code:raw, last:r.at, rev:r.rev}); CLOUD.last='';
+    S.restoreCode=''; S.restoreMsg=`Done! This device now has ${saveSummary(d)}.`; return true;
+  }catch(e){ S.restoreMsg=/permission/i.test(e.message||'')?"Cloud backup isn't switched on yet.":'Could not connect. Check your internet.'; return false; }
+}
+/* The move to slayersquad.app: saves belong to a web address, so the old address stays up and offers one button. It backs up, then opens
+   the new site with the code in the link, and the new site adds that save straight away. Nothing is typed, and restoring only adds. */
+const NEW_SITE = 'https://slayersquad.app/';
+const oldSite = () => /github\.io$/.test(location.hostname);
+async function moveLink(){ const d=saveData(); if(!hasProgress(d)) return NEW_SITE; await cloudBackup(true); const c=loadCloud(); return c.code ? `${NEW_SITE}?restore=${c.code}` : ''; }
+async function moveSite(){ S.moveMsg='Saving your progress…'; render(); const url=await moveLink(); if(url) return location.assign(url); S.moveMsg='Could not save your progress. Check your internet and try again.'; render(); }
+async function arriveFromMove(){
+  const raw=(new URLSearchParams(location.search).get('restore')||'').toUpperCase().replace(/[^A-Z0-9]/g,''); if(!raw) return;
+  history.replaceState(null,'',location.pathname);   // the code doesn't stay in the address bar or browser history
+  const ok=raw.length===12 && await restoreCode(raw); note(ok ? 'Welcome to slayersquad.app! Your progress came with you.' : 'We couldn’t bring your progress over. Enter your code in Settings → Save.'); render();
+}
+function note(text){ const el=document.createElement('div'); el.className='tauntpop'; el.setAttribute('role','status'); el.textContent=text; document.body.appendChild(el); setTimeout(()=>el.remove(),6000); }
 S.vol=loadVolumes(); S.speed=loadSpeed(); try{ S.vibeOn=localStorage.getItem('squad-draft-vibe')!=='off'; S.clipsOn=localStorage.getItem('squad-draft-clips')!=='off'; S.clipRepeat=localStorage.getItem('squad-draft-clip-repeat')||'first'; S.tauntsOn=localStorage.getItem('squad-draft-taunts')!=='off' }catch(e){}
 // One-time reset of The Endless Dream only (CK, Oct 30, 2026, after it changed): the main story and stars stay
 try{ if(localStorage.getItem('squad-draft-dream-reset')!=='1'){ const st=loadStory(); st.cleared=(st.cleared||[]).filter(id=>!/^dr_/.test(id)); writeStory(st); localStorage.setItem('squad-draft-dream-reset','1'); } }catch(e){}

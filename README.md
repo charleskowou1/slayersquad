@@ -3,7 +3,7 @@
 A Demon Slayer squad battler for two players on one phone, or vs the computer.
 Personal fan project, not affiliated with or endorsed by the creators of Demon Slayer.
 
-**Play:** https://charleskowou1.github.io/squad-draft/
+**Play:** https://slayersquad.app/
 
 On a phone, open the link and use **Add to Home Screen** to install it like an app. It works offline after the first visit.
 
