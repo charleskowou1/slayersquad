@@ -2,6 +2,7 @@
 // (CACHE 'squad-draft-vNN'), which goes up with every push. tools/make-guide.js prints this at the top of the guide.
 // Add a line here with every push (CK, Oct 28, 2026), then rebuild the guide: node tools/make-guide.js
 module.exports = [
+  [106, '2026-11-02', 'Online rebuilt: Quick Match, Play Friends for 2 to 4 players in one lobby, online Random and Mirror, co-op Final Form and Gauntlet against the computer, quick taunts, and the loser picks first in a rematch. New home screen with a tappable roster, new Quickplay and Same Phone pages (Same Phone is now 2 players), Classic replaces Standard, Random Squads deals 5 to 50 points, new app icon and link preview.'],
   [105, '2026-11-02', 'Random Squads never deals the same character to both teams, in any version.'],
   [104, '2026-11-02', 'Game Modes in Quickplay: Final Form, Gauntlet, Upper Moon Rush, Random Squads and Mirror Match, with every character open; the real Hantengu feeds Zohakuten +2 PWR a round and hides instead of attacking; two devices on one recovery code now combine their progress, and restoring only adds; Mark Tanjiro has a separate clip for Hinokami Kagura out of the Selfless State.'],
   [103, '2026-11-01', 'Card stats line up across every row in the Codex and draft; on phones, Join a TV, Codex and Settings move to their own row under the game modes.'],

@@ -70,7 +70,7 @@ function loadModeCfg(mode){
 }
 function saveModeCfg(mode, c){ try{ localStorage.setItem('squad-draft-mode-'+mode, JSON.stringify(c)) }catch(e){} }
 // Copy a mode's settings into the game state (points, pool, players, level)
-function useModeCfg(mode=S.mode){ const c=loadModeCfg(mode); if(mode==='cpu'||mode==='practice') c.players=2;   // Quickplay and Practice: you vs one computer
+function useModeCfg(mode=S.mode){ const c=loadModeCfg(mode); if(mode==='cpu'||mode==='practice'||mode==='local') c.players=2;   // Quickplay and Practice: you vs one computer. Same Phone: 2 players (CK dropped 3 and 4, Nov 2, 2026)
   S.cfg=c; S.duo = mode!=='story' && c.players===4 && !!c.duo; S.budget=c.budget; S.poolType=c.poolType; S.level=c.level; S.sideWar=mode==='cpu'&&!!c.demonSide; S.maxTeam=mode==='story'?MAXTEAM:c.maxTeam; S.bansOn=mode!=='story'&&!!c.bans; if(mode!=='online') S.n=c.players; return c; }
 const CPU_NAMES = ['Muzan AI','Kokushibo AI','Doma AI'];
 
@@ -100,7 +100,10 @@ const nPlayers = () => S.n || 2;
 const players = () => Array.from({length:nPlayers()}, (_,i)=>i);
 const others = p => players().filter(q=>q!==p);
 // 2v2 (4 players, teams on): players 1 & 3 are one team, 2 & 4 the other (side = seat % 2). Otherwise everyone is alone.
-const sideOf = p => S.duo ? p%2 : p;
+// Co-op online (S.coop = 'final' or 'gauntlet'): the humans are one side, the last seat is the computer, played by the host
+const foeSeat = () => nPlayers()-1, coopFoe = p => !!S.coop && p===foeSeat(), coopHumans = () => nPlayers()-1;
+const finalFight = () => S.mode==='final' || S.coop==='final';
+const sideOf = p => S.coop ? (p===foeSeat()?1:0) : S.duo ? p%2 : p;
 const sameSide = (p,q) => sideOf(p)===sideOf(q);
 const enemiesOf = p => players().filter(q=>!sameSide(p,q));
 const partnersOf = p => players().filter(q=>q!==p && sameSide(p,q));
@@ -304,7 +307,7 @@ function cpuDraftStep(level='hard'){
 /* ---------- battle setup ---------- */
 let UID=0;
 // Final Form: Muzan's side, including forms that appear mid-battle (Zohakuten)
-const finalUp = (v,p) => S.mode==='final' && p===1 ? Math.round(v*(1+FINAL_POW)) : v;
+const finalUp = (v,p) => finalFight() && p===foeSeat() ? Math.round(v*(1+FINAL_POW)) : v;
 function mkUnit(id,p){ const c=BYID[id]; return {uid:'u'+(UID++),id,fam:c.fam,sk:c.sk,p,name:c.short,g:c.g,hp:c.hp,max:c.hp,pow:finalUp(c.pow,p),spd:c.spd,def:c.def,
   regen:c.regen||0,revive:c.revive||0,demon:!!c.demon,mark:!!c.mark,legend:!!c.legend,strikes:c.strikes||1,cap:c.cap||0,taken:0,grit:c.id==='murata',
   sunproof:!!c.sunproof,noPoison:!!c.noPoison,vowed:false,noDefend:!!c.noDefend,basic:c.basic||null,anchor:c.anchor||null,
@@ -341,6 +344,7 @@ function synergies(p){
 function startBattle(){
   S.n=S.picks.length;
   if(gameMode() && !S.picks[1].length) S.picks[1]=gmEnemy();   // the enemy is chosen once your squad is locked (js/daily.js)
+  if(S.coop && !S.picks[foeSeat()].length) S.picks[foeSeat()]=gmEnemy();
   S.teams=players().map(p=>fighterIds(p).map(id=>mkUnit(id,p)));
   S.helpers=players().map(p=>S.picks[p].filter(isHelper)); S.helperPlan=players().map(()=>[]); S.scoutQueue=[]; S.scouting=false; S.clipSeen={};   // move clips: repeat moments shown this match (js/clips.js)
   S.place = S.mode==='story' ? null : pickPlace();   // the background for this match (story battles use their own)
@@ -356,6 +360,7 @@ function startBattle(){
   // story: an enemy that starts the fight already hurt (part 2 of a two-part fight)
   Object.entries(S.startState||{}).forEach(([id,st])=>S.teams[1].filter(u=>u.id===id).forEach(u=>{
     if(st.hp) u.hp=Math.ceil(u.max*st.hp); if(st.devoured) u.devoured=st.devoured; if(st.poison) u.poison={...st.poison}; }));
+  if(S.coop) S.movesLocked[foeSeat()]=true;
   S.phase = gameMode() ? 'reveal' : S.mode==='local' && !S.tvDuo ? 'pass' : 'plan';   // TV 2-player: each phone picks in secret, no passing
 }
 const alive = p => S.teams[p].filter(u=>u.alive);
@@ -378,7 +383,7 @@ const sig2Open = card => !!card.sig2 && (!card.sig2.lock || !!S.unlockAll || typ
 /* ---------- move planning ---------- */
 const isAllyMove = (u,pl) => (pl.type==='special' && u.sig.kind==='ally') || pl.type==='save';   // save: Tanjiro's Selfless State
 // Free-for-all (3–4 players): a special that hits "every enemy" hits every fighter on the team you aim at, so you pick a target
-const aimsTeam = u => u.sig.kind==='all' && nPlayers()>2;
+const aimsTeam = u => u.sig.kind==='all' && nPlayers()>2 && !S.coop;
 const needsTarget = (u,pl) => (pl.type==='attack' && !(u.basic && u.basic.kind==='self')) || pl.type==='save' || (pl.type==='special' && (u.sig.kind==='single'||u.sig.kind==='ally'||aimsTeam(u)));
 const targetOptions = (u,pl) => !needsTarget(u,pl) ? [] : isAllyMove(u,pl) ? friends(u.p).filter(f=>pl.type!=='save'||f!==u) : foes(u.p);
 function unitReady(u){ if(u.stun) return true; const pl=S.plans[u.p][u.uid]; if(!pl||!pl.type) return false; return !needsTarget(u,pl) || !!pl.t; }
@@ -474,12 +479,12 @@ function repeatPlans(p){
 const FFA_FOCUS = 150;
 function cpuPlan(p, level='hard'){
   if(level==='easy') return cpuPlanEasy(p);
-  const noise=S.mode==='final' && p===1 ? 0 : LEVELS[level].noise;   // Muzan never misjudges a move
+  const noise=finalFight() && p===foeSeat() ? 0 : LEVELS[level].noise;   // Muzan never misjudges a move
   const foesNow=foes(p), mine=alive(p), planned={};
   const left = t => t.hp - (planned[t.uid]||0);
   // Hard reads Dead Calm: with Giyu's ready, this round's stance is a fresh roll (fire everything, hold some, or hold
   // most), so a player can't learn when it's safe to shield. Odds = the chance each damage special is held back.
-  const fin = S.mode==='final' && p===1;   // Muzan: reads Dead Calm, goes for your strongest, and only guards a fighter about to fall
+  const fin = finalFight() && p===foeSeat();   // Muzan: reads Dead Calm, goes for your strongest, and only guards a fighter about to fall
   const calm = level==='hard' && foesNow.find(f=>f.sk==='giyu' && f.cd===0 && !f.stun), stance=Math.random(), hold = !calm ? 0 : fin ? (S.heldCalm===S.round-1 ? .75 : .9) : stance<.3 ? 0 : stance<.75 ? .5 : .85;
   let guards=0;
   const threat = t => t.pow*t.strikes + (t.cd===0?4:0) + (t.sk==='kagaya' && t.cd===0 ? 8*markReady(t).length : 0) + (calm===t?5:0);   // Kagaya about to awaken Marks; Giyu about to shield
@@ -860,7 +865,7 @@ function resolve(){
   // end of round: poison, Shinobu's devour damage, sunrise, regeneration, cooldowns
   const sun=sunUp();
   if(sun && S.round===sunRise()) L('The sun rises! From now on demons burn every round, hotter each time, and stop regenerating.','h',{...fx('burn',null,null), sunrise:true});
-  if(sun && S.round===sunRise() && S.mode==='final'){ alive(1).forEach(u=>{ u.pow=Math.round(u.pow*(1+FINAL_FRENZY)); u.noDefend=true; }); L('Out of time, the demons throw everything they have left. They hit far harder and can no longer Defend.','k',fx('burn',null,null)); }
+  if(sun && S.round===sunRise() && finalFight()){ alive(foeSeat()).forEach(u=>{ u.pow=Math.round(u.pow*(1+FINAL_FRENZY)); u.noDefend=true; }); L('Out of time, the demons throw everything they have left. They hit far harder and can no longer Defend.','k',fx('burn',null,null)); }
   players().forEach(p=>S.teams[p].forEach(u=>{
     if(u.alive && u.poison){ u.hp=Math.max(0,u.hp-u.poison.dmg); L(`Poison hits ${u.name} ${lost(u,u.poison.dmg)}.`,'k',fx('poison',null,u)); fall(u); u.poison.turns--; if(u.poison.turns<=0) u.poison=null; }
     if(u.alive && u.devoured){ u.hp=Math.max(0,u.hp-u.devoured); L(`Shinobu's poison eats away at ${u.name} ${lost(u,u.devoured)}.`,'k',fx('poison',null,u)); fall(u); }
@@ -921,7 +926,7 @@ const FINAL_BUDGET = 45, FINAL_POW = .15, FINAL_FRENZY = .5, FINAL_SUNRISE = 7; 
 const SUNRISE_ROUND = 10, SUN_BURN = .1;   // round 10 since Oct 27, 2026 (CK: sun in ~10% / 25% / 30% of 10 / 20 / 30-pt games; at 12 it was 5 / 14 / 16%)
 // The burn grows every round the sun is up (CK, Oct 28, 2026): 10% at sunrise, then 15%, 20%, 25%…
 const SUN_GROW = .05, sunBurn = () => SUN_BURN + SUN_GROW*Math.max(0, S.round-sunRise());
-const sunRise = () => S.mode==='final' ? FINAL_SUNRISE : SUNRISE_ROUND;   // Final Form races an earlier dawn
+const sunRise = () => finalFight() ? FINAL_SUNRISE : SUNRISE_ROUND;   // Final Form races an earlier dawn
 const sunUp = () => S.mode!=='story' && S.round>=sunRise();
 // Nezuko burns on the first morning only, then she has conquered the sun (CK, Oct 30, 2026)
 const sunSafe = u => u.sunproof || (u.fam==='nezuko' && S.round>sunRise());

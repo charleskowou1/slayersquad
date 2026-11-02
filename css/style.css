@@ -1,7 +1,7 @@
 /* Squad Draft styles.
    "Sumi night": warm charcoal (not blue) so the eye rests, with bright color saved for what matters:
-   paper-white character seals, health bars and buttons, vermilion seal accents, and Tanjiro's
-   green/black haori checker as the one decorative motif.
+   paper-white character seals, health bars and buttons, vermilion seal accents, and
+   a thin ember line as the one decorative motif (CK dropped the green/black checker, Nov 2, 2026).
    Team colors: Player 1 haori green, Player 2 wisteria indigo. Red is reserved for low health. */
 :root{
   --bg:#1a1714; --bg-2:#12100e; --surface:#23201b; --surface-2:#2b2721; --raise:#342e27;
@@ -14,7 +14,7 @@
   --display:"Shippori Mincho B1","Hiragino Mincho ProN","Yu Mincho",Georgia,serif;
   --body:"Zen Kaku Gothic New","Hiragino Sans","Segoe UI",system-ui,sans-serif;
   --shadow:0 1px 0 rgba(255,255,255,.03) inset,0 6px 16px rgba(0,0,0,.25);
-  --check:repeating-conic-gradient(#0d0b09 0 25%,#2c7a59 0 50%) 0 0/12px 12px;
+  --check:linear-gradient(90deg,#7c2417,#e0573b 32%,#d6a54d 50%,#e0573b 68%,#7c2417);
   color-scheme:dark;
 }
 
@@ -24,7 +24,7 @@ html,body{margin:0;background:var(--bg);color:var(--fg)}
 body{font-family:var(--body);font-size:15px;line-height:1.5;-webkit-tap-highlight-color:transparent;
   background-image:radial-gradient(900px 420px at 90% -140px,rgba(224,87,59,.09),transparent 70%),
     radial-gradient(800px 520px at -10% 110%,rgba(82,179,136,.06),transparent 70%);background-attachment:fixed}
-/* haori checker strip along the top */
+/* ember line along the top */
 body::before{content:"";position:fixed;top:0;left:0;right:0;height:5px;background:var(--check);z-index:7}
 .wrap{max-width:560px;margin:0 auto;padding-top:calc(26px + env(safe-area-inset-top,0px));padding-bottom:120px;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
@@ -456,9 +456,6 @@ details ul b{color:var(--fg)}
 .mbanner + .shead{margin-top:-46px;position:relative;z-index:1}
 .mbanner + .shead .gl.lg{box-shadow:0 0 0 3px var(--surface),0 6px 16px rgba(0,0,0,.5)}
 /* main menu: art strip and mode cards */
-.artstrip{overflow:hidden;margin:0 -16px;mask-image:linear-gradient(to right,transparent,#000 12%,#000 88%,transparent);-webkit-mask-image:linear-gradient(to right,transparent,#000 12%,#000 88%,transparent)}
-.artstrip .track{display:flex;gap:8px;width:max-content;animation:marquee 60s linear infinite}
-.artstrip img{width:64px;height:78px;object-fit:cover;object-position:50% 20%;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,.4)}
 @keyframes marquee{to{transform:translateX(-50%)}}
 .modes{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
 .mode .mk{transition:transform .2s}
@@ -484,7 +481,6 @@ details ul b{color:var(--fg)}
 .mode small{font-size:.7rem;color:var(--muted);line-height:1.25}
 .mode.on{border-color:var(--paper);background:var(--surface-2);box-shadow:0 0 0 1px var(--paper) inset}
 .mode:active{transform:scale(.98)}
-@media (prefers-reduced-motion:reduce){.artstrip .track{animation:none}}
 /* playback: slim team rows so the fight stage is the focus */
 .mini{display:flex;justify-content:center;flex-wrap:wrap;gap:10px;padding:2px 0}
 .mini .m{display:flex;flex-direction:column;align-items:center;gap:4px;opacity:.42;transition:opacity .25s,transform .25s}
@@ -1991,3 +1987,65 @@ body.tvmode .wrap{min-height:calc(100dvh / var(--tvz,1))}
 .gmtile.hero .gmtext b{font-size:1.65rem;color:#fff4e3}
 @media (min-width:520px){.gmgrid{grid-template-columns:repeat(4,1fr)}}
 .revealhead{text-align:center;margin-top:12px}
+.tauntbar{margin:8px 0}
+.tauntlist{display:grid;gap:6px;margin-top:8px}
+.tauntline{padding:9px 11px;border-radius:10px;border:1px solid var(--line-2);background:var(--surface);color:var(--ink-2);text-align:left;font-size:.86rem;line-height:1.3}
+.tauntline b{color:var(--fg)}
+.tauntpop{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top));transform:translateX(-50%);z-index:9999;width:min(92vw,420px);padding:11px 14px;border-radius:12px;border:1px solid var(--gold);background:#1a1714;color:var(--fg);font-weight:700;font-size:.92rem;line-height:1.3;box-shadow:var(--shadow);animation:pop .3s ease-out}
+.onlinepage{display:grid;align-content:start;gap:12px}
+.lobby .setline,.lobby .subset{width:100%}
+.gmgrid.online{grid-template-columns:repeat(2,1fr)}
+.gmgrid.online .gmtile:not(.hero){aspect-ratio:1/1}
+.gmtile.hero .gmtext small{font-size:.82rem}
+.localpage{display:grid;align-content:start;gap:12px}
+.vsboard{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.vsside{position:relative;display:block;overflow:hidden;isolation:isolate;aspect-ratio:4/5;border-radius:16px;border:1.5px solid var(--tc);background:var(--surface);cursor:text}
+.vsside img{position:absolute;inset:0;z-index:-2;width:100%;height:100%;object-fit:cover;object-position:50% 15%}
+.vsside::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,transparent 40%,rgba(15,12,10,.94) 82%)}
+.vsside span{position:absolute;left:10px;right:10px;bottom:52px;color:var(--tc);font-size:.72rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
+.vsside input{position:absolute;left:10px;right:10px;bottom:10px;width:calc(100% - 20px);border-left:3px solid var(--tc);background:rgba(15,12,10,.82)}
+.vsmark{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%) rotate(-4deg);z-index:2;display:grid;place-items:center;width:58px;height:58px;border-radius:14px;background:var(--accent);color:#fff8ee;font-family:var(--display);font-size:1.45rem;font-weight:800;box-shadow:0 8px 22px rgba(0,0,0,.45)}
+.vshint{text-align:center;margin:0}
+.gmgrid.home .gmtile{aspect-ratio:1/1}
+.gmgrid.home .gmtext b{font-size:1.08rem}
+.gmgrid.home .gmtext small{font-size:.76rem}
+details.panel{display:block;padding:13px 16px}
+details.panel summary{font-weight:700}
+details.panel[open]>summary{margin-bottom:12px}
+.newdot{display:inline-block;margin-left:8px;padding:1px 7px;border-radius:999px;background:var(--accent);color:#fff8ee;font-size:.66rem;font-style:normal;font-weight:800;vertical-align:1px}
+.hero{padding-top:12px;gap:4px}
+.hero h1{font-size:clamp(2rem,10.5vw,2.8rem);white-space:nowrap;padding-right:0}
+.hero .kanji{width:58px;height:58px;font-size:2.3rem;top:8px}
+.daily .dart{opacity:.2}
+.daily .dgoal{max-width:84%}
+.roster{position:relative;display:grid;gap:9px;margin:0 -16px;padding:13px 0 15px;background:linear-gradient(180deg,rgba(214,165,77,.09),rgba(18,16,14,.35));}
+.roster::before,.roster::after{content:"";position:absolute;left:0;right:0;height:2px;background:var(--check)}
+.roster::before{top:0}.roster::after{bottom:0}
+.rosterhead{display:flex;align-items:center;gap:8px;margin-top:3px;padding:0 16px;border:0;background:none;color:var(--fg);text-align:left}
+.rseal{display:grid;place-items:center;width:24px;height:24px;border-radius:6px;background:var(--accent);color:#fff8ee;font-family:var(--display);font-size:.9rem;font-weight:800;transform:rotate(-4deg)}
+.rosterhead b{font-family:var(--display);font-size:1.08rem}
+.rcount{color:var(--gold);font-size:.76rem;font-weight:700;white-space:nowrap}
+.rbar{flex:1;min-width:30px;height:5px;border-radius:999px;background:rgba(255,255,255,.1);overflow:hidden}
+.rbar u{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--accent),var(--gold));text-decoration:none}
+.rosterhead em{color:var(--muted);font-style:normal;font-size:1.2rem;line-height:1}
+.artstrip{overflow:hidden;-webkit-mask-image:linear-gradient(to right,transparent,#000 6%,#000 94%,transparent);mask-image:linear-gradient(to right,transparent,#000 6%,#000 94%,transparent)}
+.artstrip .track{display:flex;gap:9px;width:max-content;padding:4px 6px;animation:marquee 90s linear infinite}
+.artstrip:active .track,.artstrip:hover .track{animation-play-state:paused}
+.rp{position:relative;display:flex;flex-direction:column;flex:none;width:68px;padding:3px 3px 0;border:0;border-radius:6px;background:var(--paper);color:var(--paper-ink);box-shadow:0 5px 12px rgba(0,0,0,.5);transform:rotate(1.4deg)}
+.rp:nth-child(even){transform:rotate(-1.4deg)}
+.rp::after{content:"";position:absolute;top:-3px;left:50%;width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 1px 2px rgba(0,0,0,.6);transform:translateX(-50%)}
+.rp.marked{background:var(--mark);color:#fff}
+.rp.marked::after{background:var(--paper)}
+.rp.demon{background:#2b2336;color:var(--fg)}
+.rp.demon::after{background:var(--p2)}
+.rp.lock{background:#26211c;color:var(--muted)}
+.rp.lock::after{background:var(--line-2)}
+.rp img{display:block;width:100%;height:68px;border-radius:3px;object-fit:cover;object-position:50% 18%}
+.rp span{padding:3px 1px 4px;font-size:.62rem;font-weight:800;line-height:1.1;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rp.lock img{filter:grayscale(1) brightness(.3) blur(3px)}
+.rp.lock::before{content:"?";position:absolute;inset:3px 3px 20px;z-index:1;display:grid;place-items:center;font-family:var(--display);font-size:1.6rem;font-weight:800;color:var(--ink-2)}
+@media (prefers-reduced-motion:reduce){.artstrip{overflow-x:auto}.artstrip .track{animation:none}}
+.vsside strong{position:absolute;left:10px;right:10px;bottom:11px;font-family:var(--display);font-size:1.35rem;font-weight:800;line-height:1.3}
+.gmgrid.qp .gmtile:not(.hero){aspect-ratio:1/.92}
+.gmgrid.qp .gmtile.hero{height:142px}
+.gmgrid.qp .gmtile.hero .gmtext b{font-size:1.45rem}

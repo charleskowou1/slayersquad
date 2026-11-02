@@ -18,11 +18,14 @@ function playVid(v){
 ['pointerdown','touchend','keydown'].forEach(ev=>document.addEventListener(ev, ()=>{
   PENDING_VIDS.forEach(v=>{ if(!v.isConnected){ PENDING_VIDS.delete(v); return; } const p=v.play(); if(p && p.then) p.then(()=>{ PENDING_VIDS.delete(v); v.classList.remove('vidwait'); }).catch(()=>{}); });
 }, {passive:true}));
+// Opening Latest Updates clears its New badge until the next version
+document.addEventListener('toggle',e=>{ if(e.target.id!=='updates' || !e.target.open) return; try{ localStorage.setItem('squad-draft-seen-update',LATEST_UPDATE.version); }catch(x){} const d=e.target.querySelector('.newdot'); if(d) d.remove(); },true);
 function render(){
   if(isOnline()) S.planFor=S.me;
   const ctl=typeof isCtl==='function' && isCtl(), view = ctl ? ctlViewName() : viewName();   // a phone controlling the TV shows only its moves
   if(view==='over' && !scored && S.mode==='daily'){ scored=true; S.dailyMet=dailyMet(S.daily); if(S.dailyMet) markDaily(S.daily.day); sfx(S.dailyMet?'win':'lose'); }   // no stats
   if(view==='over' && !scored && gameMode()){ scored=true; gmRecord(S.winner===0); if(S.winner===0) track([`m_${S.mode}_win`]); sfx(S.winner===0?'win':'lose'); }   // no shared stats: these aren't fair matchups
+  if(view==='over' && !scored && S.coop){ scored=true; track([`m_coop_${S.coop}_finish`]); if(coopWon()) track([`m_coop_${S.coop}_win`]); sfx(coopWon()?'win':'lose'); }   // no shared stats
   if(view==='over' && !scored && (isPractice() || S.mode==='story')){ scored=true;   // story and practice don't count toward stats
     if(S.winner!==0) sfx('lose'); }   // story wins are saved (and celebrated) before the ending scene
   if(view==='over' && !scored && isAsync()){ const g=myGame(S.asyncCode); if(g && g.scored===S.matchNo) scored=true; else setGame(S.asyncCode,{scored:S.matchNo}); }   // a reopened game isn't counted twice
@@ -188,13 +191,13 @@ const ACTIONS = {
   start: startDraft,
   home(){ setCampaign('main'); if(UPDATE_READY) return location.reload(); clearTimeout(S._t); clearTimeout(HANDOFF); HANDOFF=null; if(ONLINE.net){ ONLINE.net.leave(); ONLINE.net=null; ONLINE.last=null; ONLINE.offActs=ONLINE.offState=null; }
     if(S.ctl) ctlStop();
-    const tv=S.tv, mode=S.mode==='daily'||gameMode()?'cpu':S.mode; S={tv, phase:tv?'tvhome':'setup',mode,vol:S.vol,speed:S.speed,vibeOn:S.vibeOn,clipsOn:S.clipsOn,clipRepeat:S.clipRepeat,install:S.install,names:mode==='local'?localNames():[S.names[S.me||0]||S.names[0]]}; useModeCfg(mode); },
+    const tv=S.tv, mode=S.mode==='daily'||gameMode()?'cpu':S.mode; S={tv, phase:tv?'tvhome':'setup',mode,vol:S.vol,speed:S.speed,vibeOn:S.vibeOn,clipsOn:S.clipsOn,clipRepeat:S.clipRepeat,tauntsOn:S.tauntsOn,install:S.install,names:mode==='local'?localNames():[S.names[S.me||0]||S.names[0]]}; useModeCfg(mode); },
   clips(v){ S.clipsOn=v==='on'; try{ localStorage.setItem('squad-draft-clips',v) }catch(e){} },
   cliprepeat(v){ S.clipRepeat=v; try{ localStorage.setItem('squad-draft-clip-repeat',v) }catch(e){} },
   vibe(v){ S.vibeOn=v==='on'; try{ localStorage.setItem('squad-draft-vibe',v) }catch(e){} },
   gamemode(v){ gmStart(v); window.scrollTo(0,0); },
   nextfight(){ gmNext(); window.scrollTo(0,0); },
-  qpmode(v){ keepNames(); S.qpFinal=v==='final'; },   // Quickplay: choose the kind of game first, so no settings get thrown away
+  qpmode(v){ keepNames(); S.qpClassic=v==='classic'; window.scrollTo(0,0); },   // Quickplay: choose the kind of game first, so no settings get thrown away
   finalfight(){ S.phase='plan'; },
   rematch(){ if(isOnline()) return onlineRematch(); if(gameMode()) return gmAgain(); if(isPractice()) return newDraft(0); toSpin(); },
   // who picks first: take a number (a phone controlling a TV sends it; online the host applies it; vs the computer it
@@ -209,7 +212,8 @@ const ACTIONS = {
   askquit(){ S.quitAsk=true; },
   unquit(){ S.quitAsk=false; },
   redeal(){ if(typeof isCtl==='function' && isCtl()) return ctlSend({a:'redeal'}); if(isOnline() && !iAmHost()) return; S.pool=buildPool(); S.sel=null; },
-  onew(){ loadModeCfg('online').players>2 ? onlineCreate() : asyncCreate(); },   // 2 players: one game for live or your own pace. 3–4: everyone at once
+  onew(){ onlineCreate(); },
+  copyroom(){ try{ navigator.clipboard.writeText(S.lobby.code); S.copied=true; setTimeout(()=>{ S.copied=false; render(); },1500); }catch(e){} },
   ocreate(){ onlineCreate(); },
   // TV mode (js/tv.js): this laptop shows the game on the big screen; a phone joins its code as the controller
   tvstart(){ tvStart(); },
@@ -224,13 +228,17 @@ const ACTIONS = {
   ctlpick(v){ ctlSend({a:'choose', key:v}); },          // a choice on the phone: Story map, Next battle, Rematch…
   ctlstage(v,b){ ctlSend({a:'stage', i:+v, draft:b.dataset.d==='1'}); },   // a story battle picked on the phone
   ctlexit(){ ctlStop(); ACTIONS.home(); },
-  acreate(){ asyncCreate(); },
   agame(v){ keepNames(); openGame(v); },
   agamex(v){ const g=myGame(v), st=g&&g.meta; if(st && !st.final && st.phase!=='lobby' && !confirm('Remove this game? It can’t be finished after that.')) return;
-    const f=GAME_WATCH[v]; if(f){ f(); delete GAME_WATCH[v]; } dropGame(v); gamesBadge(); },
+    const f=GAME_WATCH[v]; if(f){ f(); delete GAME_WATCH[v]; } if(g && g.qm && st && st.phase==='lobby') quickCancel(v); dropGame(v); gamesBadge(); },
+  oquick(){ keepNames(); quickMatch(); },
+  cfggm(v){ keepNames(); setCfg('gm',v); },
+  taunt(v){ sendTaunt(v); },
+  tauntopen(){ S.tauntOpen=!S.tauntOpen; },
+  taunts(v){ S.tauntsOn=v==='on'; try{ localStorage.setItem('squad-draft-taunts',v) }catch(e){} },
   ojoin(){ onlineJoin(); },
   ojoinopen(){ S.names[0]=myName(); S.joinOpen=!S.joinOpen; S.onlineMsg=''; setTimeout(()=>{ const el=document.getElementById('ocode'); if(el) el.focus(); }); },
-  ostart(){ if(iAmHost() && hostStartMatch()) toSpin(); },
+  ostart(){ if(iAmHost() && hostStartMatch()) startRoom(); },
   // open a card's detail (from the grid or from a name in a pool note); any card in the pool can be viewed
   sel(v){ if(S.mode==='cpu' && turn()!==0) return;
     if(S.pool.includes(v) || ((S.mode==='daily'||S.mode==='story') && S.picks[1].includes(v))) S.sel=v; },   // the set enemy team can be studied
@@ -261,6 +269,7 @@ const ACTIONS = {
   codex(){ keepNames(); S.phase='codex'; S.codexSel=null; window.scrollTo(0,0); },
   codexf(v){ S.codexF=v; },
   codexsel(v){ S.codexSel=v; },
+  codexopen(v){ keepNames(); S.phase='codex'; S.codexSel=v; window.scrollTo(0,0); },
   daily(){ keepNames(); clearTimeout(S._t); S.play=null; S.final=false; startDaily(); window.scrollTo(0,0); },
   info(v){ S.info=v; },
   fight(){ fight(); newPlanTurn(); },
@@ -446,7 +455,10 @@ async function firebaseNet(role){
       if(!res.committed || !seat) throw new Error('That game is full (4 players).');
       presence(); return {room:v, seat}; },
     publish(json, q){ room.child('state/'+q).set(json); },
-    send(msg){ room.child('acts').push(JSON.parse(JSON.stringify(msg))); },   // Firebase rejects undefined (e.g. a Defend move's empty target)
+    send(msg){ room.child('acts').push(JSON.parse(JSON.stringify(msg))); },
+    // 2 players: the room hands over to an own-pace game, and the guest follows
+    move(code){ return room.child('moved').set(code); },
+    onMoved(cb){ return listen(room.child('moved'),'value',s=>{ if(s.val()) cb(s.val()); }); },   // Firebase rejects undefined (e.g. a Defend move's empty target)
     onState(cb){ return listen(room.child('state/'+seat),'value',s=>{ if(s.exists()) cb(s.val()); }); },
     // the host's queue of actions: an action is removed only once the host has taken it (cb returns true)
     onAction(cb){ return listen(room.child('acts'),'child_added',s=>{ if(cb(s.val())) s.ref.remove(); }); },
@@ -518,10 +530,28 @@ async function onlineJoin(){
     const net=await firebaseNet('guest'), {room, seat}=await net.join(code,name);
     ONLINE.net=net; ONLINE.offActs=ONLINE.offState=null; ONLINE.tookFrom=[];
     Object.assign(S,{me:seat, planFor:seat, hostSeat:room.hostSeat||0, away:{}, names:[(room.host&&room.host.name)||'Host', name], lobbyHost:(room.host&&room.host.name)||'Host', lobby:{code, seats:[]}, phase:'lobby', onlineMsg:''});
-    listenAsGuest(); watchPresence();
+    listenAsGuest(); watchPresence(); net.onMoved(c=>enterGame(c,seat));
     render();
   }catch(e){ S.onlineMsg=e.message||'Could not join.'; render(); }
 }
+// Start from the lobby (CK, Nov 2, 2026: one way in for 2–4 players). 2 players become an own-pace game, so they can play live or take
+// turns later. 3 or 4 stay in the live room, where everyone plays at once.
+async function startRoom(){
+  const c=S.cfg||loadModeCfg('online'); if(S.coop){ coopStart(); newPlanTurn(); return render(); }
+  S.gm=c.gm&&c.gm!=='none'?c.gm:undefined;
+  if(S.n===2) return roomToGame(c);
+  if(S.gm){ dealMatch(); newPlanTurn(); } else toSpin();
+  render();
+}
+async function roomToGame(c){
+  const names=S.names.slice(); S.onlineMsg='Starting…'; render();
+  try{
+    const db=await firebaseReady(), code=await newAsyncGame(db, c, names[0]);
+    if(!await asyncNet(db,code).send({a:'join', p:1, name:names[1]})) throw new Error('Could not start the game. Try again.');
+    await ONLINE.net.move(code); enterGame(code,0);
+  }catch(e){ S.onlineMsg=netError(e); render(); }
+}
+function enterGame(code, seat){ clearTimeout(HANDOFF); HANDOFF=null; setGame(code,{seat}); watchGames(); openGame(code); }
 /* ---------- own-pace games (2 phones, no host): games/<6-letter code> in Firebase ----------
    The rules are in online.js (asyncApply). Here: create / join / open, the transaction that applies this phone's
    actions, playing back rounds this phone hasn't watched, and the home screen list (each game's meta, watched live). */
@@ -542,16 +572,48 @@ function asyncNet(db, code){
     leave(){ offs.forEach(f=>f()); offs.length=0; },
   };
 }
-async function asyncCreate(){
-  const name=titled(myName()); S.names[0]=name; S.onlineMsg='Connecting…'; render();
+// A new 2-player game in the lobby, with this player in seat 0. Returns its code.
+async function newAsyncGame(db, c, name){
+  const now=Date.now(), state=JSON.stringify({phase:'lobby', n:2, names:[name], budget:c.budget, poolType:c.poolType, maxTeam:c.maxTeam, bansOn:!!c.bans, gm:c.gm&&c.gm!=='none'?c.gm:undefined, async:true, hostSeat:-1, duo:false, matchNo:0});
+  let code=null;
+  for(let i=0;i<8 && !code;i++){ const k=newGameCode(), r=await db.ref('games/'+k).transaction(v=>v ? undefined : {created:now, s:state, meta:{names:[name], matchNo:0, phase:'lobby', turn:[], round:0, roundId:0, final:false, winner:null, updated:now}}); if(r.committed) code=k; }
+  if(!code) throw new Error('Could not make a game code. Try again.');
+  return code;
+}
+/* Quick Match: a stranger, with nobody stuck on a waiting screen. It's an ordinary own-pace game, so the player who finds nobody
+   can leave: it waits on their home screen and starts when someone taps in. games/QUEUED (a code the 'games' rule already
+   allows, so no new Firebase rule) names the one waiting game; a transaction hands it to exactly one joiner. */
+const QM_CFG = {budget:20, poolType:'random', maxTeam:MAXTEAM, bans:false};
+async function quickMatch(){
+  const name=titled(myName()); S.names[0]=name; S.onlineMsg='Looking for a match…'; render();
   try{
-    const db=await firebaseReady(), c=useModeCfg('online'), now=Date.now();
-    const state=JSON.stringify({phase:'lobby', n:2, names:[name], budget:c.budget, poolType:c.poolType, maxTeam:c.maxTeam, bansOn:!!c.bans, async:true, hostSeat:-1, duo:false, matchNo:0});
-    let code=null;
-    for(let i=0;i<8 && !code;i++){ const k=newGameCode(), r=await db.ref('games/'+k).transaction(v=>v ? undefined : {created:now, s:state, meta:{names:[name], matchNo:0, phase:'lobby', turn:[], round:0, roundId:0, final:false, winner:null, updated:now}}); if(r.committed) code=k; }
-    if(!code) throw new Error('Could not make a game code. Try again.');
-    setGame(code,{seat:0}); watchGames(); await openGame(code);
+    const db=await firebaseReady(), q=db.ref('games/'+QUEUE), fresh=v=>v && v.code && Date.now()-v.at<QUEUE_TTL;
+    const take=async mine=>{ let took=null; await q.transaction(v=>{ took=null; if(fresh(v) && v.by!==PHONE_ID){ took=v.code; return null; } return mine ? {code:mine, by:PHONE_ID, at:Date.now()} : v; }); return took; };
+    const cur=(await q.get()).val();
+    if(fresh(cur) && cur.by===PHONE_ID && myGame(cur.code)){ S.onlineMsg='You’re already looking for a match. It’s on your home screen.'; return render(); }
+    const took=await take(null); if(took) return asyncJoin(took);
+    const code=await newAsyncGame(db, QM_CFG, name), late=await take(code);
+    if(late){ await db.ref('games/'+code).remove(); return asyncJoin(late); }
+    setGame(code,{seat:0, qm:true}); watchGames();
+    S.onlineMsg='You’re in the queue. You can leave now: your match will be on your home screen when someone joins.'; render();
   }catch(e){ S.onlineMsg=netError(e); render(); }
+}
+async function quickCancel(code){ try{ const db=await firebaseReady(); await db.ref('games/'+QUEUE).transaction(v=>v && v.code===code ? null : v); await db.ref('games/'+code).remove(); }catch(e){} }
+/* Quick taunts: only a fighter's own fixed line can be sent (the message is just the card id, so nothing typed ever reaches another
+   player), 3 a match, 15 s apart, and Settings can mute them. */
+const TAUNT_MAX = 3, TAUNT_GAP = 15000;
+const tauntsLeft = () => { const t=S.tauntsSent||{}; return t.m===S.matchNo ? TAUNT_MAX-t.n : TAUNT_MAX; };
+async function sendTaunt(id){
+  const u=isAsync() && S.teams && S.teams[S.me].find(x=>x.id===id), t=S.tauntsSent||{}, now=Date.now();
+  if(!u || S.tauntsOn===false || tauntsLeft()<=0 || now-(t.at||0)<TAUNT_GAP) return;
+  S.tauntsSent={m:S.matchNo, n:(t.m===S.matchNo?t.n:0)+1, at:now}; S.tauntOpen=false;
+  try{ const db=await firebaseReady(); await db.ref(`games/${S.asyncCode}/taunt`).set({p:S.me, id, at:now}); }catch(e){}
+}
+function showTaunt(t){
+  if(S.tauntsOn===false || !t || !BYID[t.id] || !SPECIAL_QUOTES[t.id] || t.at-(S.tauntAt||0)<TAUNT_GAP || Date.now()-t.at>60000) return;   // the gap holds on this phone too, whatever the other one sends
+  S.tauntAt=t.at;
+  const el=document.createElement('div'); el.className='tauntpop'; el.setAttribute('role','status'); el.textContent=`${BYID[t.id].short}: “${SPECIAL_QUOTES[t.id]}”`;
+  document.body.appendChild(el); setTimeout(()=>el.remove(),4000);
 }
 async function asyncJoin(code){
   if(myGame(code)) return openGame(code);
@@ -578,6 +640,7 @@ async function openGame(code){
       onlineMsg:'', asyncWatching:false, play:null, final:false, localOver:false, plans:null, helperPlan:null, lastPlans:null, sel:null, info:null});
     ONLINE.net=asyncNet(db, code); ONLINE.full=null; ONLINE.offActs=ONLINE.offState=null; ONLINE.net.here(db, g.seat);
     ONLINE.net.onGame(v=>{ if(!isAsync() || S.asyncCode!==code) return; ONLINE.full=v.s; S.oppHere=!!(v.here&&v.here[1-g.seat]); setGame(code,{meta:v.meta, gone:false});
+      if(v.taunt && v.taunt.p!==g.seat) showTaunt(v.taunt);
       if(!S.asyncWatching){ asyncShow(); render(); } });
     window.scrollTo(0,0);
   }catch(e){ S.onlineMsg=netError(e); render(); }
@@ -624,14 +687,14 @@ function gamesBadge(){
 // The match that just ended, as the stats count it (null = not counted: Story, Practice, the daily challenge, and
 // online games, which are counted once by the phone that hosts / ended them)
 function statsGame(){
-  if(S.mode==='story' || S.mode==='daily' || gameMode() || isPractice() || !S.teams) return null;
+  if(S.mode==='story' || S.mode==='daily' || S.coop || gameMode() || isPractice() || !S.teams) return null;
   if(isOnline() && (isAsync() || !iAmHost())) return null;
   return {pool:S.pool||[], poolType:S.poolType, teams:players().map(p=>S.teams[p].filter(u=>!u.spawn).map(u=>u.id)), helpers:players().map(p=>(S.picks[p]||[]).filter(isHelper)),
     won:players().map(p=>S.winner>=0 && sameSide(S.winner,p)), humans: S.mode==='cpu' ? [0] : players()};
 }
 // Anonymous counters for CK's admin page: no names, just how often things happen. Skipped on his own browser.
 let matchOn=null;
-const modeKey = () => (typeof isTV==='function'&&isTV()?'tv_':'')+(S.mode==='online'?'online'+S.n:S.mode);
+const modeKey = () => (typeof isTV==='function'&&isTV()?'tv_':'')+(S.coop?'coop_'+S.coop:S.mode==='online'?'online'+S.n:S.mode);
 function track(keys){
   try{ if(!FIREBASE_CONFIG || !navigator.onLine || navigator.webdriver || location.hostname==='localhost' || localStorage.getItem('squad-draft-admin')) return; }catch(e){ return; }
   firebaseReady().then(db=>{ const inc=firebase.database.ServerValue.increment(1), up={}; keys.forEach(k=>up[k]=inc); return db.ref('track').update(up); }).catch(()=>{});
@@ -690,7 +753,7 @@ function saveData(){ const d={}; try{ Object.keys(localStorage).filter(k=>k.star
 const hasProgress = d => ['squad-draft-story-v2','squad-draft-records','squad-draft-score','squad-draft-daily'].some(k=>d[k] && d[k]!=='{}' && d[k]!=='{"cleared":[]}');
 // what a save holds, in players' words, for choosing between two of them
 const saveJSON = (d,k) => { try{ return JSON.parse(d[k])||{}; }catch(e){ return {}; } };
-const saveSummary = d => { const s=saveJSON(d,'squad-draft-story-v2'); return `${plural((s.cleared||[]).length,'story battle')}, ${plural(Object.values(s.stars||{}).reduce((a,b)=>a+b,0),'star')}`; };
+const saveSummary = d => { const s=saveJSON(d,'squad-draft-story-v2'); return `${plural((s.cleared||[]).length,'story battle')}, ${plural(MAIN_STAGES.reduce((a,st)=>a+((s.stars||{})[st.id]||0),0),'star')}`; };   // the main story's stars, the same count the story map shows
 // Two saves combined: every battle, the best stars, the fuller record per fighter and name, every daily done. Settings stay this device's.
 function mergeSaves(mine, theirs){
   const out={...theirs, ...mine}, both=k=>[saveJSON(mine,k), saveJSON(theirs,k)], put=(k,v)=>{ if(k in out) out[k]=JSON.stringify(v); };
@@ -737,7 +800,7 @@ async function cloudRestore(){
   }catch(e){ S.restoreMsg=/permission/i.test(e.message||'')?"Cloud backup isn't switched on yet.":'Could not connect. Check your internet.'; }
   render();
 }
-S.vol=loadVolumes(); S.speed=loadSpeed(); try{ S.vibeOn=localStorage.getItem('squad-draft-vibe')!=='off'; S.clipsOn=localStorage.getItem('squad-draft-clips')!=='off'; S.clipRepeat=localStorage.getItem('squad-draft-clip-repeat')||'first' }catch(e){}
+S.vol=loadVolumes(); S.speed=loadSpeed(); try{ S.vibeOn=localStorage.getItem('squad-draft-vibe')!=='off'; S.clipsOn=localStorage.getItem('squad-draft-clips')!=='off'; S.clipRepeat=localStorage.getItem('squad-draft-clip-repeat')||'first'; S.tauntsOn=localStorage.getItem('squad-draft-taunts')!=='off' }catch(e){}
 // One-time reset of The Endless Dream only (CK, Oct 30, 2026, after it changed): the main story and stars stay
 try{ if(localStorage.getItem('squad-draft-dream-reset')!=='1'){ const st=loadStory(); st.cleared=(st.cleared||[]).filter(id=>!/^dr_/.test(id)); writeStory(st); localStorage.setItem('squad-draft-dream-reset','1'); } }catch(e){}
 useModeCfg(S.mode); S.names=localNames(); if(S.mode!=='local') S.names[0]=playerName()||'Player 1';   // solo modes: this phone's name

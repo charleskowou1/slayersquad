@@ -3,7 +3,7 @@
    needs the rules this page prints, which only let CK's browser read them. Opening it also turns tracking off in this browser. */
 const FB='10.12.2', esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const load=src=>new Promise((ok,no)=>{ const s=document.createElement('script'); s.src=src; s.onload=ok; s.onerror=no; document.head.appendChild(s); });
-const MODE_NAMES={final:'Final Form',gauntlet:'Gauntlet',rush:'Upper Moon Rush',random:'Random Squads',mirror:'Mirror Match',cpu:'Quickplay',local:'Same Phone',practice:'Practice',story:'Story',daily:'Daily',online2:'Online 2 players',online3:'Online 3 players',online4:'Online 4 players'};
+const MODE_NAMES={coop_final:'Co-op Final Form',coop_gauntlet:'Co-op Gauntlet',final:'Final Form',gauntlet:'Gauntlet',rush:'Upper Moon Rush',random:'Random Squads',mirror:'Mirror Match',cpu:'Quickplay',local:'Same Phone',practice:'Practice',story:'Story',daily:'Daily',online2:'Online 2 players',online3:'Online 3 players',online4:'Online 4 players'};
 const modeName=k=>(k.startsWith('tv_')?'TV: ':'')+(MODE_NAMES[k.replace('tv_','')]||k);
 const rowsOf=(list,max)=>list.map(([n,v,note])=>`<div class="row"><span>${esc(n)}</span><u style="width:${max?Math.max(1,v/max*100):0}%"></u><small>${note||v}</small></div>`).join('')||'<p class="muted">Nothing yet.</p>';
 function dayKeys(n){ return Array.from({length:n},(_,i)=>{ const d=new Date(); d.setDate(d.getDate()-(n-1-i)); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }); }

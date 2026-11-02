@@ -97,6 +97,45 @@ function match(seed, opts = {}) {
   return { problems, leaks, rounds: H.round, winner: H.winner, handed: hi !== 0 };
 }
 
+// Co-op: 2–4 phones against the computer's seat, which no phone plays. Runs: draft, fights, next wave or try again, with a hand-off in some.
+function coopMatch(seed, n, mode, handoff) {
+  const names = ['CK', 'Mia', 'Tom', 'Ana'].slice(0, n), phones = Array.from({length: n}, () => loadGame(FILES, EXTRA));
+  let hi = 0, host = phones[0], s = seed * 11 + 3, leaks = 0; Math.random = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  const problems = [], publish = () => phones.forEach((ph, q) => { if (q !== hi) ph.applySnapshot(host.snapshotFor(q)); });
+  const wire = () => phones.forEach((ph, q) => { ph.OL().net = q === hi ? { send() {} } : { send(msg) { host.hostHandle(msg); publish(); } }; });
+  wire(); let H = host.S_();
+  Object.assign(H, { mode: 'online', me: 0, planFor: 0, n: 2, names: [names[0]], cfg: { gm: mode }, lobby: { code: 'TEST', seats: [1, 2, 3].map(i => i < n ? { name: names[i], on: true } : null) }, phase: 'lobby' });
+  phones.forEach((ph, q) => { if (q) Object.assign(ph.S_(), { mode: 'online', me: q, planFor: q, names: [names[0], names[q]], phase: 'lobby' }); });
+  if (!host.hostStartMatch()) problems.push('could not start');
+  if (H.n !== n + 1 || H.coop !== mode) problems.push('computer seat missing');
+  host.coopStart(); publish();
+  const draft = () => { for (let k = 0; k < 150 && H.phase === 'draft'; k++) { const p = host.turn(), ctx = phones[p]; if (p >= n) { problems.push('a turn went to the computer seat'); break; }
+      const can = ctx.S_().pool.filter(id => ctx.canPick(p, id)); if (can.length && (ctx.api().fighterIds(p).length < 2 || ctx.Math.random() < .75)) ctx.onlinePick(can[Math.floor(ctx.Math.random() * can.length)]); else ctx.onlineLockTeam(); if (p === hi) publish(); } };
+  let fights = 0, handed = false;
+  for (let run = 0; run < 12; run++) {
+    draft();
+    if (H.phase !== 'plan') { problems.push('no fight after the draft (' + H.phase + ')'); break; }
+    const foe = n; if (!H.teams[foe].length) problems.push('computer has no team');
+    if (H.teams.slice(0, n).some(t => t.some(u => !u.p && u.p !== 0))) problems.push('bad team');
+    for (let r = 0; r < 45 && !H.final; r++) {
+      if (handoff && !handed && r === 1) { phones[1].takeOverHost(names[0]); hi = 1; host = phones[1]; H = host.S_(); wire(); publish(); handed = true; }
+      const live = [...Array(n).keys()].filter(p => host.api().alive(p).length);
+      live.forEach(p => phones[p].cpuPlan(p));
+      live.forEach(p => { phones[p].onlineLockMoves(); if (p === hi) publish(); if (H.phase === 'plan') phones.forEach((ph, q) => { if (q !== hi && ph.S_().plans.some((pl, x) => x !== q && Object.keys(pl || {}).length)) leaks++; }); });
+      if (H.phase !== 'result') { problems.push('round did not run: ' + H.phase + ' locked ' + H.movesLocked); break; }
+      phones.forEach((ph, q) => { if (q !== hi && JSON.stringify(ph.S_().teams) !== JSON.stringify(H.teams)) problems.push('phones disagree'); });
+      if (H.final) break;
+      phones.forEach((ph, q) => { ph.onlineNext(); if (q === hi) publish(); });
+      if (H.phase !== 'plan') { problems.push('next round did not start: ' + H.phase + ' ' + H.readyNext); break; }
+    }
+    if (!H.final) { problems.push('fight did not finish'); break; } fights++;
+    const won = H.winner >= 0 && H.winner < n, wave = H.series && H.series.wave, carried = H.teams.slice(0, n).map(t => t.filter(u => u.alive).length);
+    phones[n - 1].onlineRematch(); if (n - 1 === hi) publish();
+    if (mode === 'gauntlet' && won) { if (H.phase !== 'plan' || H.series.wave !== wave + 1) problems.push('next wave did not start'); if (H.teams.slice(0, n).some((t, i) => t.length !== carried[i])) problems.push('survivors did not carry over'); }
+    else { if (H.phase !== 'draft') problems.push('try again did not reopen the draft'); if (run >= 1) break; }
+  }
+  return { problems, leaks, fights };
+}
 let bad = 0, leaks = 0, rounds = 0, handoffs = 0;
 const N = +process.argv[2] || 200;
 for (let i = 1; i <= N; i++) {
@@ -105,4 +144,6 @@ for (let i = 1; i <= N; i++) {
   if (r.problems.length) { bad++; if (bad <= 3) console.log('match ' + i + ': ' + [...new Set(r.problems)].join('; ')); }
 }
 console.log(bad ? `${bad} of ${N} online matches had problems.` : `All ${N} online matches (2, 3 and 4 phones) played correctly on every phone (${rounds} rounds, ${handoffs} with a host hand-off).`);
+let coopBad = 0, coopFights = 0; for (let i = 1; i <= 60; i++) { const r = coopMatch(i, 2 + i % 3, i % 2 ? 'final' : 'gauntlet', i % 5 === 0); coopFights += r.fights; leaks += r.leaks; if (r.problems.length) { coopBad++; if (coopBad <= 3) console.log('co-op ' + i + ': ' + [...new Set(r.problems)].slice(0, 4).join('; ')); } }
+console.log(coopBad ? `${coopBad} of 60 co-op runs had problems.` : `All 60 co-op runs (2, 3 and 4 phones, ${coopFights} fights) played correctly on every phone.`); if (coopBad) bad++;
 console.log(leaks ? `PRIVACY: a guest held someone else's moves ${leaks} times.` : "Privacy: no guest ever received anyone else's moves while choosing.");

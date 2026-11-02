@@ -102,9 +102,9 @@ const FINAL_SUPPORT = ['kagaya','murata','zenitsu','inosuke','kanao','genya','hi
 // Which of your cards each Upper Moon does best against (from the simulator). Nakime and Kaigaku made the fight easier, so he leaves them out.
 const FINAL_COUNTERS = {hantengu:['giyu_mark','gyomei_mark','kagaya','urokodaki'], doma:['tanjiro_mark','hinatsuru','makio','murata'], kokushibo:['giyu_mark','murata','urokodaki'],
   akaza:['obanai_mark','makio','suma','genya'], gyutaro:['inosuke','kanao','zenitsu','tengen_retired'], gyokko:['mitsuri_mark','tanjiro_mark','obanai_mark']};
-function finalPicks(team){
+function finalPicks(team, uppers=3){
   const left=Object.keys(FINAL_COUNTERS), out=['muzan_final'], score=id=>FINAL_COUNTERS[id].filter(c=>team.includes(c)).length*4 + BYID[id].cost*.3 + Math.random()*4;
-  while(out.length<4) out.push(left.splice(left.indexOf(left.slice().sort((a,b)=>score(b)-score(a))[0]),1)[0]);
+  while(out.length<=uppers && left.length) out.push(left.splice(left.indexOf(left.slice().sort((a,b)=>score(b)-score(a))[0]),1)[0]);
   return out;
 }
 function finalTaunt(team, foes){
@@ -118,7 +118,7 @@ function finalTaunt(team, foes){
 const GM = {
   gauntlet:{title:'Gauntlet', blurb:'One squad, wave after wave. Damage carries over. How far can you get?', kj:'連', line:'Survive wave after wave', budget:30, foe:'The wave', art:'tanjiro'},
   rush:{title:'Upper Moon Rush', blurb:'Slayers only. Beat the Upper Moons one by one, then Muzan. Damage carries over.', kj:'月', line:'Eight fights to Muzan', budget:35, foe:'Upper Moons', art:'kokushibo'},
-  random:{title:'Random Squads', blurb:'Both teams are dealt at random. No draft: just play your hand.', kj:'運', line:'No draft, just your hand', budget:20, foe:'Computer', art:'zenitsu'},
+  random:{title:'Random Squads', blurb:'Both teams are dealt at random, from 5 to 50 points. No draft: just play your hand.', kj:'運', line:'No draft, just your hand', budget:20, foe:'Computer', art:'zenitsu'},
   mirror:{title:'Mirror Match', blurb:'The computer copies your squad exactly. Only your moves can win it.', kj:'鏡', line:'Same squad, better moves', budget:20, foe:'Your reflection', art:'typezero'},
 };
 const RUSH_FIGHTS = [['kaigaku'],['gyokko'],['gyutaro','daki'],['hantengu'],['akaza'],['doma'],['kokushibo'],['muzan_final']];
@@ -134,15 +134,17 @@ function gmRecord(won){
 const gmFights = () => S.mode==='rush' ? RUSH_FIGHTS.length : Infinity;
 const gmName = () => S.mode==='final' ? 'Final Form' : GM[S.mode].title;
 // A random squad: any card that fits, one version per character
-function randSquad(budget, cards){
+function randSquad(budget, cards, cap=MAXTEAM){
   const out=[], fams=new Set(); let left=budget;
-  cards.slice().sort(()=>Math.random()-.5).forEach(c=>{ if(out.length<MAXTEAM && c.cost<=left && !fams.has(c.fam)){ out.push(c.id); fams.add(c.fam); left-=c.cost; } });
+  cards.slice().sort(()=>Math.random()-.5).forEach(c=>{ if(out.length<cap && c.cost<=left && !fams.has(c.fam)){ out.push(c.id); fams.add(c.fam); left-=c.cost; } });
   return out;
 }
 const gmCards = () => ROSTER.filter(c=>!c.spawn && !c.helper);
 // Gauntlet: each wave is a bigger random squad, and the computer stops making mistakes from wave 3
 const waveBudget = w => 6+4*w;
 function gmEnemy(){
+  if(S.coop==='final') return finalPicks(S.picks.flat(), COOP_UPPERS[coopHumans()]);
+  if(S.coop) return randSquad(Math.round(waveBudget(S.series.wave)*COOP_WAVE[coopHumans()]), gmCards().filter(c=>c.cost<=waveBudget(S.series.wave)), MAXTEAM+coopHumans()-1);
   if(S.mode==='final') return finalPicks(S.picks[0]);
   if(S.mode==='mirror') return S.picks[0].slice();
   if(S.mode==='rush'){ const w=S.series.wave;   // alone they get swarmed (the computer cleared 100%): each brings lesser demons, more every fight
@@ -153,21 +155,39 @@ function gmEnemy(){
 const gmBase = mode => ({mode, unlockAll:true, n:2, duo:false, maxTeam:MAXTEAM, bansOn:false, banning:false, bans:[], budget:mode==='final'?FINAL_BUDGET:GM[mode].budget, level:'hard', poolType:'random', sideWar:false,
   phase:'draft', first:0, lastPicker:null, history:[], k:0, sel:null, picks:[[],[]], locked:[false,true], showTheirs:false, heldCalm:0, series:mode==='gauntlet'||mode==='rush'?{wave:1}:null,
   names:[playerName()||'Player 1', mode==='final'?'Muzan':GM[mode].foe]});
+const gmPool = mode => ROSTER.filter(mode==='final' ? c=>(c.mark&&!c.demon&&!c.spawn)||FINAL_SUPPORT.includes(c.id) : c=>!c.spawn && !c.helper && !(mode==='rush'&&c.demon)).map(c=>c.id)
+  .sort((a,b)=>BYID[b].cost-BYID[a].cost || BYID[a].name.localeCompare(BYID[b].name)).concat(dealHelpers());
 function gmDraft(mode){
   Object.assign(S,gmBase(mode));
-  S.pool=ROSTER.filter(mode==='final' ? c=>(c.mark&&!c.demon&&!c.spawn)||FINAL_SUPPORT.includes(c.id) : c=>!c.spawn && !c.helper && !(mode==='rush'&&c.demon)).map(c=>c.id)
-    .sort((a,b)=>BYID[b].cost-BYID[a].cost || BYID[a].name.localeCompare(BYID[b].name)).concat(dealHelpers());
+  S.pool=gmPool(mode);
 }
 function gmRandom(){
-  Object.assign(S,gmBase('random')); const cards=gmCards();
-  const a=randSquad(S.budget,cards), fams=new Set(a.map(id=>BYID[id].fam));
-  S.picks=[a, randSquad(S.budget,cards.filter(c=>!fams.has(c.fam)))]; S.locked=[true,true]; S.pool=[]; startBattle();   // no character on both teams, in any version
+  Object.assign(S,gmBase('random')); S.picks=dealSquads('random'); S.locked=[true,true]; S.pool=[]; startBattle();
+}
+// Two squads dealt without a draft (online too): Random never puts a character on both teams, in any version; Mirror gives both the same one
+function dealSquads(mode, n=2){
+  const budget=mode==='random' ? 5+Math.floor(Math.random()*46) : GM[mode].budget, fams=new Set(), out=[];   // Random: any size of game, 5 to 50 points (CK); every team gets the same
+  S.budget=budget;
+  for(let i=0;i<n;i++){ const q=mode==='mirror'&&i ? out[0].slice() : randSquad(budget, gmCards().filter(c=>!fams.has(c.fam))); q.forEach(id=>fams.add(BYID[id].fam)); out.push(q); }
+  return out;
 }
 const gmStart = mode => mode==='random' ? gmRandom() : gmDraft(mode);
 const gmAgain = () => gmStart(S.mode);   // a fresh draft (CK): refilling a full squad locked it and skipped the draft
 // The next fight of a run: survivors keep their damage, heal a little and have their specials ready
 function gmNext(){
-  const keep=S.teams[0].filter(u=>u.alive), g=S.series; g.wave++;
-  keep.forEach(u=>{ u.hp=Math.min(u.max, u.hp+Math.ceil(u.max*GM_HEAL)); u.cd=0; u.poison=null; u.stun=u.stunNext=false; u.devoured=0; u.defending=u.evade=false; });
-  S.picks[1]=[]; startBattle(); S.teams[0]=keep;
+  const foe=foeSeat(), keep=S.teams.map((t,p)=>p===foe?null:t.filter(u=>u.alive)), g=S.series; g.wave++;
+  keep.flat().filter(Boolean).forEach(u=>{ u.hp=Math.min(u.max, u.hp+Math.ceil(u.max*GM_HEAL)); u.cd=0; u.poison=null; u.stun=u.stunNext=false; u.devoured=0; u.defending=u.evade=false; });
+  S.picks[foe]=[]; startBattle(); keep.forEach((t,p)=>{ if(t) S.teams[p]=t; });
 }
+/* ---------- co-op online ----------
+   2–4 friends against the computer, in a live room (the host plays the computer's seat when everyone else has locked in).
+   Each drafts their own squad from a shared pool, so points per player drop as the group grows, and the enemy grows with it. */
+const COOP_BUDGET = {final:{2:30,3:23,4:21}, gauntlet:{2:20,3:16,4:15}}, COOP_UPPERS = {2:4,3:5,4:6}, COOP_WAVE = {2:1.5,3:2,4:2.5};
+function coopStart(){
+  const mode=S.coop;
+  Object.assign(S,{unlockAll:true, gm:undefined, bansOn:false, budget:COOP_BUDGET[mode][coopHumans()], poolType:'random', maxTeam:MAXTEAM, level:'hard', final:false, localOver:false, winner:undefined, matchLog:[], roundId:0,
+    series:mode==='gauntlet'?{wave:1}:null, heldCalm:0});
+  newDraft(0); S.pool=gmPool(mode); S.locked[foeSeat()]=true;
+}
+const coopWon = () => S.winner>=0 && !coopFoe(S.winner);
+function coopAgain(){ if(S.series && coopWon()){ S.final=false; S.localOver=false; S.winner=undefined; gmNext(); } else coopStart(); }

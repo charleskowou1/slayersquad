@@ -9,7 +9,7 @@ function tvBoardCheck(b){ const keep=[S.tv,S.tvDuo]; S.tv=TVT; S.tvDuo=!b; try{ 
 // Final Form: draft, auto-lock on a full squad, reveal, sun clock, the end screen and refilling the squad
 function finalCheck(){
   for(let g=0;g<60;g++){
-    S={phase:'setup',mode:'cpu',names:['A'],vol:{sfx:0,music:0},speed:1}; useModeCfg('cpu'); S.qpFinal=true; if(!vModeSet().includes('gamemode') || vSetup().includes('gamemode')) throw new Error('Final Form: wrong screen'); gmDraft('final');
+    S={phase:'setup',mode:'cpu',names:['A'],vol:{sfx:0,music:0},speed:1}; useModeCfg('cpu'); if(!vModeSet().includes('gamemode') || vSetup().includes('gamemode')) throw new Error('Final Form: wrong screen'); gmDraft('final');
     if(S.pool.some(id=>BYID[id].demon && !BYID[id].helper)) throw new Error('Final Form: demon in the pool');
     if(S.pool.some(id=>BYID[id].fam==='yoriichi')) throw new Error('Final Form: Yoriichi in the pool');
     vDraft(); let k=0; while(S.phase==='draft' && k++<40){ cpuDraftStep('hard'); if(S.phase==='draft') vDraft(); }
@@ -29,18 +29,24 @@ function finalCheck(){
 // Game Modes: every mode from its card to its end screen, including a run's next fight
 function modesCheck(){
   S.unlockAll=true; const play=()=>{ vReveal(); S.phase='plan'; vPlan(); let k=0; while(S.phase!=='over' && k++<200){ cpuBothSides('hard',S.level); resolve(); if(S.phase==='result') S.round++; if(S.phase==='plan') vPlan(); } if(S.phase!=='over') throw new Error(S.mode+': battle never ended'); gmRecord(S.winner===0); winHero(); overBar(); };
-  for(let g=0;g<80;g++){ const mode=Object.keys(GM)[g%4]; S={phase:'setup',mode:'cpu',names:['A'],vol:{sfx:0,music:0},speed:1,unlockAll:true}; useModeCfg('cpu'); S.qpFinal=true; vModeSet(); gmStart(mode);
+  for(let g=0;g<80;g++){ const mode=Object.keys(GM)[g%4]; S={phase:'setup',mode:'cpu',names:['A'],vol:{sfx:0,music:0},speed:1,unlockAll:true}; useModeCfg('cpu'); vModeSet(); gmStart(mode);
     if(!S.unlockAll) throw new Error(mode+': not every character open');
     if(mode!=='random'){ vDraft(); let k=0; while(S.phase==='draft'&&k++<40) cpuDraftStep('hard'); }
     if(S.phase!=='reveal') throw new Error(mode+': no reveal');
     if(mode==='mirror' && S.picks[0].join()!==S.picks[1].join()) throw new Error('mirror: squads differ');
+    if(mode==='random' && (S.budget<5 || S.budget>50 || S.picks.some(t=>!t.length || t.reduce((x,id)=>x+BYID[id].cost,0)>S.budget))) throw new Error('random: bad deal at '+S.budget);
+    if(mode==='random'){ S.qpClassic=true; S.mode='cpu'; useModeCfg('cpu'); if(!vModeSet().includes('cfglevel')) throw new Error('Classic: no settings'); S.qpClassic=false; S.mode=mode; }
     if(mode==='random' && S.picks[0].some(a=>S.picks[1].some(b=>BYID[a].fam===BYID[b].fam))) throw new Error('random: same character on both teams');
+    for(const n of [3,4]){ const r=dealSquads('random',n).flat().map(id=>BYID[id].fam), m=dealSquads('mirror',n); if(new Set(r).size!==r.length) throw new Error('random: a character on two teams with '+n); if(m.some(t=>t.join()!==m[0].join())) throw new Error('mirror: teams differ with '+n); }
     if(mode==='rush' && S.picks[0].some(id=>BYID[id].demon)) throw new Error('rush: demon on your team');
     play(); let n=0;
     while(S.series && S.winner===0 && gmFights()>S.series.wave && n++<30){ const up=S.teams[0].filter(u=>u.alive).map(u=>u.hp); gmNext(); if(S.phase!=='reveal' || S.teams[0].some(u=>!u.alive) || S.teams[0].some((u,i)=>u.hp<up[i])) throw new Error(mode+': survivors did not carry over'); if(S.mode==='rush' && S.picks[1].slice(0,RUSH_FIGHTS[S.series.wave-1].length).join()!==RUSH_FIGHTS[S.series.wave-1].join()) throw new Error('rush: wrong fight'); play(); }
     if(!S.teams[0].length) throw new Error(mode+': empty team');
     gmAgain(); if(mode==='random' ? S.phase!=='reveal' : S.phase!=='draft' || S.picks[0].length) throw new Error(mode+': try again did not restart');
   }
+  for(let g=0;g<24;g++){ const h=2+g%3, coop=g%2?'final':'gauntlet'; S={mode:'online',me:0,planFor:0,hostSeat:0,n:2,names:['A','B','C','D'].slice(0,h),phase:'lobby',cfg:{gm:coop,budget:20,poolType:'random'},lobby:{code:'TEST',seats:[1,2,3].map(i=>i<h?{name:'x',on:true}:null)},vol:{sfx:0,music:0},speed:1}; vLobby();
+    if(!hostStartMatch()) throw new Error('co-op did not start'); coopStart(); vDraft(); let k=0; while(S.phase==='draft'&&k++<80){ cpuDraftStep('hard'); if(S.phase==='draft') vDraft(); }
+    if(S.phase!=='plan' || S.teams.length!==h+1) throw new Error('co-op: no fight'); for(let f=0;f<4;f++){ vPlan(); k=0; while(S.phase!=='over'&&k++<200){ players().forEach(p=>cpuPlan(p,'hard')); resolve(); if(S.phase==='result') S.round++; if(S.phase==='plan') vPlan(); } S.final=true; winHero(); overBar(); if(!coopWon()||!S.series) break; S.final=false; coopAgain(); } }
   return 'Game Modes: 80 runs passed.';
 }
 function check(games){
