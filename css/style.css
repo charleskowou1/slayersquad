@@ -215,6 +215,7 @@ details ul b{color:var(--fg)}
 .modal .in{pointer-events:auto;position:relative;width:100%;max-width:460px;max-height:100%;overflow-y:auto;overscroll-behavior:contain;
   background:var(--surface);border:1px solid var(--line-2);border-radius:18px;padding:20px 18px 18px;box-shadow:0 24px 60px rgba(0,0,0,.6);
   display:flex;flex-direction:column;gap:12px;animation:rise .18s ease-out}
+.modal .in > *{flex-shrink:0}   /* a long card scrolls: its picture and header never squash */
 .modal .in.mk{border-color:rgba(216,67,79,.7)}
 .modal .in.leg{border-color:rgba(214,165,77,.8)}
 .modal .x{position:absolute;top:8px;right:8px;width:34px;height:34px;border-radius:50%;background:var(--bg-2);color:var(--muted);font-size:1.3rem;line-height:1}
