@@ -21,12 +21,13 @@ function playVid(v){
 // Opening Latest Updates clears its New badge until the next version
 document.addEventListener('toggle',e=>{ if(e.target.id!=='updates' || !e.target.open) return; try{ localStorage.setItem('squad-draft-seen-update',LATEST_UPDATE.version); }catch(x){} const d=e.target.querySelector('.newdot'); if(d) d.remove(); },true);
 // The home roster drifts on its own and you can swipe it; touching it pauses the drift for a few seconds. A redraw keeps its place.
-const ROSTER_ROW = {x:0, dir:1, until:0, on:false};
+const ROSTER_ROW = {x:0, dir:1, until:0, on:false, at:0, speed:10};   // speed in pixels a second, the same on every screen
 function rosterKeep(){ const el=document.querySelector('.artstrip'); if(!el) return; el.scrollLeft=ROSTER_ROW.x; if(!ROSTER_ROW.on && !matchMedia('(prefers-reduced-motion:reduce)').matches){ ROSTER_ROW.on=true; requestAnimationFrame(rosterDrift); } }
-function rosterDrift(){
+function rosterDrift(now){
   const el=document.querySelector('.artstrip'), R=ROSTER_ROW; if(!el){ R.on=false; return; }
+  const dt=Math.min(.1,(now-(R.at||now))/1000); R.at=now;
   if(Date.now()<R.until) R.x=el.scrollLeft;
-  else { const end=el.scrollWidth-el.clientWidth; R.x+=R.dir*.35; if(R.x>=end){ R.x=end; R.dir=-1; } if(R.x<=0){ R.x=0; R.dir=1; } el.scrollLeft=R.x; }
+  else { const end=el.scrollWidth-el.clientWidth; R.x+=R.dir*R.speed*dt; if(R.x>=end){ R.x=end; R.dir=-1; } if(R.x<=0){ R.x=0; R.dir=1; } el.scrollLeft=R.x; }
   requestAnimationFrame(rosterDrift);
 }
 ['touchstart','touchmove','wheel','pointerdown','scroll'].forEach(ev=>document.addEventListener(ev,e=>{ if(ev==='scroll' && Date.now()>=ROSTER_ROW.until) return; if(e.target.closest && e.target.closest('.artstrip')) ROSTER_ROW.until=Date.now()+4000; },{passive:true, capture:true}));

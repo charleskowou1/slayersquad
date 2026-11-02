@@ -2,6 +2,7 @@
 // (CACHE 'squad-draft-vNN'), which goes up with every push. tools/make-guide.js prints this at the top of the guide.
 // Add a line here with every push (CK, Oct 28, 2026), then rebuild the guide: node tools/make-guide.js
 module.exports = [
+  [111, '2026-11-02', 'The home roster drifts slower, at the same speed on every screen.'],
   [110, '2026-11-02', 'Notifications: Your move, Quick Match pings and a daily noon reminder, each with its own switch in the new Alerts tab; invite links with their own preview; hosts can remove players from the lobby; Play Friends is the main Online tile; the home roster can be swiped and holds every character.'],
   [109, '2026-11-02', 'Mirror Match removed; Practice moves into Quickplay; slimmer Daily Challenge; Quickplay is the wide home tile; the move card reminds players to add the new game to their Home Screen.'],
   [108, '2026-11-02', 'Slayer Squad moves to slayersquad.app: the old address offers Move my progress, a one-tap transfer. Play Friends is the main Online tile.'],
