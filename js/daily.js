@@ -166,10 +166,14 @@ function gmRandom(){
 }
 // Two squads dealt without a draft (online too): Random never puts a character on both teams, in any version; Mirror gives both the same one
 function dealSquads(mode, n=2){
-  const budget=mode==='random' ? 5+Math.floor(Math.random()*46) : GM[mode].budget, fams=new Set(), out=[];   // Random: any size of game, 5 to 50 points (CK); every team gets the same
+  const budget=mode==='random' ? 5+Math.floor(Math.random()*46) : GM[mode].budget;   // Random: any size of game, 5 to 50 points (CK); every team gets the same
   S.budget=budget;
-  for(let i=0;i<n;i++){ const q=mode==='mirror'&&i ? out[0].slice() : randSquad(budget, gmCards().filter(c=>!fams.has(c.fam))); q.forEach(id=>fams.add(BYID[id].fam)); out.push(q); }
-  return out;
+  const cost=t=>t.reduce((a,id)=>a+BYID[id].cost,0), deal=()=>{ const fams=new Set(), out=[];
+    for(let i=0;i<n;i++){ const q=mode==='mirror'&&i ? out[0].slice() : randSquad(budget, gmCards().filter(c=>!fams.has(c.fam))); q.forEach(id=>fams.add(BYID[id].fam)); out.push(q); }
+    return out; }, gap=t=>Math.max(...t.map(cost))-Math.min(...t.map(cost))+(Math.max(...t.map(q=>q.length))-Math.min(...t.map(q=>q.length)))/2;
+  // Teams must match in cost, not just share a cap: 8+ points apart decided 99% of games, so re-deal until they're level
+  let best=deal(); for(let i=0;i<120 && gap(best)>0.5;i++){ const t=deal(); if(gap(t)<gap(best)) best=t; }
+  return best;
 }
 const gmStart = mode => mode==='random' ? gmRandom() : gmDraft(mode);
 const gmAgain = () => gmStart(S.mode);   // a fresh draft (CK): refilling a full squad locked it and skipped the draft
