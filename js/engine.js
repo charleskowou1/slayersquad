@@ -197,8 +197,9 @@ const WHEEL_SEGS = 8;
 const wheelSegs = () => nPlayers()===3 ? 9 : WHEEL_SEGS;   // slices take turns between the players
 /* ---------- who picks first: "I'm thinking of a number" (CK, Oct 28, 2026: replaces the wheel) ----------
    A character thinks of a number from 1 to 9, shown as nine numbered character cards. Everyone takes a different
-   number (the computer picks at random); whoever is closest picks first. A tie is settled by a coin flip, said on
-   screen. S.spin = {game:'guess', host, cards, secret, picks:[number or 0 per player], state:'picking'|'done', r, tie} */
+   number (the computer picks at random); whoever is closest picks first. On a tie one of the two calls a coin flip
+   (CK, Nov 1, 2026), and the other gets the other side. Numbers are all different, so a tie is always two players.
+   S.spin = {game:'guess', host, cards, secret, picks:[number or 0 per player], state:'picking'|'coin'|'done', r, tied, call, flip} */
 const GUESS_HOSTS = ['kagaya','urokodaki','tengen','shinobu','tamayo'];
 function newGuess(){
   const fams=ROSTER.filter(c=>c.id===c.fam && !c.helper && !c.spawn).map(c=>c.id), cards=[];
@@ -215,8 +216,15 @@ function guessPick(p, n){
 function cpuGuess(p){ const g=S.spin, free=[1,2,3,4,5,6,7,8,9].filter(n=>!g.picks.includes(n)); return guessPick(p, free[Math.floor(Math.random()*free.length)]); }
 function guessReveal(){
   const g=S.spin, d=g.picks.map(n=>Math.abs(n-g.secret)), best=Math.min(...d), tied=players().filter(p=>d[p]===best);
-  g.r=tied[Math.floor(Math.random()*tied.length)]; g.tie=tied.length>1; g.state='done';
+  if(tied.length>1){ g.tied={who:tied, away:best}; g.state='coin'; return; }
+  g.r=tied[0]; g.state='done';
 }
+const COIN_SIDES = ['heads','tails'];
+function guessCall(p, side){
+  const g=S.spin; if(!g || g.state!=='coin' || !g.tied.who.includes(p) || !COIN_SIDES.includes(side)) return false;
+  g.call={p, side}; g.flip=COIN_SIDES[Math.floor(Math.random()*2)]; g.r=g.flip===side ? p : g.tied.who.find(q=>q!==p); g.state='done'; return true;
+}
+const cpuCall = () => guessCall(S.spin.tied.who[0], COIN_SIDES[Math.floor(Math.random()*2)]);
 // The old wheel's random first picker: still used as the coin flip for own-pace games and by the tests
 function spinWheel(){
   const n=nPlayers(), segs=wheelSegs(), r = Math.floor(Math.random()*n), seg = 360/segs;
@@ -295,7 +303,7 @@ function cpuDraftStep(level='hard'){
 let UID=0;
 function mkUnit(id,p){ const c=BYID[id]; return {uid:'u'+(UID++),id,fam:c.fam,sk:c.sk,p,name:c.short,g:c.g,hp:c.hp,max:c.hp,pow:c.pow,spd:c.spd,def:c.def,
   regen:c.regen||0,revive:c.revive||0,demon:!!c.demon,mark:!!c.mark,legend:!!c.legend,strikes:c.strikes||1,cap:c.cap||0,taken:0,grit:c.id==='murata',
-  sunproof:!!c.sunproof,noPoison:!!c.noPoison,vowed:false,noDefend:!!c.noDefend,basic:c.basic||null,
+  sunproof:!!c.sunproof,noPoison:!!c.noPoison,vowed:false,noDefend:!!c.noDefend,basic:c.basic||null,anchor:c.anchor||null,
   sig:c.sig,cd:0,alive:true,spawn:!!c.spawn,splits:c.splits||null,merge:c.merge||null,poison:null,stun:false,stunNext:false,defending:false,evade:false,sunburn:false}; }
 // Applies team bonuses to the units and returns their labels ('!' prefix = a penalty)
 function synergies(p){
@@ -427,6 +435,7 @@ const SIG_EST = {
   urogi: u=>({base:u.pow+2}),
   daki: u=>({all:true, base:u.pow-3}),
   zohakuten: u=>({all:true, base:u.pow-4, o:{pierce:true}}),
+  hantengu_true: u=>({base:u.pow+6, o:{ignoreDef:true}}),
   susamaru: u=>({base:u.pow-1, bonus:1.6}),          // also hits a second enemy
   kanae: u=>({base:u.pow+3, bonus:1.15}),             // plus a small heal
   tanjiro_demon: u=>({all:true, base:u.pow-4, o:{ignoreDef:true}}),
@@ -472,7 +481,8 @@ function cpuPlan(p, level='hard'){
   // free-for-all: gang up on the team that's ahead (most health × power left), like real players would
   const power = q => alive(q).reduce((a,x)=>a+x.hp*x.pow,0), top=Math.max(1,...enemiesOf(p).map(power));
   const lead = t => nPlayers()>2 ? FFA_FOCUS*power(t.p)/top : 0;
-  const score = (t,d) => { const l=left(t); if(l<=0) return 0; d=Math.min(d,l); return d/t.max*100 + (d>=l ? 40+threat(t) : 0) + (d>0?lead(t):0); };
+  const held = t => t.anchor && foesNow.some(f=>f.id===t.anchor), root = t => foesNow.some(f=>f.anchor===t.id);   // Zohakuten can't fall while the real Hantengu lives
+  const score = (t,d) => { const l=left(t); if(l<=0) return 0; d=Math.min(d,l); if(held(t)) return d/t.max*15; return d/t.max*100 + (d>=l ? 40+threat(t) : 0) + (d>0?lead(t):0) + (root(t)?30:0); };
   const best = (base,o) => foesNow.reduce((b,t)=>{ const s=score(t,estHit(t,base,o))+threat(t)*.5+Math.random()*noise; return s>b.s?{t,s}:b; },{t:foesNow[0],s:-1}).t;
   const pctHurt = m => m.hp/m.max;
   mine.forEach(u=>{
@@ -480,7 +490,8 @@ function cpuPlan(p, level='hard'){
     const ao=u.selfless?{ignoreDef:true}:undefined, at=best(u.pow,ao), atD=estHit(at,u.pow,ao)*u.strikes;
     let plan={type:'attack', t:at.uid, v:score(at,atD), hits:[[at,atD]]};
     // Nakime's Biwa Strum: slow down the most dangerous enemy. Kagaya's Words of Resolve: heal the team.
-    if(u.basic && u.basic.kind==='self') plan={type:'attack', v: mine.reduce((a,m)=>a+Math.min(2,m.max-m.hp)/m.max*100,0)};
+    if(u.basic && u.basic.cower) plan={type:'attack', v:12};
+    else if(u.basic && u.basic.kind==='self') plan={type:'attack', v: mine.reduce((a,m)=>a+Math.min(2,m.max-m.hp)/m.max*100,0)};
     else if(u.basic){ const t=calm && Math.random()<.6 ? calm : foesNow.slice().sort((a,b)=>threat(b)-threat(a))[0]; plan={type:'attack', t:t.uid, v:8, hits:[]}; }   // Biwa Strum on Giyu: his Dead Calm comes too late
     // Selfless State: Save a teammate who's in danger, otherwise attack (he can't be hit anyway)
     if(u.selfless && !u.saveUsed){ const low=mine.filter(m=>m!==u).sort((a,b)=>pctHurt(a)-pctHurt(b))[0]; if(low && pctHurt(low)<.45) plan={type:'save', t:low.uid, v:45}; }
@@ -534,6 +545,7 @@ const fx = (type, by, on) => ({fx:type, by:by?by.uid:null, on:on?on.uid:null, mo
 function L(t,c='',extra){ const hp={}; allUnits().forEach(u=>{ hp[u.uid]=u.hp; }); S.log.push(Object.assign({t,c,hp},extra)); }
 function target(u,tid){ let t=findU(tid); if(!t||!t.alive||sameSide(t.p,u.p)){ const a=foes(u.p); t=a.length?rnd(a):null; } return t; }
 function fall(t,a){ if(t.hp>0) return; if(t.grit){ t.grit=false; t.hp=1; L(`${t.name} somehow survives on ${pct(t)}% health!`,'h',{...fx('heal',null,t), grit:true}); return; } if(t.revive){ t.hp=Math.ceil(t.max*t.revive); t.revive=0; L(`${t.name} falls… and rises again! Seven Hearts ${gained(t,t.hp)}.`,'x',{...fx('revive',null,t), knit:true}); return; }
+  if(t.anchor && S.teams[t.p].some(u=>u.alive && u.id===t.anchor)){ t.hp=1; L(`${t.name} won't fall! The real ${BYID[t.anchor].short} is still alive.`,'x',{...fx('block',null,t), held:true}); return; }
   // how it fell, for playback: burned away by the sun, or killed by Shinobu's blade or wisteria
   const ash=t.demon && !a && sunUp() && !sunSafe(t), wist=t.demon && ((a&&a.fam==='shinobu') || (!a && t.poison && t.poison.src==='shinobu'));
   t.alive=false; L(`${t.name} falls!`,'k',{ko:t.uid, ash, wist, ...fx('ko',a,t)});
@@ -544,14 +556,15 @@ function fall(t,a){ if(t.hp>0) return; if(t.grit){ t.grit=false; t.hp=1; L(`${t.
   if(t.fam==='shinobu' && a && a.alive && a.demon && a.fam!=='akaza'){ a.devoured=5; L(`${a.name} devours Shinobu, but her body is full of wisteria poison. ${a.name} will lose ${lost(a,5)} every round.`,'h',fx('poison',null,a)); }
   if(t.splits) split(t);
   if(t.merge) merge(t);
+  S.teams[t.p].filter(u=>u.alive && u.anchor===t.id).forEach(u=>{ u.hp=0; L(`With the real ${t.name} gone, ${u.name} crumbles.`,'k',fx('hit',a,u)); fall(u,a); });
   // story: allies who arrive the moment this fighter falls (Petals of Futility: Kanao and Inosuke when Shinobu falls)
   ((S.twist||{}).reinforce||[]).forEach(r=>{ if(r.after===t.id && !r.came && t.p===0) arrive(r); }); }
 // Hantengu's forms: a fallen form is replaced by the forms it splits into. They join the team at full health and act from next round.
 // Hantengu's emotions: when the last form with this merge falls, they merge into that form (Zohakuten). Acts from next round.
 function merge(t){
   if(S.teams[t.p].some(u=>u.alive && u.merge===t.merge)) return;
-  const m=mkUnit(t.merge,t.p); S.teams[t.p].push(m);
-  L(`The emotions merge into one body. ${m.name} appears!`,'x',{spawn:[m.uid], merged:true, ...fx('spawn',null,t)});
+  const m=mkUnit(t.merge,t.p), real=m.anchor?mkUnit(m.anchor,t.p):null; S.teams[t.p].push(m); if(real) S.teams[t.p].push(real);
+  L(`The emotions merge into one body. ${m.name} appears!${real?` The real ${real.name} crawls out behind him.`:''}`,'x',{spawn:real?[m.uid,real.uid]:[m.uid], merged:true, ...fx('spawn',null,t)});
 }
 function split(t){
   const kids=t.splits.map(id=>mkUnit(id,t.p)); S.teams[t.p].push(...kids);
@@ -657,6 +670,7 @@ function special(u,pl){
     case 'karaku': hit(u,target(u,pl.t),u.pow+3); break;
     case 'aizetsu': hit(u,target(u,pl.t),u.pow+4); break;
     case 'urogi': hit(u,target(u,pl.t),u.pow+2); break;
+    case 'hantengu_true': hit(u,target(u,pl.t),u.pow+6,{ignoreDef:true}); break;
     case 'hantengu': { u.evade=true; const h=Math.min(6,u.max-u.hp); u.hp+=h; L(`Hantengu shrinks into hiding and heals ${gained(u,h)}.`,'h',{...fx('heal',null,u), shrink:true}); break; }
     case 'kaigaku': { const t=target(u,pl.t); hit(u,t,u.pow+3); const o=en().filter(e=>e!==t); if(o.length) hit(u,rnd(o),4,{ignoreDef:true}); break; }
     case 'enmu': en().forEach(e=>{ if(S.shield[e.p]||e.evade||hidden(e)) return; e.cd+=2; }); L('The enemy team falls into a deep sleep. Their specials are 2 rounds further away.','k',fx('stun',u,null)); break;
@@ -685,7 +699,7 @@ function twinsRise(){
 }
 // Nakime and Kagaya never fight: if only they are left standing on a team, they're out (count as knocked out)
 function aloneCheck(){
-  players().forEach(p=>{ const a=alive(p); if(!a.length || !a.every(u=>u.basic)) return;
+  players().forEach(p=>{ const a=alive(p); if(!a.length || !a.every(u=>u.basic && u.basic.flee)) return;
     a.forEach(u=>{ u.alive=false; u.hp=0; L(u.basic.flee,'k',{ko:u.uid, ...fx('ko',null,u)}); }); });
 }
 // Free-for-all: the team an "every enemy" special lands on (the aimed fighter's team; if it's gone, a random team still standing)
@@ -803,7 +817,7 @@ function resolve(){
   players().forEach(p=>(S.helperPlan&&S.helperPlan[p]||[]).forEach(id=>useHelper(p,id)));   // back-pocket helpers act first
   const acts=[];
   players().forEach(p=>alive(p).forEach(u=>{ u.taken=0; acts.push({u, pl: u.stun?{type:'stunned'}:(S.plans[p][u.uid]||{type:u.noDefend?'attack':'defend'}), r:Math.random()}); }));
-  acts.forEach(x=>{ if(x.pl.type==='defend') x.u.defending=true;
+  acts.forEach(x=>{ if(x.pl.type==='defend' || (x.pl.type==='attack' && x.u.basic && x.u.basic.cower)) x.u.defending=true;
     if(x.u.selfless && x.pl.type==='attack') x.u.reveal=true;   // striking shows him for this round
     if(x.pl.type==='save' && x.u.selfless && !x.u.saveUsed){ const t=findU(x.pl.t); if(t && t.alive && t!==x.u && sameSide(t.p,x.u.p)){ t.saved=x.u.name; x.u.saveUsed=true; } } });
   const moves=players().map(p=>({p, helpers:(S.helperPlan&&S.helperPlan[p]||[]).map(id=>BYID[id].short), picks:acts.filter(x=>x.u.p===p).map(x=>moveText(x.u,x.pl))}));
@@ -821,6 +835,7 @@ function resolve(){
     S.curMove=x.pl.type;
     if(x.pl.type==='stunned'){ L(`${u.name} can't move.`,'',fx('stun',null,u)); continue; }
     if(u.away){ L(u.carried ? `${u.name} is being carried to safety.` : `${u.name} is lost in the Infinity Castle and can't act.`,'',fx('stun',null,u)); continue; }
+    if(x.pl.type==='attack' && u.basic && u.basic.cower){ L(`${u.name} cowers.`,'',fx('guard',null,u)); continue; }   // Hantengu never attacks
     if(x.pl.type==='attack' && u.basic && u.basic.kind==='self'){   // Kagaya's Words of Resolve
       const healed=alive(u.p).map(m=>{ const h=Math.min(2,m.max-m.hp); m.hp+=h; return h?`${m.name} ${gained(m,h)}`:''; }).filter(Boolean);
       L(`Kagaya steadies the Corps.${healed.length?' '+healed.join(', ')+'.':''}`,'h',fx('heal',u,null)); continue; }

@@ -2,7 +2,7 @@
 // Catches crashes in js/views.js without opening a browser.
 // Usage:  node tools/check-screens.js
 const { loadGame } = require('./load-game');
-const ctx = loadGame(['roster.js', 'engine.js', 'story.js', 'daily.js', 'online.js', 'notes.js', 'effects.js', 'clips.js', 'views.js', 'sound.js', 'tv.js'], `
+const ctx = loadGame(['roster.js', 'engine.js', 'story.js', 'daily.js', 'online.js', 'notes.js', 'effects.js', 'clips.js', 'updates.js', 'views.js', 'sound.js', 'tv.js'], `
 // the TV battle board (js/tv.js) for 2-team games: every playback beat, and the waiting board, as a 2-player TV match
 const TVT={code:'TEST', phones:{a:{name:'A'}, b:{name:'B'}}, seats:['a','b'], names:{a:'A', b:'B'}, saves:{}};
 function tvBoardCheck(b){ const keep=[S.tv,S.tvDuo]; S.tv=TVT; S.tvDuo=!b; try{ vTvBoard(b); tvWaiting(); vTvHome(); tvChoices('tvhome'); tvChoices('story'); globalThis.TVN=(globalThis.TVN||0)+1; } finally { [S.tv,S.tvDuo]=keep; } }
@@ -20,6 +20,7 @@ function check(games){
       if(mode==='online'){ S.phase='lobby'; S.lobby={code:'TEST',seats:[{name:'B',on:true},{name:'C',on:n>2},null]}; vLobby(); S.phase='setup'; }
       S.spin=newGuess(); vSpin(); if(guessPick(0,10) || guessPick(0,0)) throw new Error('number game took a number outside 1-9');
       players().forEach((q,i)=>{ if(i===1 && guessPick(q, S.spin.picks[0])) throw new Error('number game allowed the same number twice'); cpuGuess(q); vSpin(); });
+      if(S.spin.state==='coin'){ vSpin(); if(guessCall(S.spin.tied.who[0],'edge')) throw new Error('coin took a bad side'); cpuCall(); }   // a tie: call the coin
       if(S.spin.state!=='done') throw new Error('number game did not finish'); vSpin();
       { const g=S.spin, d=g.picks.map(n=>Math.abs(n-g.secret)); if(d[g.r]!==Math.min(...d)) throw new Error('number game: the closest did not go first'); }
       if(S.spin.r<0||S.spin.r>=n) throw new Error('spin winner out of range');

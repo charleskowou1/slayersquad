@@ -89,7 +89,7 @@ const clockKey = () => S.phase==='draft' ? `d${S.k}.${(S.bans||[]).length}.${S.b
   : S.phase==='spin' ? 's'+(S.spin&&S.spin.state) : S.phase==='plan' ? 'p'+S.round : S.phase==='scout' ? `c${S.round}.${S.scoutP}` : '';
 function timeoutRun(){
   if(S.phase==='draft') return S.banning ? cpuBan() : cpuDraftStep('normal');
-  if(S.phase==='spin'){ if(S.spin.state==='done') return newDraft(S.spin.r); players().forEach(q=>{ if(!S.spin.picks[q]) cpuGuess(q); }); return; }
+  if(S.phase==='spin'){ if(S.spin.state==='done') return newDraft(S.spin.r); if(S.spin.state==='coin') return cpuCall(); players().forEach(q=>{ if(!S.spin.picks[q]) cpuGuess(q); }); return; }
   if(S.phase==='scout') return hostNextScout();
   if(S.phase==='plan'){ players().filter(q=>alive(q).length && !S.movesLocked[q]).forEach(q=>{ S.plans[q]=cleanPlans(q,null); S.helperPlan[q]=[]; S.movesLocked[q]=true; }); hostAfterLocks(); }
 }
@@ -111,6 +111,7 @@ function hostHandle(msg){
       }
       break;
     case 'guess': if(S.phase==='spin') guessPick(p, msg.n); break;   // who picks first: this phone's number
+    case 'coin': if(S.phase==='spin') guessCall(p, msg.v); break;   // a tie: this phone calls the coin
     case 'keep': if(S.phase==='scout' && S.scoutP===p) hostNextScout(); break;
     case 'next': if(S.phase==='result'){ S.readyNext[p]=true; hostMaybeNextRound(); } break;
     case 'rematch': if(S.phase==='result' && S.final) hostRematch(); break;
@@ -174,6 +175,7 @@ function onlineNext(){
   if(iAmHost()) hostMaybeNextRound(); else send({a:'next'});
 }
 function onlineGuess(n){ if(S.phase!=='spin') return; if(iAmHost()) guessPick(S.me,n); else send({a:'guess', n}); }
+function onlineCoin(v){ if(S.phase!=='spin') return; if(iAmHost()) guessCall(S.me,v); else send({a:'coin', v}); }
 function onlineRematch(){ if(iAmHost()) hostRematch(); else send({a:'rematch'}); }
 
 /* ---------- play at your own pace (2 phones, no host) ----------
@@ -194,7 +196,7 @@ function asyncBegin(){
 }
 // Who has to do something now (seats), from the shared state in S
 function asyncTurnOf(){
-  if(S.phase==='spin') return S.spin.state==='done' ? [S.spin.r] : players().filter(p=>!S.spin.picks[p]);
+  if(S.phase==='spin') return S.spin.state==='done' ? [S.spin.r] : S.spin.state==='coin' ? S.spin.tied.who : players().filter(p=>!S.spin.picks[p]);
   if(S.phase==='draft') return [turn()];
   if(S.phase==='plan') return players().filter(p=>alive(p).length && !S.movesLocked[p]);
   if(S.phase==='scout') return [S.scoutP];
@@ -213,6 +215,7 @@ function asyncApply(json, msg){
     if(msg.a==='join'){ if(S.phase!=='lobby' || S.names[1]) return null; S.names=[S.names[0], msg.name]; asyncBegin(); }
     else if(msg.a==='rematch'){ if(!(S.phase==='result' && S.final)) return null; hostRematch(); asyncBegin(); }
     else if(msg.a==='guess'){ if(S.phase!=='spin' || !guessPick(msg.p, msg.n)) return null; }
+    else if(msg.a==='coin'){ if(S.phase!=='spin' || !guessCall(msg.p, msg.v)) return null; }
     else if(msg.a==='todraft'){ if(S.phase!=='spin' || S.spin.state!=='done') return null; newDraft(S.spin.r); }
     else {
       const before=JSON.stringify([S.phase, S.k, S.picks, S.bans, S.locked, S.movesLocked, S.scoutP, S.roundId, S.spin]);

@@ -319,6 +319,7 @@ function vSetup(){
       <p><b>3–4 players:</b> a free-for-all or 2v2 teams. Specials that hit "every enemy" hit the team you aim at.</p>
       <p><b>Story</b> unlocks new characters for every mode as you win battles.</p>
     </div></details>
+  ${updatesPanel()}
   ${installCard()}`;
 }
 
@@ -338,15 +339,18 @@ function vSpin(){
   const mine = !done && me>=0 && !g.picks[me];
   const host=BYID[g.host], waiting=players().filter(q=>!g.picks[q]);
   const card=(id,i)=>{ const n=i+1, o=g.picks.indexOf(n), c=BYID[id], win=done && o===g.r;
-    return `<button class="gcard${o>=0?' taken':''}${done&&n===g.secret?' secret':''}${win?' win':''}" data-a="guess" data-v="${n}" ${mine&&o<0?'':'disabled'} style="--tc:${o>=0?pc(o):'var(--line-2)'};--i:${i}">
+    return `<button class="gcard${o>=0?' taken':''}${shown&&n===g.secret?' secret':''}${win?' win':''}" data-a="guess" data-v="${n}" ${mine&&o<0?'':'disabled'} style="--tc:${o>=0?pc(o):'var(--line-2)'};--i:${i}">
       <span class="gart">${ART[id]?`<img decoding="sync" src="${ART[id]}" alt="">`:`<span class="ck">${c.g}</span>`}</span><span class="gnum">${n}</span>
-      ${done&&n===g.secret?'<span class="gis">The number!</span>':''}${o>=0?`<span class="gtag" style="background:${pc(o)}">${nm(o)}</span>`:''}</button>`; };
-  const say = done ? `It was <b>${g.secret}</b>: <b>${esc(BYID[g.cards[g.secret-1]].short)}</b>!` : 'I’m thinking of a number from 1 to 9.';
+      ${shown&&n===g.secret?'<span class="gis">The number!</span>':''}${o>=0?`<span class="gtag" style="background:${pc(o)}">${nm(o)}</span>`:''}</button>`; };
+  const coin=g.state==='coin', shown=done||coin, tieLine=g.tied?`${g.tied.who.map(q=>`${nm(q)} ${g.picks[q]}`).join(' and ')}: a tie, both ${plural(g.tied.away,'away')}.`:'';
+  const say = shown ? `It was <b>${g.secret}</b>: <b>${esc(BYID[g.cards[g.secret-1]].short)}</b>!` : 'I’m thinking of a number from 1 to 9.';
+  const caller = !coin || onPhones ? -1 : isOnline()||ctl ? S.me : S.mode==='cpu' ? 0 : g.tied.who[0], callNow = coin && g.tied.who.includes(caller);
   const dist = q => Math.abs(g.picks[q]-g.secret);
   const status = done
     ? `<div class="spinres" style="color:${pc(g.r)}">${nm(g.r)} picks first</div>
-       <p class="hint gwhy">${g.tie?`${players().filter(q=>dist(q)===dist(g.r)).map(q=>`${nm(q)} ${g.picks[q]}`).join(' and ')}: a tie, both ${plural(dist(g.r),'away')}. A coin flip decided it.`:players().map(q=>`${nm(q)} ${g.picks[q]} (${dist(q)} away)`).join(' · ')}</p>
+       <p class="hint gwhy">${g.call?`${tieLine} ${nm(g.call.p)} called ${g.call.side}, and it landed ${g.flip}.`:players().map(q=>`${nm(q)} ${g.picks[q]} (${dist(q)} away)`).join(' · ')}</p>
        ${ctl?'':actionbar(guest?`<button class="btn" disabled>Waiting for ${nm(hostSeat())} to start…</button>`:`<button class="btn team" data-a="toDraft" style="--bc:${pc(g.r)}">Start the draft</button>`)}`
+    : coin ? `<p class="hint gwhy">${tieLine}</p><div class="spinhint">${callNow?`<span style="color:${pc(caller)}">${nm(caller)}</span>, call the coin`:`Waiting for ${g.tied.who.map(q=>`<span style="color:${pc(q)}">${nm(q)}</span>`).join(' or ')} to call the coin${onPhones?' on the phone':''}…`}</div>${callNow?`<div class="coinbtns">${COIN_SIDES.map(s=>`<button class="btn" data-a="coincall" data-v="${s}">${s==='heads'?'Heads':'Tails'}</button>`).join('')}</div>`:''}${isAsync()?`<p class="hint">${asyncHint()}</p>`:''}`
     : `<div class="spinhint">${mine?`<span style="color:${pc(me)}">${nm(me)}</span>, pick a number`:`Waiting for ${waiting.map(q=>`<span style="color:${pc(q)}">${nm(q)}</span>`).join(' and ')} to pick${onPhones?' on the phone':''}…`}</div>${isAsync()?`<p class="hint">${asyncHint()}</p>`:''}`;
   return `${topbar('Before the draft', 'Who picks first?')}
     <div class="guess${done?' done':''}${fresh?' fresh':''}"><div class="gthink">${seal(host,'stg')}<div class="gsay"><span class="gwho">${esc(host.short||host.name)}</span><span>${say}</span></div></div>
@@ -510,12 +514,16 @@ function noteHTML(n, self){
     ${n.kind==='vs'?vsChips():who.length?`<div class="nwho">${self?'<span class="tlabel">With</span>':''}${who.map(chip).join('')}</div>`:''}</div>`;
 }
 // Hantengu's split forms, shown on his card: each form, what it becomes when it falls, and the form they merge into
+// The home screen's Latest Updates tile (js/updates.js)
+const updatesPanel = () => `<details class="panel" id="updates"><summary>Latest Updates</summary>
+    <div class="updhead"><b>Version ${LATEST_UPDATE.version}</b><span class="muted">${esc(LATEST_UPDATE.date)}</span></div>
+    <ul class="updlist">${LATEST_UPDATE.notes.map(([t,d])=>`<li><b>${esc(t)}</b>${esc(d)}</li>`).join('')}</ul></details>`;
 function splitTree(c){
   const form=id=>{ const f=BYID[id]; return `<div class="sform">${seal(f,'sm')}<div><b>${esc(f.short)}</b> <span class="muted">${f.hp} HP · PWR ${f.pow} · SPD ${f.spd}</span><br><span class="sx">${esc(f.sig.name)}: ${esc(f.sig.desc)}</span>${f.splits?`<div class="sthen">falls → ${f.splits.map(k=>esc(BYID[k].short)).join(', ')}</div>`:''}</div></div>`; };
   const all=[]; const walk=id=>{ (BYID[id].splits||[]).forEach(k=>{ all.push(k); }); (BYID[id].splits||[]).forEach(walk); }; walk(c.id);
   const merged=[...new Set(all.map(id=>BYID[id].merge).filter(Boolean))];
   return `<div class="splits"><div class="tlabel">Splits into</div>${all.map(form).join('')}
-    ${merged.map(id=>`<div class="tlabel">When the last one falls, they merge into</div>${form(id)}`).join('')}</div>`;
+    ${merged.map(id=>`<div class="tlabel">When the last one falls, they merge into</div>${form(id)}${BYID[id].anchor?`<div class="tlabel">And the real one comes back</div>${form(BYID[id].anchor)}`:''}`).join('')}</div>`;
 }
 // Fighter info card in battle: tap any picture (yours or the opponent's). Shows current stats, which include
 // team bonuses and anything gained in the match, plus the special's cooldown, passives and status effects.
@@ -604,6 +612,8 @@ function vSettings(){
     <div class="setgroup"><div class="tlabel">Sound effects</div>${seg('volsfx',(S.vol||loadVolumes()).sfx,[[0,'Off'],[1,'Low'],[2,'Medium'],[3,'High']])}</div>
     <div class="setgroup"><div class="tlabel">Move clips</div>${seg('clips',S.clipsOn===false?'off':'on',[['on','On'],['off','Off']])}
       <div class="hint">Short anime clips for some specials and moments during a round. Needs internet.</div></div>
+    <div class="setgroup"><div class="tlabel">Repeat clips</div>${seg('cliprepeat',S.clipRepeat==='every'?'every':'first',[['first','First time'],['every','Every round']])}
+      <div class="hint">Every clip plays in full the first time. Choose whether it plays again each round.</div></div>
     <div class="setgroup"><div class="tlabel">Vibration on knockouts</div>${seg('vibe',S.vibeOn===false?'off':'on',[['on','On'],['off','Off']])}
       <div class="hint">Android phones only (iPhones don't allow it).</div></div>
     <div class="hint">Saved on this phone. Players, points, pool and difficulty are set per mode on the main menu.</div>`}
@@ -744,9 +754,9 @@ function stage(line){
   const rev = duo && by.p!==on.p && by.p!==leftSide();
   const amt=line.t.match(/\[([+-])(\d+%)\]/);
   const pop=amt?`<span class="pop ${amt[1]==='-'?'dmg':'gain'}">${amt[1]==='-'?'−':'+'}${amt[2]}</span>`:'';
-  const calm=calmSides(), ring=u=>calm.has(u.p)?waterRing():'';
+  const calm=calmSides(), ring=(u,role)=>role==='on'&&by&&!sameSide(by.p,u.p)&&calm.has(u.p)?waterRing():'';   // the water shows on whoever is being attacked
   const cut=type==='ko' && slicedBy(line,on), dust=crumbleKind(line), act=line.move==='special'&&by?' by-'+by.sk:'';
-  const who=(u,role)=>`<div class="st-${role}">${role==='on'&&dust?crumblePic(dust,seal(u,'stg')):role==='on'&&cut?slicePic(u,seal(u,'stg'),cutStyle(line)):seal(u,'stg')}${ring(u)}${role==='on'&&line.gone?kDoors:''}${role==='by'?byFx(line):''}${role==='on'?art+pop+targetFx(line):''}${role==='by'&&type==='special'&&style?fxArt(style,'aura'):''}<span class="st-nm" style="color:${pc(u.p)}">${esc(u.name)}</span></div>`;
+  const who=(u,role)=>`<div class="st-${role}">${role==='on'&&dust?crumblePic(dust,seal(u,'stg')):role==='on'&&cut?slicePic(u,seal(u,'stg'),cutStyle(line)):seal(u,'stg')}${ring(u,role)}${role==='on'&&line.gone?kDoors:''}${role==='by'?byFx(line):''}${role==='on'?art+pop+targetFx(line):''}${role==='by'&&type==='special'&&style?fxArt(style,'aura'):''}<span class="st-nm" style="color:${pc(u.p)}">${esc(u.name)}</span></div>`;
   if(line.helper){ const h=BYID[line.helper];   // a back-pocket helper acting
     return `<div class="stage fx-${type} solo helperfx" aria-hidden="true"><span class="st-mark">${FX_MARK[type]||''}</span><div class="st-on">${seal(h,'stg')}<span class="st-nm">${esc(h.short)}</span></div></div>`; }
   const mark=`<span class="st-mark">${style&&(type==='hit'||type==='special')?STYLE_KANJI[style]:FX_MARK[type]||''}</span>`;
@@ -796,9 +806,9 @@ const momentFx = m => !m ? '' : SFX_ART[m.k] ? `<div class="sfx sfx-${m.k}" aria
 // One Attack's several strikes as one quick beat: quick lunges, a number per strike
 const flurryPct = lines => lines.reduce((a,l)=>a+(+((l.t.match(/\[-(\d+)%\]/)||[])[1]||0)),0);
 function stageFlurry(lines){
-  const by=findU(lines[0].by), t=findU(lines[0].on), style=styleOf(by,'attack'), rev=by.p!==leftSide(), calm=calmSides(), ring=u=>calm.has(u.p)?waterRing():'';
+  const by=findU(lines[0].by), t=findU(lines[0].on), style=styleOf(by,'attack'), rev=by.p!==leftSide(), calm=calmSides(), ring=u=>calm.has(u.p)&&!sameSide(by.p,u.p)?waterRing():'';
   const pops=lines.map((l,i)=>{ const a=l.t.match(/\[-(\d+%)\]/); return `<span class="pop dmg fl" style="--i:${i}">${a?'−'+a[1]:l.fx==='miss'?'miss':'blocked'}</span>`; }).join('');
-  const side=(u,r)=>`<div class="st-${r}">${seal(u,'stg')}${ring(u)}${r==='on'?fxArt(style)+pops+(by.sk==='typezero'?artSvg('typezero'):''):''}<span class="st-nm" style="color:${pc(u.p)}">${esc(u.name)}</span></div>`;
+  const side=(u,r)=>`<div class="st-${r}">${seal(u,'stg')}${r==='on'?ring(u):''}${r==='on'?fxArt(style)+pops+(by.sk==='typezero'?artSvg('typezero'):''):''}<span class="st-nm" style="color:${pc(u.p)}">${esc(u.name)}</span></div>`;
   return `<div class="stage duo flurry sty sty-${style}${rev?' rev':''}" style="--n:${lines.length}" aria-hidden="true">${rev?side(t,'on')+side(by,'by'):side(by,'by')+side(t,'on')}</div>`;
 }
 function flurrySummary(lines){
@@ -876,7 +886,7 @@ function stageGroup(lines){
   const target=l=>{ const t=findU(l.on), amt=l.t.match(/\[([+-])(\d+%)\]/), ko=lines.some(m=>m.fx==='ko'&&m.on===l.on);
     const koL=lines.find(m=>m.fx==='ko'&&m.on===l.on), cut=ko && slicedBy(koL,t), dust=crumbleKind(koL);
     return `<div class="st-on${ko?(cut||dust?' sliced':' koed'):''}${l.fx!=='hit'?' missed':''}">${dust?crumblePic(dust,seal(t,'stg')):cut?slicePic(t,seal(t,'stg'),cutStyle(koL)):seal(t,'stg')}${calmSides().has(t.p)?waterRing():''}${targetFx(l)}${l.fx==='hit'?fxArt(style):''}${amt?`<span class="pop dmg">−${amt[2]}</span>`:l.fx!=='hit'?`<span class="pop">${l.fx==='miss'?'miss':'blocked'}</span>`:''}<span class="st-nm" style="color:${pc(t.p)}">${esc(t.name)}</span></div>`; };
-  const attacker=`<div class="st-by">${seal(by,'stg')}${calmSides().has(by.p)?waterRing():''}<span class="st-nm" style="color:${pc(by.p)}">${esc(by.name)}</span></div>`;
+  const attacker=`<div class="st-by">${seal(by,'stg')}<span class="st-nm" style="color:${pc(by.p)}">${esc(by.name)}</span></div>`;
   const row=`<div class="st-targets">${hits.map(target).join('')}</div>`, mark=`<span class="st-mark">${STYLE_KANJI[style]}</span>`;
   return `<div class="stage group duo fx-hit sty sty-${style}${rev?' rev':''}" aria-hidden="true">${rev?row+mark+attacker:attacker+mark+row}</div>`;
 }
@@ -922,7 +932,7 @@ function playBeat(){
   if(!done) S.log.slice(0,from).forEach(l=>{ if(l.gone) lost.add(l.on); });
   if(!done) S.log.slice(0,to+1).forEach(l=>{ if(l.hid) hid.add(l.on); });
   const burning = !done && S.mode!=='story' && S.round>=SUNRISE_ROUND;   // demons smoulder once the sun is up
-  const moment = u => done ? {} : cur.hp[u.uid]===undefined ? {hidden:true} : {hid:hid.has(u.uid), smolder:burning&&u.demon&&!sunSafe(u), calm:calm.has(u.p), lost:lost.has(u.uid), hp:cur.hp[u.uid], from:prev.hp[u.uid]??cur.hp[u.uid],
+  const moment = u => done ? {} : cur.hp[u.uid]===undefined ? {hidden:true} : {hid:hid.has(u.uid), smolder:burning&&u.demon&&!sunSafe(u), calm:calm.has(u.p)&&lines.some(l=>l.on===u.uid&&l.by&&findU(l.by)&&!sameSide(findU(l.by).p,u.p)), lost:lost.has(u.uid), hp:cur.hp[u.uid], from:prev.hp[u.uid]??cur.hp[u.uid],
     flash: lines.some(l=>l.ko===u.uid) ? 'ko' : prev.hp[u.uid]===undefined ? 'spawn' : cur.hp[u.uid]<prev.hp[u.uid] ? 'hit' : cur.hp[u.uid]>prev.hp[u.uid] ? 'heal' : actor===u ? 'acting' : ''};
   // fighters in this beat (attacker and targets) stay bright in the slim team rows; the rest fade back
   const involved=new Set(lines.flatMap(l=>[l.by,l.on,l.ko]).filter(Boolean));

@@ -33,7 +33,7 @@ add({id:'kokushibo',name:'Kokushibo',short:'Kokushibo',g:'月',type:'Upper Moon 
   sig:{name:'Moon Breathing',desc:'Every enemy takes PWR−4, ignores DEF.',cd:3,kind:'all'}});
 add({id:'doma',name:'Doma',short:'Doma',g:'氷',type:'Upper Moon 2',demon:true,upper:true,cost:11,hp:44,pow:14,spd:11,def:6,regen:3,
   sig:{name:'Frozen Lotus',desc:'Every enemy takes PWR−4, ignores DEF.',cd:3,kind:'all'}});
-add({id:'akaza',name:'Akaza',short:'Akaza',g:'拳',type:'Upper Moon 3',demon:true,upper:true,cost:9,hp:44,pow:13,spd:10,def:5,regen:2,
+add({id:'akaza',name:'Akaza',short:'Akaza',g:'拳',type:'Upper Moon 3',demon:true,upper:true,cost:10,hp:43,pow:15,spd:10,def:5,regen:2,
   sig:{name:'Destructive Death: Compass Needle',desc:'Strike for PWR+6.',cd:3,kind:'single'},
   sig2:{id:'annihilation',name:'Destructive Death: Annihilation Type',desc:'Every enemy takes PWR−4, ignoring DEF.',cd:3,kind:'all',tag:'hit all, ignores DEF',quote:'Destructive Death: Annihilation Type!'}});
 // Gyutaro and Daki: two cards. Together they're "Two as One" (see synergies() and fall() in engine.js).
@@ -53,14 +53,19 @@ add({id:'gyokko',name:'Gyokko',short:'Gyokko',g:'壺',type:'Upper Moon 5',demon:
 // Hantengu splits when knocked out: Hantengu → all four emotions (Sekido, Karaku, Aizetsu, Urogi). When the last
 // emotion falls they merge into Zohakuten (merge: the form that appears once every form with that merge is down).
 // The split-off forms (spawn:true) are never dealt in the draft; they only appear in battle.
-add({id:'hantengu',name:'Hantengu',short:'Hantengu',g:'怯',type:'Upper Moon 4',demon:true,upper:true,cost:9,hp:20,pow:8,spd:9,def:4,regen:1,
+add({id:'hantengu',name:'Hantengu',short:'Hantengu',g:'怯',type:'Upper Moon 4',demon:true,upper:true,cost:9,hp:14,pow:0,spd:9,def:4,regen:1,noDefend:true,
+  basic:{name:'Cower',tag:'takes half damage',k:'怯',kind:'self',cower:true,desc:'Instead of attacking: he cowers and takes half damage this round.'},
   splits:['sekido','karaku','aizetsu','urogi'],
-  passive:'Splitting Emotions: when Hantengu falls he splits into his four emotions: Sekido, Karaku, Aizetsu and Urogi. When the last of them falls, they merge into Zohakuten. Beat him too to win.',
+  passive:'Splitting Emotions: he never attacks. When he falls he splits into Sekido, Karaku, Aizetsu and Urogi. When the last of them falls, they merge into Zohakuten and the real Hantengu comes back. Zohakuten can\'t fall until the real Hantengu does, and when he falls, Zohakuten falls with him.',
   sig:{name:'Cowering Hide',desc:'Moves first. Hides: attacks miss him this round, and he heals 6.',cd:3,kind:'self',prio:3}});
 // Zohakuten: Hantengu's last form. The four emotions merge into him when the last one falls (never dealt).
-add({id:'zohakuten',spawn:true,name:'Zohakuten (Hatred)',short:'Zohakuten',g:'憎',type:'Hantengu merged · Hatred',demon:true,cost:0,hp:24,pow:10,spd:9,def:4,regen:2,
-  passive:"Hantengu's Hatred: the four emotions merged into one body.",
+add({id:'zohakuten',spawn:true,name:'Zohakuten (Hatred)',short:'Zohakuten',g:'憎',type:'Hantengu merged · Hatred',demon:true,cost:0,hp:28,pow:12,spd:9,def:4,regen:2,anchor:'hantengu_true',
+  passive:"Hantengu's Hatred: he can't fall while the real Hantengu lives. He stops at 1 HP.",
   sig:{name:'Wood Dragons',desc:'Every enemy takes PWR−4, even through Defend.',cd:3,kind:'all'}});
+// The real Hantengu: comes back beside Zohakuten. Cut him down and Zohakuten falls with him.
+add({id:'hantengu_true',fam:'hantengu',spawn:true,name:'Hantengu (True Form)',short:'Hantengu',g:'怯',type:'Hantengu · True Form',demon:true,cost:0,hp:14,pow:9,spd:11,def:8,regen:1,
+  passive:'The real one: Zohakuten can\'t fall while he lives, and falls the moment he does.',
+  sig:{name:'Terror of the Weak',desc:'Strike for PWR+6, ignores DEF.',cd:3,kind:'single'}});
 add({id:'sekido',spawn:true,name:'Sekido (Anger)',short:'Sekido',g:'怒',type:'Hantengu split · Anger',demon:true,cost:0,hp:8,pow:7,spd:8,def:3,regen:1,
   merge:'zohakuten',
   sig:{name:'Lightning Staff',desc:'Every enemy takes 4, ignores DEF.',cd:3,kind:'all'}});
@@ -232,7 +237,7 @@ const SPECIAL_TAGS = {
   makomo:'dodge + hit', hinatsuru:'hit + poison', makio:'strong hit', suma:'dodge + random hit', michikatsu:'hit grows each round', hakuji:'strong hit', tanjuro:'team heals 3', dojo_fighter:'strong hit',
   yoriichi:'hit all, stops regen', yoriichi_old:'huge hit, ignores DEF',
   muzan:'hit all, heal self', muzan_final:'hit all, heal self', kokushibo:'hit all enemies', doma:'hit all enemies',
-  akaza:'big hit', gyutaro:'hit all + poison', daki:'hit all enemies', nakime:'send an enemy away', zohakuten:'hit all, through Defend',
+  akaza:'big hit', gyutaro:'hit all + poison', daki:'hit all enemies', nakime:'send an enemy away', zohakuten:'hit all, through Defend', hantengu_true:'huge hit, ignores DEF',
   susamaru:'hit two enemies', yahaba:"enemy's hits miss", kanae:'hit + heal ally', tanjiro_demon:'hit all enemies', nezuko_awakened:'hit all + cure poison',
   typezero:'ally +2 SPD', hotaru:'reload a special', hantengu:'hide + heal self', gyokko:'hit + stun', kaigaku:'hit two enemies',
   sekido:'hit all enemies', karaku:'strong hit', aizetsu:'strong hit', urogi:'fast hit',
@@ -253,7 +258,7 @@ const SPECIAL_QUOTES = {
   yoriichi:'Sun Breathing has thirteen forms. This is the last.', yoriichi_old:'Even now, my sword has not dulled.',
   muzan:'I decide who lives.', muzan_final:'I will not die. Not to the sun, not to you.', kokushibo:'Moonlight, cut them down.',
   doma:'Let me save you all.', daki:'How dare you look at me like that!', nakime:'The castle answers to me.',
-  zohakuten:'Why do you torment the weak?!', susamaru:"Let's play temari!", yahaba:'Your aim belongs to me now.',
+  zohakuten:'Why do you torment the weak?!', hantengu_true:'How dare you hurt someone so weak!', susamaru:"Let's play temari!", yahaba:'Your aim belongs to me now.',
   kanae:"I'd rather we didn't fight. But if we must…", tanjiro_demon:"I can't hear anyone anymore…", nezuko_awakened:'Grrrr!',
   typezero:'*clack clack clack*', hotaru:"You chipped my blade?! I'll end you!", akaza:'Become a demon and fight me forever!', gyutaro:'Take it all from them!',
   hantengu:'Don\'t hurt me! I\'m so weak!', gyokko:'Admire my art!', kaigaku:'I was the one meant to rise.',
@@ -342,7 +347,7 @@ const LORE = {
 const loreOf = c => LORE[c.id] || LORE[c.fam] || null;
 // One short line under each draft card: what the special does at a glance (the full text is on the card's details)
 const SIG_CAPTION = {yoriichi:'Hits all · stops regen', yoriichi_old:'Huge single hit', muzan:'Hits all · heals him', muzan_final:'Hits all · heals him', kokushibo:'Hits all · ignores DEF', doma:'Hits all · ignores DEF',
-  akaza:'Big single hit', gyutaro:'Hits all · poison', daki:'Hits all · through Defend', nakime:'Banishes one enemy', gyokko:'Hit + stun', hantengu:'Hides and heals', kaigaku:'Hits two', enmu:'Delays all specials',
+  akaza:'Big single hit', gyutaro:'Hits all · poison', daki:'Hits all · through Defend', nakime:'Banishes one enemy', gyokko:'Hit + stun', hantengu:'Hides and heals · never attacks', kaigaku:'Hits two', enmu:'Delays all specials',
   rui:'Hit + stun', kyogai:'Stuns one enemy', susamaru:'Hits two', yahaba:'Enemy\'s hits miss', hand:'Big single hit', swamp:'Dodges + hits', giyu:'Team takes no damage', gyomei:'Hits all · ignores DEF',
   sanemi:'Hits two', muichiro:'Dodges + hits', mitsuri:'Hits all · through Defend', obanai:'Big hit · through Defend', rengoku:'Big single hit', tengen:'Hits all', tengen_retired:'Guards an ally', shinobu:'Poisons one enemy',
   kanae:'Hit + heals', tanjiro:'Big hit · ignores DEF', tanjiro_demon:'Hits all · ignores DEF', nezuko:'Hits all · ignores DEF', nezuko_awakened:'Hits all · cures poison', zenitsu:'Moves first · double hit', inosuke:'Two random hits',

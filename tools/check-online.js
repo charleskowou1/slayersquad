@@ -34,6 +34,7 @@ function match(seed, opts = {}) {
   phones.forEach((ph, q) => { const taken = H.spin.picks.filter(Boolean), n0 = [1,2,3,4,5,6,7,8,9].find(x => !taken.includes(x));
     if (taken.length) { ph.onlineGuess(taken[0]); if (q === hi) publish(); if (H.spin.picks[q]) problems.push('a number was taken twice'); }
     ph.onlineGuess(n0); if (q === hi) publish(); });
+  if (H.spin.state === 'coin') { const q = H.spin.tied.who[0]; phones[q].onlineCoin('heads'); publish(); }   // a tie: that player calls the coin
   if (H.spin.state !== 'done') problems.push('number game did not finish');
   { const d = H.spin.picks.map(x => Math.abs(x - H.spin.secret)); if (d[H.spin.r] !== Math.min(...d)) problems.push('closest number did not pick first'); }
   phones.forEach((ph, q) => { if (q !== hi && (!ph.S_().spin || ph.S_().spin.r !== H.spin.r)) problems.push('phones disagree on who picks first'); });

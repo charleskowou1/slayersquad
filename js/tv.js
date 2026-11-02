@@ -108,6 +108,7 @@ function tvAct(m){
   if(m.a==='lockteam' && myDraft){ ACTIONS.lock(); render(); return; }
   if(m.a==='undo' && S.phase==='draft'){ ACTIONS.undo(); render(); return; }
   if(m.a==='redeal' && S.phase==='draft'){ ACTIONS.redeal(); render(); return; }
+  if(m.a==='coin' && S.phase==='spin'){ if(guessCall(S.tvDuo?seat:0,m.v)) sfx('pick'); render(); return; }
   if(m.a==='guess' && S.phase==='spin'){ if(S.tvDuo ? seat<2 && guessPick(seat,m.n) : seat===0) { if(!S.tvDuo) ACTIONS.guess(m.n); sfx('pick'); } render(); return; }
   if(m.a==='keep' && S.phase==='scout' && S.scoutP===seat){ ACTIONS.keepmoves(); render(); return; }
   if(m.a==='moves' && m.round===S.round && tvChooser(seat)){
@@ -191,7 +192,7 @@ function tvDuoStart(){
 const tvStoryList = () => STAGES.map((st,i)=>({i, title:st.title, arc:ARCS[st.arc].title, open:stageUnlocked(i), won:stageCleared(i), stars:stageStars(st.id)}));
 // What the phone at seat q should show
 function tvSeatView(q, view){
-  const g=S.spin; if(S.phase==='spin' && g && g.state==='picking' && !g.picks[q] && (S.tvDuo ? q<2 : q===0 && S.mode==='cpu')) return 'guess';
+  const g=S.spin; if(S.phase==='spin' && g && (g.state==='picking' ? !g.picks[q] : g.state==='coin' && g.tied.who.includes(q)) && (S.tvDuo ? q<2 : q===0 && S.mode==='cpu')) return 'guess';
   if(S.phase==='plan' && tvChooser(q) && !tvLocked(q) && !(S.tvMouse===S.round && S.planFor===q)) return 'plan';
   if(S.phase==='scout' && S.scoutP===q && tvChooser(q)) return 'scout';
   if(view==='draft' && turn()===q && (S.tvDuo ? q<2 : q===0 && (S.mode==='cpu'||S.mode==='story'))) return 'draft';
@@ -215,6 +216,7 @@ function tvWaiting(){
     const done=S.tvDuo ? players().filter(q=>tvChooser(q) && tvLocked(q)).map(q=>`${who(q)} ✓`) : [];
     return [...done, ...w.map(q=>off(q)?`${who(q)}’s phone is reconnecting…`:`Waiting for ${who(q)}’s moves`)].join(' · '); }
   if(S.phase==='scout' && S.scoutP>=0) return `${who(S.scoutP)}’s Kasugai Crow is scouting…`;
+  if(S.phase==='spin' && S.spin && S.spin.state==='coin') return `Waiting for ${S.spin.tied.who.map(who).join(' or ')} to call the coin`;
   if(S.phase==='spin' && S.spin && S.spin.state==='picking'){ const w=players().filter(q=>!S.spin.picks[q] && (S.tvDuo||q===0)); return w.length ? `Waiting for ${w.map(who).join(' and ')} to pick a number` : ''; }
   if(S.phase==='draft'){ const q=turn(); if(!S.tvDuo && q!==0) return ''; return off(q)?`${who(q)}’s phone is reconnecting…`:`${who(q)} is picking on the phone`; }
   return '';
@@ -342,7 +344,7 @@ function vTvBoard(b){
     : b.clip ? `<div class="now clipbeat">${clipBeat(b.clip,cur)}</div>`
     : cur.fx==='say' && by ? `<div class="now saybeat" style="--tc:${pc(by.p)}">${seal(by,'stg')}<div><span class="sayn">${esc(by.name)}</span><span class="sayq">“${esc(cur.t)}”</span></div></div>` : '';
   const roles = beat && !over ? boardRoles(b, pos) : new Map();
-  const calmRow = r => playing && r.some(u=>b.moment(u).calm) ? ' calm' : '';   // Dead Calm's water around the whole team, for the rest of the round
+  const calmRow = r => playing && r.some(u=>b.moment(u).calm) ? ' calm' : '';   // Dead Calm's water, only while someone on that team is being attacked
   const card=u=>{
     const o=playing?b.moment(u):{}, hp=o.hp===undefined?u.hp:o.hp;
     // a fighter hit down to 0 stays standing at 0% this beat; it falls on its own "falls!" beat (flash 'ko')
@@ -408,7 +410,7 @@ async function ctlJoin(code){
   S.onlineMsg='Connecting to the TV…'; render();
   try{
     const db=await firebaseReady(), room=db.ref('rooms/'+code);
-    const keep={vol:S.vol, speed:S.speed, vibeOn:S.vibeOn, clipsOn:S.clipsOn, install:S.install};
+    const keep={vol:S.vol, speed:S.speed, vibeOn:S.vibeOn, clipsOn:S.clipsOn, clipRepeat:S.clipRepeat, install:S.install};
     S=Object.assign({phase:'setup', mode:'story', names:[playerName()||'Player 1','Computer']}, keep, {ctl:{code}, onlineMsg:'', ctlView:'watch', ctlLocked:0, ctlSeat:-1, me:0, planFor:0, plans:[{},{}], helperPlan:[[],[]], lastPlans:[null,null]});
     TV.room=room;
     // here at the TV: the phone's name under its id, removed by the server if the phone drops off

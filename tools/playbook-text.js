@@ -250,7 +250,7 @@ cards: {
         'Best with Hantengu (two Upper Moons: +1 regen).'],
   beat: ['Average stats for an Upper Moon: focus him early.'] },
  hantengu: {
-  win: ['When he falls, four emotions appear at once (Sekido, Karaku, Aizetsu, Urogi). When the last one falls they merge into Zohakuten. He\'s many bodies for 9 pts.',
+  win: ['He never attacks. When he falls, four emotions appear at once. When the last one falls, Zohakuten and the real Hantengu appear. Zohakuten can\'t fall until the real Hantengu does. He\'s many bodies for 9 pts.',
         'Cowering Hide moves first: attacks miss him and he heals 6.',
         'Doma is his best partner.'],
   beat: ['Area specials (Gyomei, Tengen, Mitsuri, Yoriichi) hit all the emotions at once.',
@@ -411,7 +411,7 @@ module.exports.depth = {
  daki: { role: 'Area chip, half of Two as One', draft: ['6 pts; only take her with Gyutaro.'], plan: ['Obi Sashes when ready; keep her alive while Gyutaro stands so she can rise.'] },
  gyutaro: { role: 'Area poison, half of Two as One', draft: ['8 pts; with Daki (14 for the pair).'], plan: ['Blood Sickles on round 1 to poison everyone, then Attack the weakest.'] },
  gyokko: { role: 'Control (trap) plus damage', draft: ['6 pts; with another Upper Moon.'], plan: ['Trap their carry the round before its special is ready.'] },
- hantengu: { role: 'Many lives (splits, then merges)', draft: ['9 pts; with another Upper Moon (Doma is his best partner).'], plan: ['Cowering Hide when he\'s focused: attacks miss and he heals.', 'When he splits, the four emotions act next round; Zohakuten closes it out.'] },
+ hantengu: { role: 'Many lives (splits, then merges)', draft: ['9 pts; with another Upper Moon (Doma is his best partner).'], plan: ['Cowering Hide when he\'s focused: attacks miss and he heals.', 'When he splits, the four emotions act next round; protect the real Hantengu at the end, because Zohakuten falls with him.'] },
  nakime: { role: 'Control (send away, act last)', draft: ['4 pts; never alone, and best against a single giant.'], plan: ['Castle Shift their giant on its special round; Biwa Strum their fastest fighter otherwise.'] },
  akaza: { role: 'Fast burst, then area damage', draft: ['9 pts; with Doma or Gyutaro.'], plan: ['Compass Needle for the single big hit, then Annihilation Type when several enemies are low.', 'Win before round 10: the sun ends his regeneration.'] },
  doma: { role: 'Area damage that ignores DEF, regeneration', draft: ['11 pts; with Hantengu or Akaza at 20.'], plan: ['Frozen Lotus every time it\'s ready; regen keeps him up between.', 'Never be the one to knock Shinobu out.'] },

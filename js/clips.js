@@ -46,6 +46,7 @@ const CLIPS = {
   enmu:          {special: 'https://media.tenor.com/KwNbxtAZ7rwAAAPo/kimetsu-no-yaiba-mugen-train.mp4'},   // Forced Sleep
   gyokko:        {special: 'https://media.tenor.com/WhSFVAa0eE8AAAPo/gyokko-pot.mp4'},   // Water Prison Pot
   gyutaro:       {special: 'https://media.tenor.com/0ViOIVwIBOgAAAPo/demon-slayer-demon-slayer-s2.mp4'},   // Flying Blood Sickles
+  hantengu_true: {},
   hantengu:      {special: 'https://media.giphy.com/media/wiNn6bskDVY4SvE3kf/giphy.mp4'},   // Cowering Hide
   kanae:         {special: 'https://media.giphy.com/media/xWIklyBVywrEjcMKWJ/giphy.mp4'},   // Crimson Hanagoromo
   murata:        {special: 'https://media.tenor.com/wtlDk3glPlEAAAPo/sm32-murata.mp4'},   // Water Surface Slash
@@ -143,9 +144,11 @@ function clipStep(line){
   const src=(clipSet(CLIPS,m.u)||{})[m.act]; if(!src) return null;
   const seen=S.clipSeen=S.clipSeen||{}, key=m.u.uid+':'+m.act;
   // A special plays its full clip and voice the first time in a match, and again only when it knocks someone out or a Mark flares
-  if(line.fx==='special'){ S.play.quick=seen[key]!==undefined && !line.flare && !specialKOs(m.u); if(S.play.quick) return null; seen[key]=S.round; }
-  if(CLIP_REPEAT.includes(m.act) && !(CLIP_ALWAYS[m.u.fam||m.u.id]||[]).includes(m.act)){ if(seen[key]!==undefined && S.round-seen[key]<CLIP_GAP) return null; seen[key]=S.round; }
-  return {src, act:m.act, uid:m.u.uid, who:m.u.helper?m.u:null, sound:(clipSet(CLIP_SOUNDS,m.u)||{})[m.act]||null, key:`${S.round}-${S.play?S.play.k:0}-${m.u.uid}`};
+  const every=S.clipRepeat==='every';   // Settings: Repeat clips, Every round
+  if(line.fx==='special'){ S.play.quick=!every && seen[key]!==undefined && !line.flare && !specialKOs(m.u); if(S.play.quick) return null; seen[key]=S.round; }
+  if(!every && CLIP_REPEAT.includes(m.act) && !(CLIP_ALWAYS[m.u.fam||m.u.id]||[]).includes(m.act)){ if(seen[key]!==undefined && S.round-seen[key]<CLIP_GAP) return null; seen[key]=S.round; }
+  const first=!seen['full:'+key]; seen['full:'+key]=true;   // the first time a clip plays this match, it plays to the end
+  return {src, first, act:m.act, uid:m.u.uid, who:m.u.helper?m.u:null, sound:(clipSet(CLIP_SOUNDS,m.u)||{})[m.act]||null, key:`${S.round}-${S.play?S.play.k:0}-${m.u.uid}`};
 }
 // A clip can be a still picture (no video exists): drawn as an <img> for the same beat
 const clipIsPic = url => /\.(jpe?g|png|webp)$/i.test(url);

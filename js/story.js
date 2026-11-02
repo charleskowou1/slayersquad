@@ -97,7 +97,7 @@ const MAIN_STAGES = [
       ['','Two hundred passengers sleep on. Only the slayers can save them.']]},
   {id:'mugen_akaza', arc:'mugen', title:'Set Your Heart Ablaze', place:'Beside the derailed train', foe:'Akaza', mine:['rengoku','tanjiro','inosuke'], enemy:['akaza'], level:'hard',
     stars:{standing:2, rounds:4},
-    boosts:[{side:1, hp:1.5, pow:2, label:'Akaza: +50% HP, +2 PWR'}],   // +3 PWR before Annihilation Type became his second special (Oct 27, 2026)
+    boosts:[{side:1, hp:1.5, label:'Akaza: +50% HP'}],   // +3 PWR before Annihilation Type became his second special (Oct 27, 2026)
     beats:[{when:'low', id:'rengoku', at:.3, text:'Set your heart ablaze! I will not fall here!'}, {when:'ko', id:'rengoku', who:'tanjiro', text:'Rengoku!'}, {when:'round', round:6, id:'akaza', text:'The sky is getting lighter… I don’t have long.'}],
     phases:[{id:'akaza', at:.5, pow:2, ready:true, second:true, label:'+2 PWR, Annihilation Type ready', line:'Destructive Death: Annihilation Type!'}],
     outro:[['akaza','The sun! I have to go—',{img:'akaza-sunrise'}],
@@ -153,8 +153,8 @@ const MAIN_STAGES = [
       ['mitsuri_mark','A heart-shaped mark blooms on her neck. Love Breathing, full power!',{awaken:true}]]}],
     stars:{standing:2, rounds:12},
     beats:[{when:'ko', id:'hantengu', who:'tanjiro', text:'He split again?!'}, {when:'low', id:'nezuko', at:.4, text:'Mmph!!'}],
-    outro:[['','Zohakuten falls, and the real Hantengu runs for the trees.'],['nezuko','Mmph!'],['tanjiro','Nezuko… you’re standing in the sun!']],
-    boosts:[{side:1, hp:2.3, pow:1, label:'Upper Moons: +130% HP, +1 PWR'}],
+    outro:[['','Tanjiro’s blade finds the real Hantengu at last, and Zohakuten crumbles with him.'],['nezuko','Mmph!'],['tanjiro','Nezuko… you’re standing in the sun!']],
+    boosts:[{side:1, hp:2, pow:1, label:'Upper Moons: +100% HP, +1 PWR'}],
     blurb:'Two Upper Moons at once. Cut Hantengu down and four more appear. Then they merge.',
     scene:[['hantengu',"Don't hurt me! I'm so weak! So very weak!"],
       ['genya',"Cut his head off and he splits? Then I'll eat them all!"],
@@ -237,7 +237,7 @@ const MAIN_STAGES = [
       ['zenitsu',"Grandpa cut his own belly because of you. I made a form of my own. For him."]]},
   {id:'akaza', arc:'castle', title:'Destructive Death', place:'Infinity Castle', foe:'Akaza', mine:['tanjiro','giyu'], enemy:['akaza'], level:'hard',
     stars:{standing:1, hp2:15, rounds:10},
-    boosts:[{side:1, hp:1.8, pow:4, label:'Akaza: +80% HP, +4 PWR'}],   // was +20% / +1 before Tanjiro's Selfless State (Oct 27, 2026)
+    boosts:[{side:1, hp:1.85, pow:2, label:'Akaza: +85% HP, +2 PWR'}],   // was +20% / +1 before Tanjiro's Selfless State (Oct 27, 2026)
     beats:[{when:'low', id:'akaza', at:.5, text:'Your spirit… it’s just like Kyojuro’s.'}, {when:'low', id:'giyu', at:.4, text:'Tanjiro, keep going. I’ll hold.'}],
     awaken:[{id:'giyu', at:.5, round:4, lines:[['','Akaza’s fists shatter the floor. Giyu takes a blow meant for Tanjiro.'],
       ['giyu','I was never worthy of being a Hashira… but I won’t let him die.'],
@@ -418,7 +418,7 @@ const DREAM_FINALE = [
 ];
 const SIX_STAGES = [
   {id:'six', arc:'six', title:'Yoriichi vs the Six', place:'A road at the end of the night', foe:'The Upper Moons', mine:['yoriichi'], enemy:['kokushibo','doma','akaza','hantengu','gyokko','gyutaro'], level:'hard',
-    boosts:[{side:0, hp:2.8, pow:3, label:'Yoriichi: +180% HP, +3 PWR'}],
+    boosts:[{side:0, hp:2.6, pow:3, label:'Yoriichi: +160% HP, +3 PWR'}],
     blurb:'For the ones who earned every star.',
     scene:[['yoriichi','Six moons, and no sun among them.'],['kokushibo','Brother.'],['yoriichi','You look tired, Michikatsu. Let me end this.']],
     outro:[['yoriichi',"It's done. Rest, all of you."]]},

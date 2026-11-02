@@ -18,8 +18,8 @@ let AC = null, NOISE = null, SFX_OUT = null, MUSIC_OUT = null;
 function unlockSound(){
   if(typeof AudioContext==='undefined' && typeof webkitAudioContext==='undefined') return;
   if(!AC){
-    // iPhone: play through the media channel so the ringer's silent switch doesn't mute the game (Safari 17+)
-    try{ if(navigator.audioSession) navigator.audioSession.type='playback'; }catch(e){}
+    // iPhone: a 'playback' session keeps an audio symbol on the Dynamic Island the whole time the game is open (Safari 17+)
+    try{ if(navigator.audioSession) navigator.audioSession.type='ambient'; }catch(e){}   // ambient: no audio symbol on the iPhone's Dynamic Island (CK, Nov 1, 2026), but the silent switch mutes the game
     AC = new (window.AudioContext || window.webkitAudioContext)();
     NOISE = AC.createBuffer(1, AC.sampleRate, AC.sampleRate);
     const d=NOISE.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
@@ -124,7 +124,7 @@ const STYLE_SFX = {
 // Basic attacks: what the fighter swings. Blades ring; fists, claws and demon arts sound like themselves.
 const WEAPON = {akaza:'fist', hakuji:'fist', typezero:'blade', hand:'claw', swamp:'claw', kyogai:'drum', rui:'thread', enmu:'dream', muzan:'whip', muzan_final:'whip',
   doma:'fan', gyutaro:'sickle', daki:'obi', gyokko:'blunt', susamaru:'blunt', yahaba:'arrow', nezuko:'kick', nezuko_awakened:'kick', tanjiro_demon:'claw',
-  tamayo:'blood', yushiro:'claw', hantengu:'claw', sekido:'staff', karaku:'fan', aizetsu:'spear', urogi:'claw', zohakuten:'staff', kokushibo:'blade', kaigaku:'blade'};
+  tamayo:'blood', yushiro:'claw', hantengu:'claw', hantengu_true:'claw', sekido:'staff', karaku:'fan', aizetsu:'spear', urogi:'claw', zohakuten:'staff', kokushibo:'blade', kaigaku:'blade'};
 const ATTACK_SFX = {
   blade:  v=>{ swoosh(.12,.13*v,.2); steel(.3,.06*v); hiss('highpass',1800,500,.07,.08*v,.31); tone('sine',150,60,.12,.14*v,.31); },
   fist:   v=>{ hiss('lowpass',800,200,.08,.12*v,.2); tone('sine',150,55,.16,.5*v,.28); hiss('highpass',2500,4000,.04,.1*v,.28); },

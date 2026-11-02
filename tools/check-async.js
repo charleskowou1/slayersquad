@@ -31,9 +31,10 @@ function match(seed) {
     phones[0].OL().net.send({ a: 'guess', p: 0, n: 6 }); if (db.s !== after) problems.push('a player changed their number');
     const q = db.meta.turn; if (q.length !== 1 || q[0] !== 1) problems.push('home-screen summary missed whose number it is');
     phones[1].onlineGuess(6);
+    if (st().spin.state === 'coin') { const b4c = db.s; phones[0].OL().net.send({ a: 'todraft', p: 0 }); if (db.s !== b4c) problems.push('draft started before the coin was called'); phones[1].onlineCoin('tails'); }   // a tie: call the coin
     const g = st().spin; if (g.state !== 'done' || g.r === undefined) problems.push('the number game did not finish');
     const d = g.picks.map(n => Math.abs(n - g.secret));
-    if (d[0] === d[1] ? !g.tie : g.tie || d[g.r] !== Math.min(...d)) problems.push('the wrong player won the number game');
+    if (d[g.r] !== Math.min(...d) || (d[0] === d[1] && !g.call)) problems.push('the wrong player won the number game');
     phones[1].OL().net.send({ a: 'todraft', p: 1 });
     if (st().phase !== 'draft' || st().first !== g.r) problems.push('the number game\'s winner does not pick first');
   };

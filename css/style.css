@@ -1148,6 +1148,7 @@ details ul b{color:var(--fg)}
 .cutin.hasclip.right{animation-name:clipwiper}
 @keyframes clipwipe{from{clip-path:polygon(0 0,0 0,-20% 100%,-20% 100%)}to{clip-path:polygon(0 0,120% 0,100% 100%,-20% 100%)}}
 @keyframes clipwiper{from{clip-path:polygon(120% 0,120% 0,100% 100%,100% 100%)}to{clip-path:polygon(0 0,120% 0,100% 100%,-20% 100%)}}
+.cvid.vidwait{visibility:hidden}
 .cvid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;animation:clipzoom 4s cubic-bezier(.2,.6,.3,1) both}
 @keyframes clipzoom{from{transform:scale(1.14)}to{transform:scale(1)}}
 .cutin.hasclip::after,.clipbox::after{content:'';position:absolute;inset:0;z-index:1;pointer-events:none;box-shadow:inset 0 0 60px 10px rgba(0,0,0,.65)}
@@ -1687,8 +1688,15 @@ body.tvmode .awt{font-size:2rem}
 @keyframes sleepspin{0%,22%{opacity:0;transform:rotate(0)}45%,62%{opacity:1}85%,100%{opacity:0;transform:rotate(300deg)}}
 /* Hantengu breaks into his emotions */
 .sfx-crack polyline{fill:none;stroke:#fff;stroke-width:3;vector-effect:non-scaling-stroke;filter:drop-shadow(0 0 6px #ff4a2c);stroke-dasharray:300;stroke-dashoffset:300;animation:whip 1.5s ease-out both}
-.sfx-crack b{position:absolute;top:50%;left:50%;font-family:var(--display);font-size:15vmin;color:#ff7a5c;text-shadow:0 0 14px #000;margin:-.6em;animation:emotion 1.6s .25s ease-out both}
-@keyframes emotion{0%{transform:none;opacity:0}40%{transform:translate(var(--x),var(--y));opacity:1}78%{opacity:1;transform:translate(var(--x),var(--y))}100%{opacity:0;transform:translate(var(--x),var(--y))}}
+.sfx .emo,.sfx .husk{position:absolute;top:50%;left:50%;width:24vmin;height:24vmin;margin:-12vmin;display:grid;place-items:center}
+.sfx .emo img,.sfx .husk img{width:100%;height:100%;object-fit:cover;object-position:50% 20%;border-radius:50%;border:3px solid #ff7a5c;box-shadow:0 0 26px rgba(255,74,44,.8);background:#120a08}
+.sfx .emo em,.sfx .husk em{font:normal 800 12vmin/1 var(--display);color:#ff7a5c}
+.sfx .emo b,.sfx .husk b{position:absolute;right:-4%;bottom:-4%;font-family:var(--display);font-size:8vmin;line-height:1;color:#fff;text-shadow:0 0 10px #ff4a2c,0 2px 6px #000}
+.sfx-crack .husk{animation:huskshake .95s linear both}
+@keyframes huskshake{0%{opacity:0;transform:scale(.7)}12%{opacity:1;transform:scale(1)}20%,40%,60%,80%{transform:translateX(-1.6vmin) rotate(-3deg)}30%,50%,70%{transform:translateX(1.6vmin) rotate(3deg)}90%{opacity:1;transform:scale(1.15)}100%{opacity:0;transform:scale(1.5)}}
+.sfx-crack .mflash{animation:mergeflash 1.25s ease-out both}
+.sfx-crack .emo{animation:emotion 1.9s .85s cubic-bezier(.2,1.2,.4,1) both}
+@keyframes emotion{0%{transform:scale(.3);opacity:0}25%{transform:translate(var(--x),var(--y)) scale(1);opacity:1}82%{opacity:1;transform:translate(var(--x),var(--y)) scale(1)}100%{opacity:0;transform:translate(var(--x),var(--y)) scale(.9)}}
 /* The blow that ends the match, and a team's last fighter */
 .sfx-final{animation:finalflash .7s ease-out both}
 @keyframes finalflash{0%{background:rgba(255,255,255,.55)}100%{background:transparent}}
@@ -1815,7 +1823,9 @@ body.tvmode .wrap{min-height:calc(100dvh / var(--tvz,1))}
 .tfx .pot{fill:#5d7f90;stroke:#27404d;stroke-width:1.5}
 .tfx .potl{fill:none;stroke:#c9dbe3;stroke-width:1.5}
 /* Hantengu's emotions slam back into one body */
-.sfx-merge b{position:absolute;top:50%;left:50%;font-family:var(--display);font-size:15vmin;color:#ff7a5c;text-shadow:0 0 14px #000;margin:-.6em;animation:mergein 1.2s ease-in both}
+.sfx-merge .emo{animation:mergein 1.25s ease-in both}
+.sfx-merge .zoh{width:34vmin;height:34vmin;margin:-17vmin;animation:zohin 1.7s 1.05s ease-out both}
+@keyframes zohin{0%{opacity:0;transform:scale(.4)}22%{opacity:1;transform:scale(1.12)}34%{transform:scale(1)}85%{opacity:1}100%{opacity:0}}
 @keyframes mergein{0%{transform:translate(var(--x),var(--y));opacity:0}25%{transform:translate(var(--x),var(--y));opacity:1}85%{transform:none;opacity:1}100%{transform:scale(1.5);opacity:0}}
 .mflash{position:absolute;inset:0;animation:mergeflash 1.6s ease-out both}
 @keyframes mergeflash{0%,70%{background:transparent}78%{background:rgba(255,120,80,.7)}100%{background:transparent}}
@@ -1943,3 +1953,12 @@ body.tvmode .wrap{min-height:calc(100dvh / var(--tvz,1))}
 .shbody b{font-size:1.2rem;line-height:1.15;text-shadow:0 2px 8px rgba(0,0,0,.7)}
 .shbody .muted{color:var(--ink-2);text-shadow:0 1px 6px rgba(0,0,0,.8)}
 .storyhome .btn{position:relative;box-shadow:0 4px 14px rgba(0,0,0,.45)}
+/* Latest Updates tile */
+.updhead{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:12px 0 8px}
+.updlist{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.updlist li{padding-left:12px;border-left:2px solid var(--accent)}
+.updlist b{display:block}
+.coinbtns{display:flex;justify-content:center;gap:10px;margin-top:10px}
+.coinbtns .btn{min-width:120px}
+/* Phones: room to tuck the home buttons above the title (render() in app.js) */
+@media (max-width:899px){ .wrap:has(.hero){min-height:calc(100dvh + 110px)} }

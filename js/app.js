@@ -12,11 +12,14 @@ const viewName = () => isOnline() && S.final && S.localOver ? 'over' : S.phase==
 const PENDING_VIDS = new Set();
 function playVid(v){
   v.muted=true; v.defaultMuted=true; v.playsInline=true; v.setAttribute('muted',''); v.setAttribute('playsinline',''); v.setAttribute('webkit-playsinline','');
-  const p=v.play(); if(p && p.catch) p.catch(()=>PENDING_VIDS.add(v));
+  const go=()=>{ if(!v.isConnected || !v.paused || v.ended) return; const p=v.play(); if(p && p.then) p.then(()=>{ PENDING_VIDS.delete(v); v.classList.remove('vidwait'); }).catch(()=>{ PENDING_VIDS.add(v); v.classList.add('vidwait'); }); };
+  go(); v.addEventListener('canplay',go,{once:true}); setTimeout(go,400);   // not loaded yet: try again when it can play
 }
 ['pointerdown','touchend','keydown'].forEach(ev=>document.addEventListener(ev, ()=>{
-  PENDING_VIDS.forEach(v=>{ if(!v.isConnected){ PENDING_VIDS.delete(v); return; } const p=v.play(); if(p && p.then) p.then(()=>PENDING_VIDS.delete(v)).catch(()=>{}); });
+  PENDING_VIDS.forEach(v=>{ if(!v.isConnected){ PENDING_VIDS.delete(v); return; } const p=v.play(); if(p && p.then) p.then(()=>{ PENDING_VIDS.delete(v); v.classList.remove('vidwait'); }).catch(()=>{}); });
 }, {passive:true}));
+let lastView='';
+try{ history.scrollRestoration='manual'; }catch(e){}
 function render(){
   if(isOnline()) S.planFor=S.me;
   const ctl=typeof isCtl==='function' && isCtl(), view = ctl ? ctlViewName() : viewName();   // a phone controlling the TV shows only its moves
@@ -54,9 +57,12 @@ function render(){
   const pics=new Map(); app.querySelectorAll('img:not([data-k])').forEach(im=>{ const k=im.getAttribute('src'); if(!pics.has(k)) pics.set(k,[]); pics.get(k).push(im); });
   beforeAwake(()=>{ app.innerHTML=VIEWS[view](); sheet.innerHTML=vSheet(); });
   app.querySelectorAll('img:not([data-k])').forEach(im=>{ const old=(pics.get(im.getAttribute('src'))||[]).shift(); if(old){ old.className=im.className; im.replaceWith(old); } });
-  app.querySelectorAll('video[data-k],img[data-k]').forEach(v=>{ const old=vids.get(v.dataset.k); if(old) v.replaceWith(old); else if(v.tagName==='VIDEO'){ v.onended=()=>{ if(v.duration<CLIP_LOOP){ v.currentTime=0; playVid(v); } }; playVid(v); } });
+  app.querySelectorAll('video[data-k],img[data-k]').forEach(v=>{ const old=vids.get(v.dataset.k); if(old){ v.replaceWith(old); if(old.tagName==='VIDEO') playVid(old); } else if(v.tagName==='VIDEO'){ v.onended=()=>{ if(v.duration<CLIP_LOOP){ v.currentTime=0; playVid(v); } }; playVid(v); } });
   warmClips();
   open.forEach(id=>{ const d=document.getElementById(id); if(d) d.open=true; });
+  // Opening the home screen on a phone: Slayer Squad comes first, and Join a TV, Codex and Settings sit just above it (scroll up)
+  if(view==='setup' && lastView!=='setup' && window.innerWidth<900 && !(typeof isTV==='function'&&isTV())){ const h=app.querySelector('.hero'), w=app.closest('.wrap'); if(h&&w) window.scrollTo(0, Math.max(0, h.getBoundingClientRect().top+window.scrollY-(parseFloat(getComputedStyle(w).paddingTop)-14))); }
+  lastView=view;
   if(view==='story' && S.storyScroll){ S.storyScroll=false; const el=app.querySelector('.srow.sel'); if(el) el.scrollIntoView({block:'center'}); else window.scrollTo(0,0); }
   if(!ctl && S.phase==='draft' && S.mode==='cpu' && turn()!==0){ clearTimeout(S._t); S._t=setTimeout(()=>{ if(S.banning) cpuBan(); else cpuDraftStep(S.level); render(); },700); }
   if(!ctl && S.phase==='spin' && S.spin && S.spin.state==='done' && S.spin.cards && spinShown!==S.spin.cards.join()){ spinShown=S.spin.cards.join(); sfx('ding'); }   // the number is revealed
@@ -77,7 +83,7 @@ const groupTime = lines => quickMotion() ? 400 : (2400 + 450*lines.filter(l=>GRO
 // Move clips (js/clips.js): beats with a clip stay up at least this long; clips download when a battle starts
 // Clips shorter than CLIP_LOOP seconds loop (instead of freezing on their last frame); longer ones keep the beat up
 // until they finish (up to CLIP_MAX ms), since many build up to the strike at the very end.
-const CLIP_MIN = 3600, CLIP_MAX = 6000, CLIP_LOOP = 2.2, CLIP_PENDING = new Set(), CLIP_DUR = {};
+const CLIP_MIN = 3600, CLIP_MAX = 6000, CLIP_FIRST_MAX = 12000, CLIP_LOOP = 2.2, CLIP_PENDING = new Set(), CLIP_DUR = {};
 function warmClips(){
   if(S.clipsOn===false || !(S.teams||S.picks) || !navigator.onLine) return;
   matchClips().forEach(url=>{ if(CLIP_BLOB[url] || CLIP_PENDING.has(url)) return; CLIP_PENDING.add(url);
@@ -100,7 +106,8 @@ function playRound(){
     render();
     const extra=(special==='sunform'?1300:0)+(!m?0:m.k==='final'?600:m.k==='lone'?500:0);
     const t = extra*pace() + (flurry ? (quickMotion()?400:(1300+320*lines.length)*pace()) : b>a ? groupTime(lines) : line.fx==='awaken' ? Math.max(readTime(line), 3600*pace()) : readTime(line));
-    const d=S.play.clip&&CLIP_DUR[S.play.clip.src], full=d&&d>=CLIP_LOOP&&S.speed!=='fast' ? Math.min(CLIP_MAX, d*1000+400) : CLIP_MIN*pace();
+    const c=S.play.clip, d=c&&CLIP_DUR[c.src], full=c&&c.first&&!clipIsPic(c.src) ? (!d ? CLIP_MAX : d>=CLIP_LOOP ? Math.min(CLIP_FIRST_MAX, d*1000+400) : CLIP_MIN*pace())   // first time: to the end, at any speed
+      : d&&d>=CLIP_LOOP&&S.speed!=='fast' ? Math.min(CLIP_MAX, d*1000+400) : CLIP_MIN*pace();
     S._t=setTimeout(step, S.play.clip ? Math.max(t, full) : S.play.quick ? t*.55 : t);   // a clip beat stays up long enough to watch
   };
   sfx('gong'); clearTimeout(S._t); S._t=setTimeout(step, quickMotion() ? 250 : 1500*pace());   // the "Round N · Fight!" intro
@@ -184,8 +191,9 @@ const ACTIONS = {
   start: startDraft,
   home(){ setCampaign('main'); if(UPDATE_READY) return location.reload(); clearTimeout(S._t); clearTimeout(HANDOFF); HANDOFF=null; if(ONLINE.net){ ONLINE.net.leave(); ONLINE.net=null; ONLINE.last=null; ONLINE.offActs=ONLINE.offState=null; }
     if(S.ctl) ctlStop();
-    const tv=S.tv, mode=S.mode==='daily'?'cpu':S.mode; S={tv, phase:tv?'tvhome':'setup',mode,vol:S.vol,speed:S.speed,vibeOn:S.vibeOn,clipsOn:S.clipsOn,install:S.install,names:mode==='local'?localNames():[S.names[S.me||0]||S.names[0]]}; useModeCfg(mode); },
+    const tv=S.tv, mode=S.mode==='daily'?'cpu':S.mode; S={tv, phase:tv?'tvhome':'setup',mode,vol:S.vol,speed:S.speed,vibeOn:S.vibeOn,clipsOn:S.clipsOn,clipRepeat:S.clipRepeat,install:S.install,names:mode==='local'?localNames():[S.names[S.me||0]||S.names[0]]}; useModeCfg(mode); },
   clips(v){ S.clipsOn=v==='on'; try{ localStorage.setItem('squad-draft-clips',v) }catch(e){} },
+  cliprepeat(v){ S.clipRepeat=v; try{ localStorage.setItem('squad-draft-clip-repeat',v) }catch(e){} },
   vibe(v){ S.vibeOn=v==='on'; try{ localStorage.setItem('squad-draft-vibe',v) }catch(e){} },
   rematch(){ if(isOnline()) return onlineRematch(); if(isPractice()) return newDraft(0); toSpin(); },
   // who picks first: take a number (a phone controlling a TV sends it; online the host applies it; vs the computer it
@@ -194,6 +202,8 @@ const ACTIONS = {
     if(isOnline()) return onlineGuess(+v);
     const p = S.mode==='cpu' ? 0 : guessTurn(); if(p<0 || !guessPick(p,+v)) return; sfx('pick');
     if(S.mode==='cpu') others(0).forEach(q=>cpuGuess(q)); },
+  // a tie in the number game: call the coin
+  coincall(v){ if(typeof isCtl==='function' && isCtl()) return ctlSend({a:'coin', v}); if(isOnline()) return onlineCoin(v); const g=S.spin; if(!g || g.state!=='coin') return; if(guessCall(S.mode==='cpu'?0:g.tied.who[0],v)) sfx('pick'); },
   toDraft(){ if(isAsync()) return send({a:'todraft'}); if(isOnline() && !iAmHost()) return; if(!S.spin || S.spin.state!=='done') return; newDraft(S.spin.r); },
   askquit(){ S.quitAsk=true; },
   unquit(){ S.quitAsk=false; },
@@ -708,7 +718,7 @@ function cloudApply(){
     Object.entries(f.data||{}).forEach(([k,v])=>localStorage.setItem(k,v)); saveCloud({code:f.code, last:f.at}); }catch(e){}
   location.reload();
 }
-S.vol=loadVolumes(); S.speed=loadSpeed(); try{ S.vibeOn=localStorage.getItem('squad-draft-vibe')!=='off'; S.clipsOn=localStorage.getItem('squad-draft-clips')!=='off' }catch(e){}
+S.vol=loadVolumes(); S.speed=loadSpeed(); try{ S.vibeOn=localStorage.getItem('squad-draft-vibe')!=='off'; S.clipsOn=localStorage.getItem('squad-draft-clips')!=='off'; S.clipRepeat=localStorage.getItem('squad-draft-clip-repeat')||'first' }catch(e){}
 // One-time reset of The Endless Dream only (CK, Oct 30, 2026, after it changed): the main story and stars stay
 try{ if(localStorage.getItem('squad-draft-dream-reset')!=='1'){ const st=loadStory(); st.cleared=(st.cleared||[]).filter(id=>!/^dr_/.test(id)); writeStory(st); localStorage.setItem('squad-draft-dream-reset','1'); } }catch(e){}
 useModeCfg(S.mode); S.names=localNames(); if(S.mode!=='local') S.names[0]=playerName()||'Player 1';   // solo modes: this phone's name

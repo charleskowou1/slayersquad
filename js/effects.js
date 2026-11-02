@@ -8,13 +8,16 @@ const STYLE_KANJI = {
   claw:'爪', dream:'夢', slash:'斬',
 };
 // character (sk) → style, or {attack, special} when the special has its own look
+// Hantengu's four emotions, for his split and merge
+const EMOTIONS = [['sekido','怒'],['karaku','楽'],['aizetsu','哀'],['urogi','喜']];
+const emoFace = id => ART[id] ? `<img decoding="sync" src="${ART[id]}" alt="">` : `<em>${BYID[id].g}</em>`;
 const FIGHT_STYLE = {
   yoriichi:'sun', yoriichi_old:'sun', tanjiro:{attack:'water', special:'sun'}, giyu:'water', urokodaki:'water', sabito:'water',
   murata:'water', rengoku:'flame', zenitsu:'thunder', kaigaku:'darkthunder', muichiro:'mist', sanemi:'wind', gyomei:'stone',
   mitsuri:'love', obanai:'serpent', tengen:'sound', tengen_retired:'sound', shinobu:'insect', inosuke:'beast', kanao:'flower',
   genya:'claw', nezuko:'blood', tamayo:'blood', yushiro:'blood', kagaya:'slash',
   muzan:'blood', muzan_final:'blood', kokushibo:'moon', doma:'ice', akaza:'compass', gyutaro:'blood', gyokko:'water',
-  hantengu:'claw', sekido:'thunder', karaku:'wind', aizetsu:'slash', urogi:'sound', enmu:'dream', rui:'thread', kyogai:'drum',
+  hantengu:'claw', hantengu_true:'claw', sekido:'thunder', karaku:'wind', aizetsu:'slash', urogi:'sound', enmu:'dream', rui:'thread', kyogai:'drum',
   hand:'claw', swamp:'claw',
   daki:'thread', nakime:'sound', zohakuten:{attack:'thunder', special:'beast'}, susamaru:'compass', yahaba:'wind', kanae:'flower',
   tanjiro_demon:'blood', nezuko_awakened:'blood', typezero:'slash', makomo:'water', hinatsuru:'slash', makio:'slash', suma:'slash', michikatsu:'moon', hakuji:'compass', tanjuro:'sun', dojo_fighter:'slash',
@@ -70,11 +73,11 @@ const SFX_ART = {
   ribbon: () => `<svg viewBox="0 0 100 100" preserveAspectRatio="none">${rep(3, i=>`<path style="--d:${i*.1}s" d="M-4 ${38+i*10} C18 ${10+i*12} 30 ${80-i*8} 50 ${44+i*6} S82 ${12+i*12} 104 ${52+i*6}"/>`)}</svg>`,
   snake: () => `<svg viewBox="0 0 100 100" preserveAspectRatio="none"><path class="body" d="M-8 22 C10 2 22 44 34 24 S46 12 50 34"/><path class="scale" d="M-8 22 C10 2 22 44 34 24 S46 12 50 34"/><path class="body two" d="M108 22 C90 44 78 2 66 24 S54 44 50 34"/><path class="scale two" d="M108 22 C90 44 78 2 66 24 S54 44 50 34"/></svg><i class="fang l"></i><i class="fang r"></i><b class="ser">蛇</b>`,
   sleep: () => `<span class="lid t"></span><span class="lid b"></span><svg class="spiral" viewBox="0 0 100 100"><path d="M50 50 m0 -6 a6 6 0 1 1 -6 6 a12 12 0 1 1 12 12 a18 18 0 1 1 -18 -18 a26 26 0 1 1 26 26 a34 34 0 1 1 -34 -34"/></svg>`,
-  crack: () => `<svg viewBox="0 0 100 100" preserveAspectRatio="none"><polyline points="50,0 46,22 54,34 44,52 56,68 48,100"/><polyline points="46,22 26,30 12,24"/><polyline points="54,34 74,40 90,32"/><polyline points="44,52 22,62 8,60"/><polyline points="56,68 78,72 94,84"/></svg>${['怒','楽','哀','喜'].map((k,i)=>`<b style="--x:${[-34,34,-34,34][i]}vmin;--y:${[-30,-30,30,30][i]}vmin">${k}</b>`).join('')}`,
+  crack: () => `<span class="husk">${emoFace('hantengu')}</span><svg viewBox="0 0 100 100" preserveAspectRatio="none"><polyline points="50,0 46,22 54,34 44,52 56,68 48,100"/><polyline points="46,22 26,30 12,24"/><polyline points="54,34 74,40 90,32"/><polyline points="44,52 22,62 8,60"/><polyline points="56,68 78,72 94,84"/></svg><i class="mflash"></i>${EMOTIONS.map(([id,k],i)=>`<span class="emo" style="--x:${[-30,30,-30,30][i]}vmin;--y:${[-26,-26,26,26][i]}vmin;--i:${i}">${emoFace(id)}<b>${k}</b></span>`).join('')}`,
   darkbolt: () => `<svg viewBox="0 0 100 40" preserveAspectRatio="none"><polyline class="b1" points="-2,28 16,14 30,30 48,12 62,28 80,10 102,24"/><polyline class="b2" points="-2,28 16,14 30,30 48,12 62,28 80,10 102,24"/></svg>`,
   dragons: () => `<svg viewBox="0 0 100 100" preserveAspectRatio="none">${rep(4, i=>`<path style="--d:${i*.12}s" d="M${10+i*27} 108 C${i%2?34+i*14:i*14} 70 ${i%2?i*18:30+i*18} 50 ${20+i*20} ${16+(i%2)*12}"/>`)}</svg>`,
   annihil: () => `<svg class="annring" viewBox="0 0 100 100"><g>${rep(16, i=>`<line x1="50" y1="50" x2="${50+48*Math.cos(i*Math.PI/8)}" y2="${50+48*Math.sin(i*Math.PI/8)}"/>`)}${rep(8, i=>`<polygon points="50,2 54,14 50,26 46,14" transform="rotate(${i*45} 50 50)"/>`)}<circle cx="50" cy="50" r="26"/><circle cx="50" cy="50" r="47"/></g></svg>`,
-  merge: () => ['怒','楽','哀','喜'].map((k,i)=>`<b style="--x:${[-40,40,-40,40][i]}vmin;--y:${[-34,-34,34,34][i]}vmin">${k}</b>`).join('')+'<i class="mflash"></i>',
+  merge: () => EMOTIONS.map(([id,k],i)=>`<span class="emo" style="--x:${[-34,34,-34,34][i]}vmin;--y:${[-28,-28,28,28][i]}vmin">${emoFace(id)}<b>${k}</b></span>`).join('')+`<i class="mflash"></i><span class="husk zoh">${emoFace('zohakuten')}<b>憎</b></span>`,
   biwa: () => rep(3, i=>`<i style="--d:${i*.14}s"></i>`)+'<b>♪</b>',
   tilt: () => '',
   sunsweep: () => '<i></i>',
