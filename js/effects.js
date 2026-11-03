@@ -32,7 +32,8 @@ const FX_ART = {
   flame: () => rep(3, i=>`<path class="burst" style="--d:${i*.06}s" d="M${34+i*14} 78 C${22+i*14} 56 ${40+i*14} 46 ${32+i*14} ${22+(i%2)*12} C${50+i*14} 40 ${50+i*14} 60 ${42+i*14} 78 Z"/>`)
     + rep(6, i=>`<circle class="spray" cx="50" cy="56" r="2.5" style="--dx:${(i-2.5)*16}px;--dy:${-22-(i%3)*12}px"/>`),
   thunder: () => `<polyline class="flick" points="44,0 58,34 44,38 66,100"/><polyline class="flick f2" points="58,34 78,46 70,58"/>`,
-  sun: () => `<circle class="spin" cx="50" cy="50" r="20"/>` + rep(8, i=>`<line class="spin" x1="50" y1="50" x2="${50+46*Math.cos(i*Math.PI/4)}" y2="${50+46*Math.sin(i*Math.PI/4)}" style="stroke-dasharray:0 26 30"/>`),
+  // Sun Breathing on the target: a crossed blaze of golden cuts, no sun disc (CK didn't want suns on the targets)
+  sun: () => `<path class="draw thick" d="M14 30 L86 70"/><path class="draw d2 thick" d="M16 72 L84 28"/><path class="draw thin" style="opacity:.8" d="M30 12 L70 88"/>`,
   mist: () => rep(3, i=>`<ellipse class="drift" style="--d:${i*.12}s" cx="${36+i*14}" cy="${40+i*10}" rx="22" ry="10"/>`),
   wind: () => rep(3, i=>`<path class="draw" style="animation-delay:${.26+i*.07}s,${.8+i*.07}s" d="M6 ${30+i*18} Q50 ${6+i*18} 94 ${36+i*16}"/>`),
   stone: () => rep(6, i=>`<polygon class="spray solid" points="${44+i*3},44 ${54+i*3},40 ${50+i*3},54" style="--dx:${(i-2.5)*18}px;--dy:${(i%2?-1:1)*(14+i*4)}px"/>`),
@@ -58,7 +59,8 @@ const FX_ART = {
 // a drum. Rengoku has one for each special (tiger, then ninth for Ninth Form).
 const SPECIAL_FX = {zenitsu:'bolt', muichiro:'mist', tengen:'drum', inosuke:'claws', tanjiro:'firering', rengoku:'tiger', zohakuten:'dragons', kaigaku:'darkbolt', sanemi:'tornado', gyutaro:'sickles', susamaru:'temari', sekido:'redbolt', suma:'kunai', akaza:'annihil', yoriichi:'sunform', yoriichi_old:'sunform',
   muzan:'whips', muzan_final:'whips2', gyomei:'flail', mitsuri:'ribbon', obanai:'snake', enmu:'sleep',
-  urokodaki:'waterwheel', makio:'burst', hand:'hands', tanjuro:'kagura', sabito:'foxmask'};   // CK, Nov 3, 2026: the last specials without their own moment
+  urokodaki:'waterwheel', makio:'burst', hand:'hands', tanjuro:'kagura', sabito:'boulder',
+  kanao:'bloom', tanjiro_demon:'tendrils', murata:'fizzle', gyokko:'goldfish'};   // Awakened Nezuko: her targets catch pink fire (TARGET_ART)   // Sabito: the boulder on Mount Sagiri, cut clean in two   // CK, Nov 3, 2026: the last specials without their own moment
 const UPPER_RANK = ['','壱','弐','参','肆','伍','陸'];
 const whipArt = n => `<svg viewBox="0 0 100 100" preserveAspectRatio="none">${rep(n, i=>`<path style="--d:${i*.06}s" d="M${i%2?104:-4} ${16+i*(70/n)} C30 ${(i*37)%100} 70 ${100-(i*53)%100} ${i%2?-4:104} ${30+(i*29)%50}"/>`)}</svg>`;
 const SFX_ART = {
@@ -67,10 +69,21 @@ const SFX_ART = {
   burst: () => `<span class="bflash"></span>${rep(12,i=>`<i style="--a:${i*30}deg;--d:${(i%3)*.05}s"></i>`)}`,
   hands: () => rep(6,i=>`<svg class="arm a${i}" viewBox="0 0 40 100"><path d="M20 100 C14 70 24 50 18 30 C16 22 10 18 8 10 M18 30 C22 20 28 16 30 6 M18 30 C20 22 22 14 20 2 M18 30 C14 24 12 18 14 8"/></svg>`),
   kagura: () => `<span class="kring"></span><span class="kring k2"></span>${rep(14,i=>`<i style="--x:${(i*29)%100}%;--d:${(i%7)*.12}s"></i>`)}`,
+  // Gyokko's Thousand Needles: goldfish swim in and fire needles (CK: no vase)
+  goldfish: () => `${rep(5,i=>`<svg class="gf" style="--y:${16+i*16}%;--d:${i*.08}s;--s:${i%2?-1:1}" viewBox="0 0 60 30"><path d="M8 15 C18 2 38 2 46 15 C38 28 18 28 8 15 Z"/><path class="tail" d="M46 15 L58 5 L55 15 L58 25 Z"/><circle cx="16" cy="13" r="2"/></svg>`)}${rep(14,i=>`<i class="nd" style="--a:${-30+i*4.5}deg;--d:${.45+(i%7)*.05}s"></i>`)}<span class="gf-splash"></span>`,
+  // Kanao's Equinoctial Vermilion Eye: a crimson flower blooms, a cut, then its petals scatter (CK: no eyes)
+  bloom: () => `<svg class="bl" viewBox="0 0 100 100">${rep(6,i=>`<path class="blp" style="--r:${i*60}deg;--d:${i*.05}s" d="M50 50 C40 34 42 16 50 8 C58 16 60 34 50 50 Z"/>`)}<circle class="blc" cx="50" cy="50" r="7"/></svg><i class="bl-cut"></i>${rep(16,i=>`<i class="pk" style="--a:${i*22.5}deg;--d:${.9+(i%5)*.04}s"></i>`)}`,
+  petalspin: () => `<span class="pk-eyes"><i></i><i></i></span>${rep(18,i=>`<i class="pk" style="--a:${i*20}deg;--d:${i*.04}s"></i>`)}`,
+  tendrils: () => `<svg viewBox="0 0 100 100" preserveAspectRatio="none">${rep(9,i=>`<path style="--d:${i*.05}s" d="M50 50 C${30+i*5} ${20+i*3} ${70-i*4} ${80-i*5} ${4+i*11} ${i%2?6:94}"/>`)}</svg><span class="td-core"></span>`,
+  bloodfire: () => `<span class="bf-wave"></span>${rep(22,i=>`<i class="bf" style="--x:${(i*41)%100}%;--d:${(i%8)*.05}s;--h:${30+(i*17)%40}vmin"></i>`)}`,
+  fizzle: () => `<span class="fz-wave"></span>${rep(5,i=>`<i class="fz" style="--a:${-50+i*25}deg;--d:${i*.05}s"></i>`)}<b class="fz-puff">…</b>`,
+  boulder: () => `<span class="bd-l"></span><span class="bd-r"></span><i class="bd-cut"></i>${rep(14,i=>`<i class="bd-spray" style="--a:${-70+i*10}deg;--d:${(i%4)*.04}s"></i>`)}`,
   foxmask: () => `<svg class="fox" viewBox="0 0 100 100"><path d="M50 12 C70 12 84 24 86 44 C88 64 72 86 50 90 C28 86 12 64 14 44 C16 24 30 12 50 12 Z"/><path class="fm" d="M28 40 L42 46 M72 40 L58 46 M44 30 C48 26 52 26 56 30 M30 62 C40 58 44 66 50 66 C56 66 60 58 70 62"/></svg><span class="rip"></span><span class="rip r2"></span>`,
   // Nov 3, 2026: an Upper Moon's first move of the match, and two fighters falling on the same beat
   upper: m => `<span class="upeye"><b>上弦の${UPPER_RANK[+(((BYID[m.u.id]||{}).type||'').match(/\d/)||[0])[0]]||''}</b><small>${m.u.name}</small></span>`,
   doubleko: () => '<b class="dko">Double KO</b>',
+  // Muzan's death across the whole screen: dark red build-up, cracks, a white flash, three shockwaves, bars, embers (CK: more climactic)
+  muzandeath: () => `<span class="md-dark"></span><svg class="md-cracks" viewBox="0 0 100 100" preserveAspectRatio="none">${['M50 50 L10 4','M50 50 L92 10','M50 50 L98 58','M50 50 L70 98','M50 50 L22 96','M50 50 L2 40','M30 28 L14 30','M74 30 L86 22','M62 76 L80 84','M28 70 L12 64'].map((d,i)=>`<path style="--d:${i*.04}s" d="${d}"/>`).join('')}</svg><span class="md-flash"></span>${rep(3,i=>`<span class="md-ring" style="--d:${1.05+i*.16}s"></span>`)}<i class="md-bar t"></i><i class="md-bar b"></i>${rep(40,i=>`<i class="md-ember" style="--x:${(i*37)%100}%;--dx:${((i*53)%60)-30}px;--d:${1.2+(i%10)*.12}s;--s:${3+(i*7)%6}px"></i>`)}<b class="md-name">無惨</b>`,
   bolt: () => `<svg viewBox="0 0 100 40" preserveAspectRatio="none"><polyline class="b1" points="-2,12 18,20 30,8 46,24 60,10 76,26 102,14"/><polyline class="b2" points="-2,12 18,20 30,8 46,24 60,10 76,26 102,14"/></svg>`,
   mist: () => rep(5, i=>`<i style="--d:${i*.09}s;--y:${8+i*19}%"></i>`),
   drum: () => rep(3, i=>`<i style="--d:${i*.16}s"></i>`),
@@ -108,6 +121,7 @@ const SFX_ART = {
 const compassFx = () => `<svg class="compassfx" viewBox="0 0 100 100" aria-hidden="true"><g>${rep(8, i=>`<line x1="50" y1="50" x2="${50+48*Math.cos(i*Math.PI/4)}" y2="${50+48*Math.sin(i*Math.PI/4)}"/>`)}${rep(6, i=>`<polygon points="50,6 54,16 50,26 46,16" transform="rotate(${i*60} 50 50)"/>`)}<circle cx="50" cy="50" r="30"/><circle cx="50" cy="50" r="46"/></g></svg>`;
 // Drawn on each fighter a special lands on, so the eye stays on the damage (views.js targetFx, by character)
 const TARGET_ART = {
+  nezuko_awakened: () => rep(8, i=>`<path class="tfi pinkfire" style="--d:${i*.06}s" d="M${10+i*11} 96 C${2+i*11} 70 ${22+i*11} 56 ${12+i*11} 30 C${30+i*11} 48 ${26+i*11} 72 ${18+i*11} 96 Z"/>`),   // Awakened Nezuko: her targets catch pink fire (CK)
   kanae: () => rep(9, i=>`<ellipse class="tfi fall" style="--d:${i*.08}s" cx="${10+i*10}" cy="${6+(i*37)%30}" rx="4" ry="2.2" transform="rotate(${i*40} ${10+i*10} 20)"/>`),
   hakuji: () => rep(14, i=>`<g transform="translate(${8+(i*37)%84} ${8+(i*53)%80})"><polygon class="tfi fist" style="--d:${i*.06}s" points="0,-9 3,-3 9,-3 4,1 6,8 0,4 -6,8 -4,1 -9,-3 -3,-3"/></g>`),
   typezero: () => rep(6, i=>`<g transform="rotate(${i*60} 50 50)"><path class="tfi tzb" style="--d:${i*.07}s" d="M50 50 L54 8 L50 2 L46 8 Z"/></g>`),
@@ -120,7 +134,8 @@ const TARGET_ART = {
   crack: () => `<polyline class="tfi crk" points="50,2 44,24 56,36 42,54 58,70 48,98"/><polyline class="tfi crk" style="--d:.1s" points="44,24 22,32 8,26"/><polyline class="tfi crk" style="--d:.1s" points="56,36 78,44 94,36"/><polyline class="tfi crk" style="--d:.2s" points="42,54 20,64 6,62"/><polyline class="tfi crk" style="--d:.2s" points="58,70 80,74 96,86"/>`,
   charm: () => `<g class="tfi"><rect x="36" y="14" width="28" height="62" rx="2" fill="#f2ead8" stroke="#a33" stroke-width="1.2"/><circle cx="50" cy="44" r="8" fill="none" stroke="#a33" stroke-width="1.6"/><line x1="50" y1="24" x2="50" y2="66" stroke="#a33" stroke-width="1.2"/></g>`,
   wires: () => rep(5, i=>`<line class="tfi wire" style="--d:${i*.05}s" x1="${i*25}" y1="-6" x2="${100-i*25}" y2="106"/>`)+rep(3, i=>`<line class="tfi wire" style="--d:${.2+i*.05}s" x1="-6" y1="${20+i*30}" x2="106" y2="${50-i*10}"/>`),
-  vase: () => `<path class="tfi pot" d="M34 6 H66 L62 18 C84 32 88 74 68 94 H32 C12 74 16 32 38 18 Z"/><path class="tfi potl" style="--d:.1s" d="M24 44 C38 52 62 52 76 44"/><path class="tfi potl" style="--d:.1s" d="M22 62 C38 70 62 70 78 62"/>`,
+  // Gyokko's Water Prison Pot: a sphere of water closes around the target and ripples (CK, Nov 3, 2026)
+  vase: () => `<circle class="tfi wpr" cx="50" cy="52" r="42"/><circle class="tfi wpr w2" cx="50" cy="52" r="34"/><path class="tfi wpw" d="M12 60 C26 52 38 68 50 60 C62 52 74 68 88 60"/>${rep(6,i=>`<circle class="tfi wpb" style="--d:${i*.12}s" cx="${26+i*10}" cy="${80-(i%3)*8}" r="${2+(i%3)}"/>`)}`,
   tamayo: () => rep(7, i=>`<g transform="rotate(${i*360/7} 50 50)"><g class="tfi bloom" style="--d:${i*.07}s"><circle cx="50" cy="12" r="3"/>${rep(5, k=>`<ellipse cx="50" cy="6" rx="3.4" ry="6" transform="rotate(${k*72} 50 12)"/>`)}</g></g>`),
   kokushibo: () => rep(3, i=>`<g transform="rotate(${i*120-20} 50 50)"><path class="tfi moon" style="--d:${i*.12}s" d="M34 8 A22 22 0 1 0 66 8 A17 17 0 1 1 34 8 Z"/></g>`),
   shinobu: () => rep(5, i=>`<g transform="rotate(${i*72} 50 50)"><g class="fly" style="--d:${i*.08}s"><ellipse cx="44" cy="10" rx="7" ry="5" transform="rotate(-24 44 10)"/><ellipse cx="56" cy="10" rx="7" ry="5" transform="rotate(24 56 10)"/></g></g>`),

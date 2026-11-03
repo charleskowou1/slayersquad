@@ -140,7 +140,7 @@ function clipMoment(line){
 const specialKOs = u => { const a=S.play.steps[S.play.k][0]; for(let i=a+1;i<S.log.length && S.log[i].fx!=='special';i++) if(S.log[i].ko && S.log[i].by===u.uid) return true; return false; };
 // The clip for one playback step (first line of the step), or null. Records repeat moments in S.clipSeen.
 function clipStep(line){
-  if(S.clipsOn===false || !line) return null;
+  if(S.clipsOn===false || !line || line.dodge || line.guard) return null;   // a dodge or a guard shows its own animation, not the attacker's clip
   const m=clipMoment(line); if(!m || !m.u) return null;
   const src=(clipSet(CLIPS,m.u)||{})[m.act]; if(!src) return null;
   const seen=S.clipSeen=S.clipSeen||{}, key=m.u.uid+':'+m.act;

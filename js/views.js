@@ -832,6 +832,9 @@ function stage(line){
   const mark=`<span class="st-mark">${style&&(type==='hit'||type==='special')?STYLE_KANJI[style]:FX_MARK[type]||''}</span>`;
   const solo=on||by;
   if(line.calm && by) return stageCalm(by);
+  const dart=(line.dodge||line.guard) && by && on ? dodgeArt(line,on) : '';
+  if(dart){ const rev=by.p!==leftSide(), att=`<div class="st-by">${seal(by,'stg')}<span class="st-nm" style="color:${pc(by.p)}">${esc(by.name)}</span></div>`, tgt=`<div class="st-on">${dart}<span class="st-nm" style="color:${pc(on.p)}">${esc(on.name)}</span></div>`;
+      return `<div class="stage duo dodgestage fx-${type}${rev?' rev':''}" aria-hidden="true">${rev?tgt+att:att+tgt}</div>`; }
   if(line.sunrise) return `<div class="stage sunstage" aria-hidden="true"><span class="sunrays"></span><span class="sundisc"></span><span class="sunland"></span><b class="sunkj">日の出</b></div>`;   // nobody acts at sunrise, so it gets its own picture
   if(line.frenzy){ const foe=players().find(p=>alive(p).some(u=>u.demon)); return `<div class="stage frenzystage" aria-hidden="true"><div class="calmteam">${(foe===undefined?[]:alive(foe)).slice(0,6).map(u=>seal(u,'stg')).join('')}</div><b class="sunkj">狂</b></div>`; }
   return `<div class="stage fx-${type||'none'}${cut||dust||muz||fell?' sliced':''}${muz?' muzko':''}${line.gone?' goneaway':''}${line.shrink?' shrinking':''}${line.cover?' covering':''}${act} ${duo?'duo':'solo'}${rev?' rev':''}${style?' sty sty-'+style:''}" aria-hidden="true">
@@ -848,6 +851,20 @@ const crumblePic = (kind, html) => `<span class="crumble ${kind}"><span class="c
 const slicePic = (u, html, style='slash') => `<span class="slice cut-${style}${BYID[u.id]&&BYID[u.id].upper?' upcut':''}">${BYID[u.id]&&BYID[u.id].upper?`<b class="upk" aria-hidden="true"><span>上弦</span><span>上弦</span></b>`:''}<span class="sl-b">${html}</span><span class="sl-t">${html}</span><i class="sl-line"></i>${rep(7,i=>`<i class="sl-red" style="--a:${-60+i*20}deg;--d:${i*.03}s"></i>`)}</span>`;
 // A special that knocks someone out ends on a big KO in the middle of the stage (CK, Nov 3, 2026; ink and hanko marks tried and dropped)
 const koSlam = () => '<b class="koslam" aria-hidden="true">KO</b>';
+// Character dodges and guards (CK, Nov 3, 2026): the miss or block looks like the move that caused it. Used by single hits and group attacks.
+function dodgeArt(line, on){
+  const dg=line.dodge, gd=line.guard&&findU(line.guard); if(!(dg||gd) || !on) return '';
+  const pic=seal(on,'stg'), D={
+    muichiro:`<span class="dg mist"><span class="dg-ghost">${pic}</span><span class="dg-ghost g2">${pic}</span><span class="dg-real">${pic}</span>${rep(6,i=>`<i style="--x:${12+i*15}%;--d:${i*.06}s"></i>`)}</span>`,
+    swamp:`<span class="dg swampdive"><span class="dg-pool"></span><span class="dg-real">${pic}</span></span>`,
+    makomo:`<span class="dg flow"><span class="dg-ghost">${pic}</span><span class="dg-real">${pic}</span></span>`,
+    suma:`<span class="dg flee"><span class="dg-real">${pic}</span><b class="dg-sweat">!</b></span>`,
+    hantengu:`<span class="dg shrinkdg"><span class="dg-real">${pic}</span></span>`,
+    yushiro:`<span class="dg talisman"><span class="dg-real">${pic}</span><svg class="dg-tag" viewBox="0 0 100 100"><rect x="36" y="14" width="28" height="62" rx="2"/><circle cx="50" cy="44" r="8"/><circle cx="50" cy="44" r="3"/></svg></span>`,
+    selfless:`<span class="dg selflessdg"><span class="dg-real">${pic}</span><i class="dg-pass"></i></span>`,
+  };
+  return gd ? `<span class="dg guarddg ${gd.sk==='tengen_retired'?'tengen':'tanjiro'}"><span class="dg-real">${pic}</span><span class="dg-guardian">${seal(gd,'stg')}</span><b class="dg-kj">護</b>${rep(6,i=>`<i style="--a:${-60+i*24}deg"></i>`)}</span>` : D[dg]||'';
+}
 // Shinobu, Kanae and Kanao fall in butterfly petals (CK kept these; other slayers fall as before)
 const PETAL_FAMS = ['shinobu','kanae','kanao'];
 const fallPic = (u, html) => `<span class="fall petals"><span class="fl-pic">${html}</span>${rep(12,i=>`<i style="--x:${(i*31)%100}%;--dx:${((i*47)%80)-40}px;--d:${(i%6)*.12}s"></i>`)}</span>`;
@@ -866,7 +883,8 @@ function fxName(lines, from){
   if(name!=='drum') for(let i=from-1;i>=0;i--){ const m=S.log[i]; if(m.by!==l.by) continue; if(m.fx==='special'){ if(m.sig==='ninth') name='ninth'; break; } if(m.move==='special' && SPECIAL_HITS.includes(m.fx)) return null; }
   return name;
 }
-const beatFx = (lines, from) => { const name=fxName(lines,from); return name ? `<div class="sfx sfx-${name}" aria-hidden="true">${SFX_ART[name]()}</div>` : ''; };
+const beatFx = (lines, from) => { const name=fxName(lines,from); if(!name) return ''; const l=lines.find(x=>x.by), by=l&&findU(l.by), right=by && by.p!==leftSide();   // which side the attacker is on (Yoriichi's glow comes from there)
+  return `<div class="sfx sfx-${name}${right?' fromright':''}" aria-hidden="true">${SFX_ART[name]()}</div>`; };
 // The big moments of a match: the blow that ends it, a team down to its last fighter, Hantengu breaking apart
 function momentOf(lines, to, cur){
   if(lines.some(l=>l.grit)) return {k:'somehow'};
@@ -879,6 +897,7 @@ function momentOf(lines, to, cur){
   if(lines.some(l=>l.fx==='stun' && l.move==='attack' && l.by && (findU(l.by)||{}).sk==='nakime')) return {k:'biwa'};
   if(lines.some(l=>l.fx==='spawn' && l.on && findU(l.on) && findU(l.on).sk==='hantengu')) return {k:'crack'};
   const ko=lines.filter(l=>l.fx==='ko'); if(!ko.length) return null;
+  if(ko.some(l=>(findU(l.on)||{}).fam==='muzan')) return {k:'muzandeath'};   // Muzan's end gets the whole screen
   if(S.final && !S.log.slice(to+1).some(l=>l.fx==='ko')) return {k:'final', color:ko.some(l=>(findU(l.on)||{}).fam==='muzan')};   // Muzan's explosion stays in colour
   if(ko.length>=2) return {k:'doubleko'};
   for(const p of players()){ const up=S.teams[p].filter(u=>(cur.hp[u.uid]||0)>0);
@@ -906,7 +925,7 @@ const byFx = l => { const u=l.by&&findU(l.by); if(!u || l.move!=='special' || l.
 // Akaza's Compass Needle opens under his target, Doma's Frozen Lotus around each of his
 const artSvg = k => `<svg class="tfx" viewBox="0 0 100 100" aria-hidden="true">${TARGET_ART[k]()}</svg>`;
 const targetFx = l => { const by=l.by&&findU(l.by);
-  const k=l.knit?'knit':l.ate?'crack':l.hid?'charm':l.trap?'wires':l.kind==='pot'?'vase':''; if(k) return artSvg(k); if(by && by.sk==='tamayo' && l.fx==='heal') return `<svg class="tfx" viewBox="0 0 100 100" aria-hidden="true">${TARGET_ART.tamayo()}</svg>`;
+  const k=l.knit?'knit':l.ate?'crack':l.hid?'charm':l.trap?'wires':l.kind==='pot'?'':''; if(k) return artSvg(k); if(by && by.sk==='tamayo' && l.fx==='heal') return `<svg class="tfx" viewBox="0 0 100 100" aria-hidden="true">${TARGET_ART.tamayo()}</svg>`;
   if(by && by.sk==='yahaba' && l.move==='special' && l.fx==='stun') return artSvg('yahaba');
   if(!by || l.move!=='special' || !['hit','poison'].includes(l.fx)) return '';
   return by.sk==='akaza' ? (sigFor(l)==='annihilation' ? '' : compassFx()) : by.sk==='doma' ? lotusFx() : TARGET_ART[by.sk] && !['tamayo','knit','crack','charm','wires','vase'].includes(by.sk) ? `<svg class="tfx" viewBox="0 0 100 100" aria-hidden="true">${TARGET_ART[by.sk]()}</svg>` : ''; };
@@ -970,7 +989,7 @@ function stageGroup(lines){
   const hits=lines.filter(l=>GROUP_FX.includes(l.fx));
   const target=l=>{ const t=findU(l.on), amt=l.t.match(/\[([+-])(\d+%)\]/), ko=lines.some(m=>m.fx==='ko'&&m.on===l.on);
     const koL=lines.find(m=>m.fx==='ko'&&m.on===l.on), cut=ko && slicedBy(koL,t), dust=crumbleKind(koL), muz=ko && t.fam==='muzan', fell=ko && !cut && !dust && !muz && PETAL_FAMS.includes(t.fam);
-    const pic=muz?muzanPic(seal(t,'stg')):dust?crumblePic(dust,seal(t,'stg')):cut?slicePic(t,seal(t,'stg'),cutStyle(koL)):fell?fallPic(t,seal(t,'stg')):seal(t,'stg');
+    const dga=dodgeArt(l,t), pic=dga?dga:muz?muzanPic(seal(t,'stg')):dust?crumblePic(dust,seal(t,'stg')):cut?slicePic(t,seal(t,'stg'),cutStyle(koL)):fell?fallPic(t,seal(t,'stg')):seal(t,'stg');
     return `<div class="st-on${ko?(cut||dust||muz||fell?' sliced':' koed'):''}${l.fx!=='hit'?' missed':''}">${ko&&pic.startsWith('<span')?`<span class="kolater">${pic}</span>`:pic}${calmSides().has(t.p)?waterRing():''}${targetFx(l)}${l.fx==='hit'?fxArt(style):''}${ko?'':amt?`<span class="pop dmg">−${amt[2]}</span>`:l.fx!=='hit'?`<span class="pop">${l.fx==='miss'?'miss':'blocked'}</span>`:''}<span class="st-nm" style="color:${pc(t.p)}">${esc(t.name)}</span></div>`; };
   const attacker=`<div class="st-by">${seal(by,'stg')}<span class="st-nm" style="color:${pc(by.p)}">${esc(by.name)}</span></div>`;
   const row=`<div class="st-targets">${hits.map(target).join('')}</div>`, mark=`<span class="st-mark">${STYLE_KANJI[style]}</span>`;

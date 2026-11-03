@@ -34,28 +34,79 @@ function rosterDrift(now){
 }
 ['touchstart','touchmove','wheel','pointerdown','scroll'].forEach(ev=>document.addEventListener(ev,e=>{ if(ev==='scroll' && Date.now()>=ROSTER_ROW.until) return; if(e.target.closest && e.target.closest('.artstrip')){ ROSTER_ROW.until=Date.now()+4000; const el=document.querySelector('.artstrip'); if(el) rosterPlace(el); } },{passive:true, capture:true}));
 // Synergy reveal: once per match, at the first move screen, the teams' active synergies light up for a moment (tap to skip)
+// Who a synergy is about, for its portraits: fighters named in it, or the group it counts (Hashira, Upper Moons, Marks, demons)
+const SYN_GROUPS = {'Hashira':u=>BYID[u.id].hashira, 'Corps Master':u=>BYID[u.id].hashira||u.fam==='kagaya', 'Upper Moons':u=>BYID[u.id].upper, 'Marks spread':u=>u.mark,
+  "Muzan's Blood":u=>u.demon&&u.fam!=='nezuko', 'Kamaboko Squad':u=>['tanjiro','zenitsu','inosuke'].includes(u.fam), 'Siblings counter':u=>['tanjiro','nezuko'].includes(u.fam),
+  'Mentor':u=>['urokodaki','tanjiro','giyu','sabito'].includes(u.fam), 'The Three Wives':u=>['hinatsuru','makio','suma'].includes(u.fam)};
+// Pairs: both fighters are pictured even when only one gets the bonus (CK: Sun Lineage shows Yoriichi and Tanjiro)
+[['Sun Lineage','yoriichi','tanjiro'],['Devoted','tamayo','yushiro'],['Two as One','gyutaro','daki'],['Father and Son','tanjuro','tanjiro'],["Kanae's student",'kanae','kanao'],
+ ['Training partner','typezero','muichiro'],['Kocho Sisters','kanae','shinobu'],['Temari & Arrows','susamaru','yahaba'],['Old Friends','giyu','sabito'],['Set Your Heart Ablaze','rengoku','tanjiro'],
+ ['Love Hashira','obanai','mitsuri'],['Brothers','sanemi','genya'],["Urokodaki's Pupils",'makomo','sabito'],["Tengen's Family",'tengen','hinatsuru','makio','suma']].forEach(([n,...f])=>{ SYN_GROUPS[n]=u=>f.includes(u.fam); });
+function synMembers(p, label){
+  const name=label.replace(/^!/,'').split(':')[0].replace(/ [+−-]\d.*$/,''), grp=SYN_GROUPS[name], team=S.teams[p].filter(u=>!u.spawn);
+  let us=grp ? team.filter(grp) : team.filter(u=>[u.name,u.short,BYID[u.id].short,u.fam].some(n=>n && label.toLowerCase().includes(String(n).toLowerCase().replace(/ ✦$/,''))));
+  if(!us.length) us=team.slice(0,2);
+  const foe=/^Rival|^Revenge/.test(name) ? enemiesOf(p).flatMap(q=>S.teams[q]).find(u=>label.includes(u.short)||(/Doma/.test(label)&&u.fam==='doma')||(name==='Rival'&&['akaza','kaigaku'].includes(u.fam))) : null;
+  return {us:us.slice(0,4), foe};
+}
+// The bonus line (CK): a bonus for both says just '+2 PWR'; a bonus for one says who, '+2 PWR for Tanjiro'
+const synBonus = t => t.split(/,\s*/).map(part=>{ const m=part.match(/^((?:[A-Z][a-z][\w✦']*\s?)+?)\s+([+−-]\d.*)$/); if(!m) return part; return / and /.test(part) ? m[2] : `${m[2]} for ${m[1].trim()}`; })
+  .join(', ').replace(/^(.*?) and (.*?) ([+−-]\d.*)$/,'$3');
+// Synergy reveal (CK, Nov 3, 2026: "do it better"): one cut-in per synergy. A band sweeps across, the fighters slide in, a link
+// lights between them, then the name. Tap to skip.
 function synergyIntro(){
-  S.synShown=true; const sides=players().map(p=>({p, list:(S.syn&&S.syn[p]||[]).filter(x=>x[0]!=='!')})).filter(x=>x.list.length); if(!sides.length) return;
-  const el=document.createElement('div'); el.className='synintro'; el.setAttribute('role','status');
-  el.innerHTML=sides.map(x=>`<div class="synside" style="--tc:${pc(x.p)}"><div class="synwho">${S.teams[x.p].filter(u=>!u.spawn).map(u=>seal(u,'sm')).join('')}</div><b>${esc(nm(x.p))}</b>${x.list.map((t,i)=>`<span class="synchip" style="--i:${i}">${esc(t)}</span>`).join('')}</div>`).join('');
-  el.addEventListener('click',()=>el.remove()); document.body.appendChild(el); setTimeout(()=>el.classList.add('out'),2600); setTimeout(()=>el.remove(),3200);
+  S.synShown=true; const list=players().flatMap(p=>(S.syn&&S.syn[p]||[]).filter(x=>x[0]!=='!').map(t=>({p,t}))).slice(0,6); if(!list.length) return;
+  const el=document.createElement('div'); el.className='synreel'; el.setAttribute('role','status'); document.body.appendChild(el);
+  let i=0, timer=null; const done=()=>{ clearTimeout(timer); el.classList.add('out'); setTimeout(()=>el.remove(),400); };
+  const next=()=>{ if(i>=list.length) return done(); const {p,t}=list[i++], m=synMembers(p,t), cut=t.includes(':')?t.indexOf(':'):t.search(/ [+−-]\d/), name=cut>0?t.slice(0,cut):t, what=synBonus(cut>0?t.slice(cut+1).trim():'');   // 'Brothers: …' or 'Hashira +1 PWR'
+    const L=m.us.slice(0,Math.ceil(m.us.length/2)), R=m.foe?[m.foe]:m.us.slice(Math.ceil(m.us.length/2));
+    el.innerHTML=`<div class="synband" style="--tc:${pc(p)}"><span class="synteamtag">${esc(nm(p))}</span>
+      <div class="synpair"><span class="synl">${L.map(u=>seal(u,'lg')).join('')}</span><i class="synlink${m.foe?' vs':''}">${m.foe?'VS':''}</i><span class="synr">${R.map(u=>seal(u,'lg')).join('')}</span></div>
+      <b class="synname">${esc(name)}</b>${what?`<span class="syneff">${esc(what)}</span>`:''}<span class="syncount">${i} / ${list.length}</span></div>`;
+    timer=setTimeout(next, quickMotion()?700:1450); };
+  el.addEventListener('click',done); next();
 }
 /* KO test matches (localhost only): ?test=<name> starts a battle one hit from that knockout. Tap Attack on the fighter
    (or Fight) and watch. CK, Nov 3, 2026. */
+const dodge=(id,by,extra)=>({you:['tanjiro'], foe:[id,'hand'], keep:true, setup:()=>{ const t=S.teams[1][0]; Object.assign(t,{hp:t.max,pow:0}, by); S.teams[0][0].spd=99; S.teams[1].forEach(u=>{u.pow=0;u.spd=1;u.cd=9;}); if(extra) extra(); }, note:'Attack '+BYID[id].short+' and Fight.'});
 const KO_TESTS = {
+  // dodges and guards (CK, Nov 3, 2026)
+  d_muichiro: dodge('muichiro',{evade:true,evadeBy:'muichiro'}),
+  d_swamp:    dodge('swamp',{evade:true,evadeBy:'swamp'}),
+  d_makomo:   dodge('makomo',{evade:true,evadeBy:'makomo'}),
+  d_suma:     dodge('suma',{evade:true,evadeBy:'suma'}),
+  d_hantengu: dodge('hantengu',{evade:true,evadeBy:'hantengu'}),
+  d_yushiro:  {you:['tanjiro'], foe:['tamayo','yushiro'], keep:true, setup:()=>{ const t=S.teams[1][0]; Object.assign(t,{evade:true,evadeBy:'yushiro'}); S.teams[0][0].spd=99; S.teams[1].forEach(u=>{u.pow=0;u.spd=1;u.cd=9;}); }, note:'Yushiro’s talisman hides Tamayo. Attack Tamayo and Fight.'},
+  d_selfless: dodge('tanjiro_mark',{selfless:true,reveal:false}, ()=>{ Object.assign(S.teams[1][0],{cd:3,stun:true}); }),   // stunned so he doesn't strike (striking reveals him)
+  g_save:     {you:['akaza'], foe:['zenitsu','tanjiro_mark'], keep:true, setup:()=>{ const [z,t]=S.teams[1]; Object.assign(z,{saved:t.name,savedBy:t.uid}); Object.assign(t,{selfless:true}); S.teams[0][0].spd=99; t.cd=3; S.teams[1].forEach(u=>{u.pow=0;u.spd=1;u.cd=9;}); }, note:'Tanjiro stands over Zenitsu. Attack Zenitsu and Fight.'},
+  g_tengen:   {you:['akaza'], foe:['zenitsu','tengen_retired'], keep:true, setup:()=>{ const [z,t]=S.teams[1]; Object.assign(z,{defending:true,guardBy:t.uid}); S.teams[0][0].spd=99; S.teams[1].forEach(u=>{u.pow=0;u.spd=1;u.cd=9;}); }, note:'Retired Tengen guards Zenitsu. Attack Zenitsu and Fight.'},
+  g_group:    {you:['gyomei'], foe:['muichiro','hantengu','tanjiro_mark','zenitsu'], keep:true, setup:()=>{ const [m,h,t,z]=S.teams[1]; Object.assign(m,{evade:true,evadeBy:'muichiro'}); Object.assign(h,{evade:true,evadeBy:'hantengu'}); Object.assign(t,{selfless:true,reveal:false,cd:3,stun:true}); Object.assign(z,{saved:t.name,savedBy:t.uid}); S.teams[0][0].cd=0; S.teams[0][0].spd=99; S.teams[1].forEach(u=>{u.pow=0;u.spd=1;u.cd=Math.max(u.cd,9);}); }, note:'Use Gyomei’s special: four dodges and a guard at once.'},
+  s_yoriichi: {you:['yoriichi'], foe:['akaza','doma'], keep:true, setup:()=>{ S.teams[1].forEach(u=>{u.pow=0;u.cd=9;u.hp=u.max=200;}); S.teams[0][0].cd=0; }, note:'Attack for the new sun, or use his special.'},
+  // new specials
+  s_gyokko:   {you:['gyokko'], foe:['tanjiro','zenitsu'], keep:true, setup:()=>{ S.teams[0][0].cd=0; S.teams[1].forEach(u=>{u.pow=0;u.cd=9;}); }, note:'Use Gyokko’s special: the water prison.'},
+  s_kanao:    {you:['kanao'], foe:['akaza','doma'], keep:true, setup:()=>{ S.teams[0][0].cd=0; S.teams[1].forEach(u=>{u.pow=0;u.cd=9;}); }, note:'Use Kanao’s special.'},
+  s_demonking:{you:['tanjiro_demon'], foe:['tanjiro','zenitsu','inosuke'], keep:true, setup:()=>{ S.teams[0][0].cd=0; S.teams[1].forEach(u=>{u.pow=0;u.cd=9;}); }, note:'Use Demon King Tanjiro’s special.'},
+  s_nezuko:   {you:['nezuko_awakened'], foe:['akaza','doma'], keep:true, setup:()=>{ S.teams[0][0].cd=0; S.teams[1].forEach(u=>{u.pow=0;u.cd=9;}); }, note:'Use Awakened Nezuko’s special.'},
+  s_murata:   {you:['murata'], foe:['hand','swamp'], keep:true, setup:()=>{ S.teams[0][0].cd=0; S.teams[1].forEach(u=>{u.pow=0;u.cd=9;}); }, note:'Use Murata’s special.'},
   petals:   {you:['akaza'], foe:['kanao'], note:'Kanao falls: butterfly petals.'},
   behead:   {you:['tanjiro'], foe:['hand','swamp'], note:'A demon is beheaded (not the last blow, so normal speed).'},
-  upper:    {you:['gyomei'], foe:['akaza'], note:'An Upper Moon: the kanji shatters, then the cut.'},
   muzan:    {you:['yoriichi'], foe:['muzan'], note:'Muzan cracks, the stage shakes, and he explodes.'},
   special:  {you:['tanjiro'], foe:['akaza'], note:'Use Tanjiro’s special (Hinokami Kagura): it lands the cut in the same moment.'},
+  synergy:  {you:['rengoku','tanjiro','sanemi','genya'], foe:['akaza','doma','gyutaro'], keep:true, syn:true, note:'The synergy panel opens now.'},
+  laststand:{you:['rengoku'], foe:['akaza','doma'], keep:true, setup:()=>{ S.teams[0][0].hp=4; }, note:'Your last fighter is under 25%: the red glow.'},
+  sunrise:  {you:['gyomei','giyu'], foe:['akaza','doma'], keep:true, setup:()=>{ S.round=SUNRISE_ROUND; }, note:'Round 10: pick any moves and Fight to see the sunrise.'},
+  upper:    {you:['gyomei'], foe:['akaza'], note:'An Upper Moon: the kanji shatters, then the cut.'},
+  entrance: {you:['tanjiro','zenitsu'], foe:['doma','hand'], keep:true, setup:()=>{ S.teams[1].forEach(u=>{ u.spd=99; }); }, note:'Fight: Doma moves first and makes his entrance.'},
+  doubleko: {you:['mitsuri_mark'], foe:['hand','swamp'], keep:true, setup:()=>{ S.teams[1].forEach(u=>{ u.hp=1; u.pow=0; u.revive=0; }); S.teams[0][0].cd=0; }, note:'Use Mitsuri’s special: both fall at once.'},
+  specials: {you:['urokodaki','makio','sabito','tanjuro'], foe:['akaza','doma'], keep:true, setup:()=>{ S.teams[0].forEach(u=>u.cd=0); S.teams[1].forEach(u=>{ u.pow=0; }); }, note:'Use each fighter’s special to see the new effects.'},
 };
 function koTest(){
   const name=(new URLSearchParams(location.search).get('test')||'').toLowerCase(), t=KO_TESTS[name]; if(!t || !/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) return;
   Object.assign(S,{mode:'cpu', n:2, duo:false, names:[playerName()||'You','Test'], askName:null, unlockAll:true, budget:UNLIMITED, maxTeam:6});
-  S.picks=[t.you.slice(), t.foe.slice()]; startBattle(); S.synShown=true;
-  S.teams[1].forEach((u,i)=>{ if(i===0) u.hp=1; u.pow=0; u.regen=0; u.revive=0; u.cd=9; u.spd=0; });   // first enemy one hit from down, and harmless
-  S.teams[0].forEach(u=>{ u.spd=99; });
-  note(t.note+' Tap Attack on the enemy, then Fight.'); render();
+  S.picks=[t.you.slice(), t.foe.slice()]; startBattle(); S.synShown=!t.syn;
+  if(!t.keep){ S.teams[1].forEach((u,i)=>{ if(i===0) u.hp=1; u.pow=0; u.regen=0; u.revive=0; u.cd=9; u.spd=0; }); S.teams[0].forEach(u=>{ u.spd=99; }); }   // first enemy one hit from down, and harmless
+  if(t.setup) t.setup();
+  note(t.keep ? t.note : t.note+' Tap Attack on the enemy, then Fight.'); render();
 }
 setTimeout(koTest, 900);
 function render(){
@@ -147,7 +198,7 @@ function playRound(){
     const noise=()=>{ if(flurry) lines.forEach((l,i)=>setTimeout(()=>sfxForLine(l),i*280)); else if(b>a){ sfx('bighit'); if(lines.some(l=>l.ko)) setTimeout(()=>sfx('ko'),250); } else if(S.play.clip && S.play.clip.sound) clipSound(S.play.clip.sound); else sfxForLine(line); };
     if(special==='sunform'){ for(let i=0;i<13;i++) setTimeout(()=>sfx('slash'), 60+i*90); setTimeout(noise,1250); } else noise();   // Yoriichi: thirteen cuts, then they all land
     render();
-    const extra=(special==='sunform'?1300:0)+(!m?0:m.k==='final'?600:m.k==='lone'?500:0);
+    const extra=(special==='sunform'?1300:0)+(!m?0:m.k==='final'?600:m.k==='muzandeath'?1500:m.k==='lone'?500:0);
     const t = extra*pace() + (flurry ? (quickMotion()?400:(1300+320*lines.length)*pace()) : b>a ? groupTime(lines) : line.fx==='awaken' ? Math.max(readTime(line), 3600*pace()) : readTime(line));
     const c=S.play.clip, d=c&&CLIP_DUR[c.src], full=c&&c.first&&!clipIsPic(c.src) ? (!d ? CLIP_MAX : d>=CLIP_LOOP ? Math.min(CLIP_FIRST_MAX, d*1000+400) : CLIP_MIN*pace())   // first time: to the end, at any speed
       : d&&d>=CLIP_LOOP&&S.speed!=='fast' ? Math.min(CLIP_MAX, d*1000+400) : CLIP_MIN*pace();
@@ -436,6 +487,9 @@ function clockTick(){
   const on=isOnline() && !S.ctl && (!isAsync() || S.oppHere) && !S.final, watch=on && S.phase==='result';
   const key=watch ? 'r'+(S.roundId||0) : on ? clockKey() : '';
   if(key!==CLOCK.key){ CLOCK.key=key; CLOCK.at=Date.now(); CLOCK.sent=false; }
+  // not counting while the synergy cut-ins are up, or while the round is still playing back (CK, Nov 3, 2026)
+  const paused=document.querySelector('.synreel') || (watch && S.play && !S.play.done) || S.phase==='scene';
+  if(paused){ CLOCK.at=Date.now(); el.hidden=true; return; }
   if(!key){ el.hidden=true; return; }
   const limit=CLOCK_LIMIT[key[0]], left=Math.max(0, Math.ceil(limit-(Date.now()-CLOCK.at)/1000));
   el.hidden=false; el.textContent=`⏱ ${Math.floor(left/60)}:${String(left%60).padStart(2,'0')}`; el.classList.toggle('low', left<=15);

@@ -597,9 +597,9 @@ function hit(a,t,base,o={}){
   const ub=!!o.unblockable;   // Hinokami Kagura out of the Selfless State: nothing blocks it
   if(!ub){
     if(S.shield[t.p]){ L(`${t.name} is untouched. Dead Calm blocks it.`,'x',fx('block',a,t)); return 0; }
-    if(hidden(t)){ L(`${a.name} strikes at ${t.name}, but he's in the Selfless State. Nothing touches him.`,'x',fx('miss',a,t)); return 0; }
-    if(t.saved){ L(`${t.name} is untouched. ${t.saved} stands guard over them.`,'x',fx('block',a,t)); return 0; }
-    if(t.evade){ L(`${a.name} strikes at ${t.name}, but hits nothing.`,'x',fx('miss',a,t)); return 0; }
+    if(hidden(t)){ L(`${a.name} strikes at ${t.name}, but he's in the Selfless State. Nothing touches him.`,'x',{...fx('miss',a,t), dodge:'selfless'}); return 0; }
+    if(t.saved){ L(`${t.name} is untouched. ${t.saved} stands guard over them.`,'x',{...fx('block',a,t), dodge:'save', guard:t.savedBy}); return 0; }
+    if(t.evade){ L(`${a.name} strikes at ${t.name}, but hits nothing.`,'x',{...fx('miss',a,t), dodge:t.evadeBy||'evade'}); return 0; }
     if(t.away){ L(t.carried ? `${a.name} can't reach ${t.name}. Goto has them.` : `${a.name} can't find ${t.name}. They're in another room of the castle.`,'x',fx('miss',a,t)); return 0; }
     if(a.astray){ L(`Yahaba's arrows bend ${a.name}'s blow away from ${t.name}.`,'x',fx('miss',a,t)); return 0; }
   } else if(S.shield[t.p]||t.evade||t.away||t.saved||t.defending||a.astray) L(`Nothing can stop it. ${a.name} cuts straight through to ${t.name}.`,'h',fx('special',a,t));
@@ -607,9 +607,10 @@ function hit(a,t,base,o={}){
   const guarded = t.defending && !o.pierce && !a.pierceAll && !ub;
   if(guarded) d = Math.ceil(d/2);
   let note = guarded?' (guarded)':'';
+  const guardLine = guarded && t.guardBy ? {guard:t.guardBy} : null;   // Retired Tengen standing over an ally
   if(t.cap){ const room=t.cap-t.taken; if(room<=0){ L(`${t.name} sees it coming in the Transparent World. No damage.`,'x',fx('block',a,t)); return 0; } if(d>room){ d=room; note+=' (capped)'; } t.taken+=d; }
   d=Math.max(0,d); const before=t.hp; t.hp = Math.max(0, t.hp - d);
-  L(`${a.name} hits ${t.name} ${lost(t,Math.min(d,before))}${note}.`,'',fx('hit',a,t));
+  L(`${a.name} hits ${t.name} ${lost(t,Math.min(d,before))}${note}.`,'',{...fx('hit',a,t), ...(guardLine||{})});
   if(o.sun && t.demon && t.regen && !t.sunproof){ t.regen=0; t.sunburn=true; L(`${t.name} is burned by the sun. No more regeneration.`,'h',fx('burn',a,t)); }
   fall(t,a);
   // Kiriya's Ambush Orders: each enemy that hits the trapped fighter this round takes AMBUSH_DMG back (once each)
@@ -649,8 +650,8 @@ function special(u,pl){
     case 'gyokko': { const t=target(u,pl.t); if(t&&t.alive){ hit(u,t,u.pow-2,{ignoreDef:true}); stunT(t,'pot'); } break; }
     case 'sabito': { let t=findU(pl.t); if(!t||!t.alive||!sameSide(t.p,u.p)) t=u; t.pow+=2; L(`Sabito trains ${t===u?'himself':t.name}: +2 PWR for the rest of the match.`,'h',fx('buff',u,t)); break; }
     case 'muzan_final': { let n=0; en().forEach(e=>{ if(hit(u,e,u.pow-6,{ignoreDef:true,counter:false})>0) n++; }); if(u.alive&&n){ const h=Math.min(3*n,u.max-u.hp); u.hp+=h; L(`Final Muzan heals ${gained(u,h)}.`,'k',fx('heal',null,u)); } break; }
-    case 'tengen_retired': { let t=findU(pl.t); if(!t||!t.alive||!sameSide(t.p,u.p)) t=u; t.defending=true; L(`Retired Tengen stands guard over ${t===u?'himself':t.name}. Half damage this round.`,'h',{...fx('guard',u,t), cover:t!==u}); break; }
-    case 'yushiro': { let t=findU(pl.t); if(!t||!t.alive||!sameSide(t.p,u.p)) t=u; t.evade=true; L(`${t===u?'Yushiro':t.name} vanishes behind the talisman.`,'h',{...fx('guard',u,t), hid:true}); break; }
+    case 'tengen_retired': { let t=findU(pl.t); if(!t||!t.alive||!sameSide(t.p,u.p)) t=u; t.defending=true; if(t!==u) t.guardBy=u.uid; L(`Retired Tengen stands guard over ${t===u?'himself':t.name}. Half damage this round.`,'h',{...fx('guard',u,t), cover:t!==u}); break; }
+    case 'yushiro': { let t=findU(pl.t); if(!t||!t.alive||!sameSide(t.p,u.p)) t=u; t.evade=true; t.evadeBy='yushiro'; L(`${t===u?'Yushiro':t.name} vanishes behind the talisman.`,'h',{...fx('guard',u,t), hid:true}); break; }
     case 'murata': hit(u,target(u,pl.t),u.pow+2); break;
     case 'giyu': players().filter(q=>sameSide(q,u.p)).forEach(q=>{ S.shield[q]=true; }); L(`${u.name}'s team can't be hurt this round.`,'h',{...fx('guard',u,null), calm:true}); break;
     case 'gyomei': en().forEach(e=>hit(u,e,s.dmg,{ignoreDef:true,counter:false})); break;
@@ -690,7 +691,7 @@ function special(u,pl){
     case 'karaku': hit(u,target(u,pl.t),u.pow+3); break;
     case 'aizetsu': hit(u,target(u,pl.t),u.pow+4); break;
     case 'urogi': hit(u,target(u,pl.t),u.pow+2); break;
-    case 'hantengu': case 'hantengu_true': { u.evade=true; const h=Math.min(6,u.max-u.hp); u.hp+=h; L(`Hantengu shrinks into hiding and heals ${gained(u,h)}.`,'h',{...fx('heal',null,u), shrink:true}); break; }
+    case 'hantengu': case 'hantengu_true': { u.evade=true; u.evadeBy='hantengu'; const h=Math.min(6,u.max-u.hp); u.hp+=h; L(`Hantengu shrinks into hiding and heals ${gained(u,h)}.`,'h',{...fx('heal',null,u), shrink:true}); break; }
     case 'kaigaku': { const t=target(u,pl.t); hit(u,t,u.pow+3); const o=en().filter(e=>e!==t); if(o.length) hit(u,rnd(o),4,{ignoreDef:true}); break; }
     case 'enmu': en().forEach(e=>{ if(S.shield[e.p]||e.evade||hidden(e)) return; e.cd+=2; }); L('The enemy team falls into a deep sleep. Their specials are 2 rounds further away.','k',fx('stun',u,null)); break;
     case 'urokodaki': hit(u,target(u,pl.t),u.pow+3); break;
@@ -838,7 +839,7 @@ function resolve(){
   players().forEach(p=>alive(p).forEach(u=>{ u.taken=0; acts.push({u, pl: u.stun?{type:'stunned'}:(S.plans[p][u.uid]||{type:u.noDefend?'attack':'defend'}), r:Math.random()}); }));
   acts.forEach(x=>{ if(x.pl.type==='defend' || (x.pl.type==='attack' && x.u.basic && x.u.basic.cower)) x.u.defending=true;
     if(x.u.selfless && x.pl.type==='attack') x.u.reveal=true;   // striking shows him for this round
-    if(x.pl.type==='save' && x.u.selfless && !x.u.saveUsed){ const t=findU(x.pl.t); if(t && t.alive && t!==x.u && sameSide(t.p,x.u.p)){ t.saved=x.u.name; x.u.saveUsed=true; } } });
+    if(x.pl.type==='save' && x.u.selfless && !x.u.saveUsed){ const t=findU(x.pl.t); if(t && t.alive && t!==x.u && sameSide(t.p,x.u.p)){ t.saved=x.u.name; t.savedBy=x.u.uid; x.u.saveUsed=true; } } });
   const moves=players().map(p=>({p, helpers:(S.helperPlan&&S.helperPlan[p]||[]).map(id=>BYID[id].short), picks:acts.filter(x=>x.u.p===p).map(x=>moveText(x.u,x.pl))}));
   // Mark Tanjiro entering the Selfless State goes before everything, even the biwa: nothing can stop him slipping into it
   acts.forEach(x=>{ if(x.pl.type==='special' && x.u.sig.id==='selfless' && x.u.alive){ S.curMove='special'; special(x.u,x.pl); S.curMove=null; x.done=true; } });
@@ -863,7 +864,7 @@ function resolve(){
     if(x.pl.type==='attack' && u.basic) continue;   // Nakime's strum already happened
     if(x.pl.type==='defend'){ L(`${u.name} braces.`,'',fx('guard',null,u)); continue; }
     if(x.pl.type==='save'){ const t=findU(x.pl.t); if(t && t.saved===u.name) L(`${u.name} stands guard over ${t.name}. Nothing will touch them this round.`,'h',fx('guard',u,t)); continue; }
-    if(x.pl.type==='special' && (u.sk==='muichiro'||u.sk==='swamp'||u.sk==='makomo'||u.sk==='suma')) u.evade=true;
+    if(x.pl.type==='special' && (u.sk==='muichiro'||u.sk==='swamp'||u.sk==='makomo'||u.sk==='suma')){ u.evade=true; u.evadeBy=u.sk; }   // evadeBy: whose dodge to draw
     if(x.pl.type==='attack' && u.reveal) L(`${u.name} strikes from the Selfless State, and for a moment he can be seen.`,'x',{...fx('buff',null,u), transparent:true});
     if(x.pl.type==='attack') for(let i=0;i<u.strikes;i++){ if(!foes(u.p).length) break; hit(u,target(u,x.pl.t),u.pow,u.selfless?{ignoreDef:true}:{}); }   // out of the Selfless State: ignores DEF
     if(x.pl.type==='special') special(u,x.pl);
@@ -884,7 +885,7 @@ function resolve(){
     if(u.sk==='hakuji' && u.alive && !u.vowed && S.teams[p].some(m=>!m.alive)){ u.vowed=true; u.pow+=3; L(`${u.name} remembers his vow: +3 PWR.`,'h',fx('buff',null,u)); }
     if(u.cd>0) u.cd--;
     if(u.selfless && u.alive && u.cd===0){ u.selfless=false; u.unblock=true; L(`${u.name} leaves the Selfless State. Hinokami Kagura is ready, and nothing can stop it.`,'h',fx('buff',null,u)); }
-    u.stun=u.stunNext; u.stunNext=false; if(!u.stun) u.bound=null; u.defending=false; u.evade=false; u.away=false; u.carried=false; u.tech=false; u.astray=false; u.late=false; u.ambush=null; u.saved=null; u.reveal=false;
+    u.stun=u.stunNext; u.stunNext=false; if(!u.stun) u.bound=null; u.defending=false; u.evade=false; u.evadeBy=null; u.guardBy=null; u.savedBy=null; u.away=false; u.carried=false; u.tech=false; u.astray=false; u.late=false; u.ambush=null; u.saved=null; u.reveal=false;
     if(u.chuBoost){ u.spd-=u.chuBoost; u.chuBoost=0; }
     if(u.miceBoost){ u.pow-=u.miceBoost; u.miceBoost=0; }   // Muscle Mice last one round
   }));
