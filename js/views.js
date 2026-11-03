@@ -891,7 +891,7 @@ function momentOf(lines, to, cur){
   const hlp=lines.find(l=>l.helper && SFX_ART['h_'+l.helper]); if(hlp) return {k:'h_'+hlp.helper, on:hlp.on};
   if(lines.some(l=>l.merged)) return {k:'merge'};
   if(lines.some(l=>l.sunrise)) return {k:'sunsweep'};
-  { const l=lines.find(x=>x.by && (x.move==='special'||x.move==='attack') && (BYID[(findU(x.by)||{}).id]||{}).upper), u=l&&findU(l.by), key=S.round+':'+(S.play?S.play.k:0);   // an Upper Moon's first move this match
+  { const l=lines.find(x=>x.by && x.move==='special' && (BYID[(findU(x.by)||{}).id]||{}).upper), u=l&&findU(l.by), key=S.round+':'+(S.play?S.play.k:0);   // an Upper Moon's first special this match (CK: not every first move)
     if(u){ S.upSeen=S.upSeen||{}; if(!S.upSeen[u.uid] || S.upSeen[u.uid]===key){ S.upSeen[u.uid]=key; return {k:'upper', u}; } } }
   if(lines.some(l=>l.kind==='drum')) return {k:'tilt'};
   if(lines.some(l=>l.fx==='stun' && l.move==='attack' && l.by && (findU(l.by)||{}).sk==='nakime')) return {k:'biwa'};
