@@ -22,15 +22,17 @@ function playVid(v){
 document.addEventListener('toggle',e=>{ if(e.target.id!=='updates' || !e.target.open) return; try{ localStorage.setItem('squad-draft-seen-update',LATEST_UPDATE.version); }catch(x){} const d=e.target.querySelector('.newdot'); if(d) d.remove(); },true);
 // The home roster drifts on its own and you can swipe it; touching it pauses the drift for a few seconds. A redraw keeps its place.
 const ROSTER_ROW = {x:0, dir:1, until:0, on:false, at:0, speed:10};   // speed in pixels a second, the same on every screen
-function rosterKeep(){ const el=document.querySelector('.artstrip'); if(!el) return; el.scrollLeft=ROSTER_ROW.x; if(!ROSTER_ROW.on && !matchMedia('(prefers-reduced-motion:reduce)').matches){ ROSTER_ROW.on=true; requestAnimationFrame(rosterDrift); } }
+// Drift moves the row on the graphics layer (smooth, fractions of a pixel); a finger gets ordinary scrolling (whole pixels), and the two hand over in place
+function rosterPlace(el){ const R=ROSTER_ROW, t=el.firstElementChild; if(Date.now()<R.until){ if(t.style.transform){ t.style.transform=''; el.scrollLeft=Math.round(R.x); } } else { if(el.scrollLeft) el.scrollLeft=0; t.style.transform=`translate3d(${-R.x}px,0,0)`; } }
+function rosterKeep(){ const el=document.querySelector('.artstrip'); if(!el) return; rosterPlace(el); if(!ROSTER_ROW.on && !matchMedia('(prefers-reduced-motion:reduce)').matches){ ROSTER_ROW.on=true; requestAnimationFrame(rosterDrift); } }
 function rosterDrift(now){
   const el=document.querySelector('.artstrip'), R=ROSTER_ROW; if(!el){ R.on=false; return; }
   const dt=Math.min(.1,(now-(R.at||now))/1000); R.at=now;
-  if(Date.now()<R.until) R.x=el.scrollLeft;
-  else { const end=el.scrollWidth-el.clientWidth; R.x+=R.dir*R.speed*dt; if(R.x>=end){ R.x=end; R.dir=-1; } if(R.x<=0){ R.x=0; R.dir=1; } el.scrollLeft=R.x; }
+  if(Date.now()<R.until){ rosterPlace(el); R.x=el.scrollLeft; }
+  else { const end=el.firstElementChild.scrollWidth-el.clientWidth; R.x+=R.dir*R.speed*dt; if(R.x>=end){ R.x=end; R.dir=-1; } if(R.x<=0){ R.x=0; R.dir=1; } rosterPlace(el); }
   requestAnimationFrame(rosterDrift);
 }
-['touchstart','touchmove','wheel','pointerdown','scroll'].forEach(ev=>document.addEventListener(ev,e=>{ if(ev==='scroll' && Date.now()>=ROSTER_ROW.until) return; if(e.target.closest && e.target.closest('.artstrip')) ROSTER_ROW.until=Date.now()+4000; },{passive:true, capture:true}));
+['touchstart','touchmove','wheel','pointerdown','scroll'].forEach(ev=>document.addEventListener(ev,e=>{ if(ev==='scroll' && Date.now()>=ROSTER_ROW.until) return; if(e.target.closest && e.target.closest('.artstrip')){ ROSTER_ROW.until=Date.now()+4000; const el=document.querySelector('.artstrip'); if(el) rosterPlace(el); } },{passive:true, capture:true}));
 function render(){
   if(isOnline()) S.planFor=S.me;
   const ctl=typeof isCtl==='function' && isCtl(), view = ctl ? ctlViewName() : viewName();   // a phone controlling the TV shows only its moves
@@ -201,7 +203,7 @@ const ACTIONS = {
   cfgbans(v){ keepNames(); setCfg('bans',v==='on'); },
   cfgduo(v){ keepNames(); setCfg('duo',v==='on'); },
   start: startDraft,
-  home(){ setCampaign('main'); if(UPDATE_READY) return location.reload(); clearTimeout(S._t); clearTimeout(HANDOFF); HANDOFF=null; if(ONLINE.net){ ONLINE.net.leave(); ONLINE.net=null; ONLINE.last=null; ONLINE.offActs=ONLINE.offState=null; }
+  home(){ setCampaign('main'); if(UPDATE_READY) return reloadQuiet(); clearTimeout(S._t); clearTimeout(HANDOFF); HANDOFF=null; if(ONLINE.net){ ONLINE.net.leave(); ONLINE.net=null; ONLINE.last=null; ONLINE.offActs=ONLINE.offState=null; }
     if(S.ctl) ctlStop();
     const tv=S.tv, mode=S.mode==='daily'||gameMode()?'cpu':S.mode; S={tv, phase:tv?'tvhome':'setup',mode,vol:S.vol,speed:S.speed,vibeOn:S.vibeOn,clipsOn:S.clipsOn,clipRepeat:S.clipRepeat,tauntsOn:S.tauntsOn,install:S.install,names:mode==='local'?localNames():[S.names[S.me||0]||S.names[0]]}; useModeCfg(mode); },
   clips(v){ S.clipsOn=v==='on'; try{ localStorage.setItem('squad-draft-clips',v) }catch(e){} },
@@ -363,10 +365,11 @@ const ACTIONS = {
 // inside a tap, so it waits for one ("Tap to start"); shown once each time the game is opened. ?nosplash skips it.
 (function splash(){
   const el=document.getElementById('splash'); if(!el) return;
-  if(/nosplash/.test(location.search) || navigator.webdriver){ el.remove(); return; }
+  let quiet=false; try{ quiet=sessionStorage.getItem('squad-draft-quiet')==='1'; sessionStorage.removeItem('squad-draft-quiet'); }catch(e){}
+  if(quiet || /nosplash/.test(location.search) || navigator.webdriver){ el.remove(); return; }   // quiet: the game just reloaded itself for an update
   let gone=false;
   const go=()=>{ if(gone) return; gone=true; unlockSound(); sfx('intro'); el.classList.add('go');
-    setTimeout(()=>{ el.classList.add('out'); setTimeout(()=>el.remove(), 700); }, quickMotion()?300:2400); };
+    setTimeout(()=>{ el.classList.add('out'); setTimeout(()=>{ el.remove(); if(UPDATE_READY && S.phase==='setup') reloadQuiet(); }, 700); }, quickMotion()?300:2400); };   // an update that arrived during the splash applies once it's gone
   el.addEventListener('click', go); el.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' ') go(); });
 })();
 // Wake audio on any touch or key, not only button taps (phones only allow it inside a tap; see unlockSound)
@@ -414,35 +417,17 @@ function clockTick(){
   if(isAsync()) send({a:'timeout', key}); else if(iAmHost()){ timeoutRun(); render(); }
 }
 if(typeof document!=='undefined'){ const t=document.createElement('div'); t.id='otimer'; t.hidden=true; document.body.append(t); setInterval(clockTick,1000); }
+// Which pictures exist comes from js/art-list.js (tools/make-art-list.js), so nothing is guessed. Portraits are loaded and decoded
+// up front so redraws never blink; places and scene pictures load only when they're shown.
+const artFile = (dir, name) => { const f=((typeof ART_FILES!=='undefined'&&ART_FILES[dir])||[]).find(x=>x.replace(/\.[^.]+$/,'')===name); if(!f) return null; const p=`img/${dir==='img'?'':dir+'/'}${f}`; return typeof document!=='undefined' ? new URL(p, document.baseURI).href : p; };   // full address: a CSS variable would read a short path from css/
 function findArt(){
-  const found={}, ids=ROSTER.map(c=>c.id).concat(EXTRA_ART);
-  let waiting=ids.length;
-  const finish=()=>{ if(--waiting>0) return;
-    ROSTER.forEach(c=>{ const src=found[c.id]||found[c.id.replace(/_mark$/,'')]||found[c.fam]; if(src) ART[c.id]=src; });
-    EXTRA_ART.forEach(id=>{ if(found[id]) ART[id]=found[id]; });
-    if(Object.keys(ART).length) render(); };
-  ids.forEach(id=>{
-    const exts=['jpg','png','webp'];
-    const tryNext=()=>{ const ext=exts.shift(); if(!ext) return finish();
-      const im=new Image(); im.onload=()=>{ found[id]=im.src; ART_KEEP.push(im); if(im.decode) im.decode().catch(()=>{}); finish(); }; im.onerror=tryNext; im.src=`img/${id}.${ext}`; };
-    tryNext();
-  });
+  const found={}, ids=ROSTER.map(c=>c.id).concat(EXTRA_ART).filter(id=>artFile('img',id));
+  ids.forEach(id=>{ const im=new Image(); found[id]=im.src=artFile('img',id); ART_KEEP.push(im); if(im.decode) im.decode().catch(()=>{}); });
+  ROSTER.forEach(c=>{ const src=found[c.id]||found[c.id.replace(/_mark$/,'')]||found[c.fam]; if(src) ART[c.id]=src; });
+  EXTRA_ART.forEach(id=>{ if(found[id]) ART[id]=found[id]; });
 }
-// Scene pictures (img/scenes/<name>.jpg/png/webp) for story lines that ask for one; lines without a file keep the portraits
-// Place pictures behind the cutscenes: img/places/<battle id>.jpg/png/webp, or <arc id> for a whole arc (optional,
-// see img/README.txt)
-function findPlaces(){
-  [...ALL_STAGES.map(st=>st.id), ...Object.keys(ARCS)].forEach(arc=>{ const exts=['jpg','png','webp','jpeg'];
-    const tryNext=()=>{ const ext=exts.shift(); if(!ext) return;
-      const im=new Image(); im.onload=()=>{ PLACE_ART[arc]=im.src; if(S.phase==='scene') render(); }; im.onerror=tryNext; im.src=`img/places/${arc}.${ext}`; };
-    tryNext(); });
-}
-function findScenePics(){
-  scenePics().forEach(name=>{ const exts=['jpg','png','webp','jpeg'];
-    const tryNext=()=>{ const ext=exts.shift(); if(!ext) return;
-      const im=new Image(); im.onload=()=>{ SCENE_ART[name]=im.src; if(S.phase==='scene') render(); }; im.onerror=tryNext; im.src=`img/scenes/${name}.${ext}`; };
-    tryNext(); });
-}
+function findPlaces(){ [...ALL_STAGES.map(st=>st.id), ...Object.keys(ARCS)].forEach(arc=>{ const f=artFile('places',arc); if(f) PLACE_ART[arc]=f; }); }
+function findScenePics(){ scenePics().forEach(name=>{ const f=artFile('scenes',name); if(f) SCENE_ART[name]=f; }); }
 /* ---------- online play: Firebase connection and create / join ---------- */
 ONLINE.hooks.roundPlayed = () => { if(!isAsync()) playRound(); };
 const FB_VERSION = '10.12.2';
@@ -732,7 +717,7 @@ function statsGame(){
 let matchOn=null;
 const modeKey = () => (typeof isTV==='function'&&isTV()?'tv_':'')+(S.coop?'coop_'+S.coop:S.mode==='online'?'online'+S.n:S.mode);
 function track(keys){
-  try{ if(!FIREBASE_CONFIG || !navigator.onLine || navigator.webdriver || location.hostname==='localhost' || localStorage.getItem('squad-draft-admin')) return; }catch(e){ return; }
+  try{ if(!FIREBASE_CONFIG || !navigator.onLine || navigator.webdriver || /HeadlessChrome/.test(navigator.userAgent) || /notrack/.test(location.search) || location.hostname==='localhost' || localStorage.getItem('squad-draft-admin')) return; }catch(e){ return; }   // test browsers don't count (Claude's live tests counted once, Nov 2026)
   firebaseReady().then(db=>{ const inc=firebase.database.ServerValue.increment(1), up={}; keys.forEach(k=>up[k]=inc); return db.ref('track').update(up); }).catch(()=>{});
 }
 function trackOpen(){
@@ -781,7 +766,7 @@ async function loadGlobalStats(){
    writes over the rev it last saw. Anything else is another device's save, and the two are combined (mergeSaves) so neither
    loses anything and the player never has to choose. Restoring combines the same way, so a code can only add progress. */
 const CLOUD_KEY = 'squad-draft-cloud', CODE_ABC = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
-const NOT_BACKED = ['squad-draft-cloud','squad-draft-data','squad-draft-install-later','squad-draft-push'];
+const NOT_BACKED = ['squad-draft-cloud','squad-draft-data','squad-draft-install-later','squad-draft-push','squad-draft-admin','squad-draft-track','squad-draft-phone','squad-draft-ctl'];   // this device only: admin flag, tracking record, phone id, TV controller
 const loadCloud = () => { try{ return JSON.parse(localStorage.getItem(CLOUD_KEY))||{} }catch(e){ return {} } };
 const saveCloud = c => { try{ localStorage.setItem(CLOUD_KEY, JSON.stringify(c)) }catch(e){} };
 const newSaveCode = () => Array.from({length:12},()=>CODE_ABC[Math.floor(Math.random()*CODE_ABC.length)]).join('');
@@ -794,7 +779,7 @@ const saveJSON = (d,k) => { try{ return JSON.parse(d[k])||{}; }catch(e){ return 
 const saveSummary = d => { const s=saveJSON(d,'squad-draft-story-v2'); return `${plural((s.cleared||[]).length,'story battle')}, ${plural(MAIN_STAGES.reduce((a,st)=>a+((s.stars||{})[st.id]||0),0),'star')}`; };   // the main story's stars, the same count the story map shows
 // Two saves combined: every battle, the best stars, the fuller record per fighter and name, every daily done. Settings stay this device's.
 function mergeSaves(mine, theirs){
-  const out={...theirs, ...mine}, both=k=>[saveJSON(mine,k), saveJSON(theirs,k)], put=(k,v)=>{ if(k in out) out[k]=JSON.stringify(v); };
+  const out={...Object.fromEntries(Object.entries(theirs).filter(([k])=>!NOT_BACKED.includes(k))), ...mine}, both=k=>[saveJSON(mine,k), saveJSON(theirs,k)], put=(k,v)=>{ if(k in out) out[k]=JSON.stringify(v); };
   { const [a,b]=both('squad-draft-story-v2'); put('squad-draft-story-v2', mergeStory(b,a)); }
   { const [a,b]=both('squad-draft-records'), r={...b}; Object.entries(a).forEach(([id,v])=>{ if(!r[id] || v[0]>=r[id][0]) r[id]=v; }); put('squad-draft-records', r); }
   { const [a,b]=both('squad-draft-score'), r={...b}; Object.entries(a).forEach(([n,v])=>{ r[n]=Math.max(v, r[n]||0); }); put('squad-draft-score', r); }
@@ -901,7 +886,7 @@ const pushSend = (sub,st) => pushPost('subscribe',{sub:sub.toJSON(), ping:!!st.p
 async function pushRefresh(){ const st=pushState(); if(!pushOn() || !pushCan() || !st.id || Date.now()-(st.sent||0)<7*864e5 || Notification.permission!=='granted') return;
   try{ const reg=await navigator.serviceWorker.ready, sub=await reg.pushManager.getSubscription(); if(sub && (await pushSend(sub,st)).id){ st.sent=Date.now(); pushSave(st); } }catch(e){} }
 setTimeout(pushRefresh, 6000);
-async function pushGame(code, seat){ const st=pushState(); if(!pushOn() || !st.turns || !st.id) return; const g=myGame(code); if(!g || g.pushed) return; setGame(code,{pushed:true}); try{ await pushPost('game',{code,seat,id:st.id}); }catch(e){} }
+async function pushGame(code, seat){ const st=pushState(); if(!pushOn() || !st.turns || !st.id) return; const g=myGame(code); if(!g || g.pushed) return; try{ if((await pushPost('game',{code,seat,id:st.id})).ok) setGame(code,{pushed:true}); }catch(e){} }   // marked only once the service confirms, so a failure retries next open
 function pushTurn(code, seat){ if(pushOn() && !S.oppHere) pushPost('turn',{code,seat}).catch(()=>{}); }
 function pushMatch(code){ if(pushOn()) pushPost('match',{code,id:pushState().id}).catch(()=>{}); }
 function note(text){ const el=document.createElement('div'); el.className='tauntpop'; el.setAttribute('role','status'); el.textContent=text; document.body.appendChild(el); setTimeout(()=>el.remove(),6000); }
@@ -932,10 +917,13 @@ findArt(); findScenePics(); findPlaces();
 // Updates: a phone that keeps the game open in the background never reloads it, so check for a new version whenever
 // the game comes back to the screen; when one arrives, reload right away on the home screen, or on the next return home.
 let UPDATE_READY=false;
+function reloadQuiet(){ try{ sessionStorage.setItem('squad-draft-quiet','1'); }catch(e){} location.reload(); }   // an update reload goes straight to the home screen
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   const hadSW=!!navigator.serviceWorker.controller;
   navigator.serviceWorker.register('sw.js').then(reg=>{
     document.addEventListener('visibilitychange',()=>{ if(!document.hidden) reg.update().catch(()=>{}); });
   }).catch(()=>{});
-  navigator.serviceWorker.addEventListener('controllerchange',()=>{ if(!hadSW || UPDATE_READY) return; UPDATE_READY=true; if(S.phase==='setup') location.reload(); });
+  // the splash used to reload mid-way when an update landed right after opening (CK: "randomly reloads"): now it waits for a quiet moment
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{ if(!hadSW || UPDATE_READY) return; UPDATE_READY=true; if(S.phase==='setup' && !document.getElementById('splash')) reloadQuiet(); });
+  document.addEventListener('visibilitychange',()=>{ if(document.hidden && UPDATE_READY && S.phase==='setup') reloadQuiet(); });
 }

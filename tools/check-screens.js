@@ -129,6 +129,7 @@ function check(games){
   return errors ? errors+' runs crashed. First error:\\n'+first : 'All '+games+' games and all '+STAGES.length+' story stages drew every screen without errors ('+mids+' Mark awakening scenes, '+(globalThis.TVN||0)+' TV board beats).';
 }
 `);
+if(!require('./make-art-list').check()){ console.log('Picture list is out of date: run node tools/make-art-list.js'); process.exitCode=1; }
 console.log(ctx.check(300));
 console.log(ctx.finalCheck());
 console.log(ctx.modesCheck());
