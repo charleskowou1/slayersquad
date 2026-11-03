@@ -2,6 +2,7 @@
 // (CACHE 'squad-draft-vNN'), which goes up with every push. tools/make-guide.js prints this at the top of the guide.
 // Add a line here with every push (CK, Oct 28, 2026), then rebuild the guide: node tools/make-guide.js
 module.exports = [
+  [113, '2026-11-03', 'Six new synergies (Brothers, Love Hashira, Set Your Heart Ablaze, Old Friends, Rival: Rengoku vs Akaza, Revenge on Doma); synergy reveal, Upper Moon entrance, last stand and Double KO animations; new specials for Urokodaki, Makio, the Hand Demon, Tanjuro and Sabito; new knockouts (beheading, Upper Moon kanji shatter, Muzan explodes, butterfly petals) and specials land the knockout with a KO; a picture for sunrise; enemy cards on the Daily tile.'],
   [112, '2026-11-03', 'Faster opening: story backgrounds load only when needed and no more missing-picture lookups; the splash no longer restarts when an update arrives; the roster drifts smoothly; backups keep device-only settings on their own device; alert sign-up retries.'],
   [111, '2026-11-02', 'The home roster drifts slower, at the same speed on every screen.'],
   [110, '2026-11-02', 'Notifications: Your move, Quick Match pings and a daily noon reminder, each with its own switch in the new Alerts tab; invite links with their own preview; hosts can remove players from the lobby; Play Friends is the main Online tile; the home roster can be swiped and holds every character.'],

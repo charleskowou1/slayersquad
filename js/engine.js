@@ -338,6 +338,13 @@ function synergies(p){
   if(has('kanae')&&has('shinobu')){ t.filter(u=>u.fam==='shinobu').forEach(u=>u.poisonTurns=4); out.push('Kocho Sisters: longer poison'); }
   if(has('kanae')&&has('kanao')){ t.filter(u=>u.fam==='kanao').forEach(u=>u.pow+=1); out.push("Kanae's student: Kanao +1 PWR"); }
   if(has('typezero')&&has('muichiro')){ t.filter(u=>u.fam==='muichiro').forEach(u=>u.pow+=1); out.push('Training partner: Muichiro +1 PWR'); }
+  // CK, Nov 3, 2026: six more from the story
+  if(has('sanemi')&&has('genya')){ t.filter(u=>u.fam==='sanemi'||u.fam==='genya').forEach(u=>u.pow+=2); out.push('Brothers: Sanemi and Genya +2 PWR'); }
+  if(has('obanai')&&has('mitsuri')){ t.filter(u=>u.fam==='obanai'||u.fam==='mitsuri').forEach(u=>{ u.spd+=1; u.pow+=1; }); out.push('Love Hashira: Obanai and Mitsuri +1 PWR, +1 SPD'); }
+  if(has('rengoku')&&has('tanjiro')){ t.filter(u=>u.fam==='tanjiro').forEach(u=>u.pow+=1); t.filter(u=>u.fam==='rengoku').forEach(u=>u.def+=1); out.push('Set Your Heart Ablaze: Tanjiro +1 PWR, Rengoku +1 DEF'); }
+  if(has('giyu')&&has('sabito')){ t.filter(u=>u.fam==='giyu').forEach(u=>{ u.pow+=2; u.def+=1; }); t.filter(u=>u.fam==='sabito').forEach(u=>u.spd+=1); out.push('Old Friends: Giyu +2 PWR +1 DEF, Sabito +1 SPD'); }
+  if(has('rengoku') && e.some(u=>u.fam==='akaza')){ t.filter(u=>u.fam==='rengoku').forEach(u=>u.pow+=2); out.push('Rival: Rengoku +2 PWR'); }
+  if((has('kanao')||has('inosuke')) && e.some(u=>u.fam==='doma')){ t.filter(u=>u.fam==='kanao'||u.fam==='inosuke').forEach(u=>{ u.spd+=2; u.revenge='doma'; }); out.push('Revenge on Doma: +2 SPD, +4 damage to Doma through his DEF'); }
   if(has('zenitsu') && e.some(u=>u.fam==='kaigaku')){ t.filter(u=>u.fam==='zenitsu').forEach(u=>u.pow+=2); out.push('Rival: Zenitsu +2 PWR'); }
   return out;
 }
@@ -352,6 +359,7 @@ function startBattle(){
   S.waveQ=null; S.said={}; S.failed=false; S.awoke={}; S.midScene=null; S.pendingAwake=[]; S.chainDone=false; S.chainPending=null;
   S.survived=false;
   S.sib=players().map(()=>false); S.twins=players().map(()=>false); S.syn=players().map(p=>synergies(p)); S.outOrder=[];
+  S.synShown=false; S.upSeen={};
   S.round=1; S.plans=players().map(()=>({})); S.lastPlans=players().map(()=>null); S.log=[]; S.matchLog=[]; S.planFor=S.me||0; S.focus=null; S.stats={};
   S.movesLocked=players().map(()=>false); S.readyNext=players().map(()=>false); S.roundId=0;   // online play
   // story: stat boosts shown on the stage card ({side, hp: ×, pow/def/spd: +, label}), e.g. a boss with more HP
@@ -585,6 +593,7 @@ function split(t){
 function hit(a,t,base,o={}){
   if(!t||!t.alive) return 0;
   if(a && a.tech) o={...o, ignoreDef:true};   // Tecchin's Masterwork Edge
+  if(a && a.revenge && t.fam===a.revenge){ base+=4; o={...o, ignoreDef:true}; }   // Revenge on Doma
   const ub=!!o.unblockable;   // Hinokami Kagura out of the Selfless State: nothing blocks it
   if(!ub){
     if(S.shield[t.p]){ L(`${t.name} is untouched. Dead Calm blocks it.`,'x',fx('block',a,t)); return 0; }
@@ -797,7 +806,7 @@ function playSteps(log){
         if((m.fx==='ko'||m.fx==='burn') && m.by===l.by){ j++; continue; }
         break;
       }
-      if(seen.size>=2){ steps.push([i,j-1]); i=j; continue; }
+      if(seen.size>=2 || log.slice(i+1,j).some(m=>m.fx==='ko')){ steps.push([i,j-1]); i=j; continue; }   // a special that lands the knockout is one moment with it (CK, Nov 3, 2026)
     }
     // several strikes from one Attack (Yoriichi, Type Zero) play as one quick flurry, not a slow beat each (CK)
     if(GROUP_FX.includes(l.fx) && l.by && l.move==='attack'){
@@ -865,7 +874,7 @@ function resolve(){
   // end of round: poison, Shinobu's devour damage, sunrise, regeneration, cooldowns
   const sun=sunUp();
   if(sun && S.round===sunRise()) L('The sun rises! From now on demons burn every round, hotter each time, and stop regenerating.','h',{...fx('burn',null,null), sunrise:true});
-  if(sun && S.round===sunRise() && finalFight()){ alive(foeSeat()).forEach(u=>{ u.pow=Math.round(u.pow*(1+FINAL_FRENZY)); u.noDefend=true; }); L('Out of time, the demons throw everything they have left. They hit far harder and can no longer Defend.','k',fx('burn',null,null)); }
+  if(sun && S.round===sunRise() && finalFight()){ alive(foeSeat()).forEach(u=>{ u.pow=Math.round(u.pow*(1+FINAL_FRENZY)); u.noDefend=true; }); L('Out of time, the demons throw everything they have left. They hit far harder and can no longer Defend.','k',{...fx('burn',null,null), frenzy:true}); }
   players().forEach(p=>S.teams[p].forEach(u=>{
     if(u.alive && u.poison){ u.hp=Math.max(0,u.hp-u.poison.dmg); L(`Poison hits ${u.name} ${lost(u,u.poison.dmg)}.`,'k',fx('poison',null,u)); fall(u); u.poison.turns--; if(u.poison.turns<=0) u.poison=null; }
     if(u.alive && u.devoured){ u.hp=Math.max(0,u.hp-u.devoured); L(`Shinobu's poison eats away at ${u.name} ${lost(u,u.devoured)}.`,'k',fx('poison',null,u)); fall(u); }

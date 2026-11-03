@@ -2065,3 +2065,115 @@ details.panel[open]>summary{margin-bottom:12px}
 .gmgrid.home .gmtile.hero{aspect-ratio:auto;height:128px}
 .kickbtn{margin-left:auto;width:30px;height:30px;padding:0;border:1px solid var(--line-2);border-radius:8px;background:transparent;color:var(--muted);font-size:1.1rem;line-height:1}
 .pushask .muted{font-size:.76rem;line-height:1.25}
+.daily.slim .dgoalrow{display:flex;align-items:center;gap:8px;min-width:0}
+.daily.slim .dgoalrow .dgoal{flex:0 1 auto;min-width:0}
+.dmini{display:flex;flex:none;gap:3px}
+.dmini .gl.sm{width:22px;height:22px;border-radius:5px;font-size:.8rem}
+/* Sunrise and the Final Form dawn surge: lines with nobody acting get their own picture */
+.sunstage{position:relative;overflow:hidden;min-height:150px;background:linear-gradient(180deg,#2a1a2e 0%,#7a3b2c 55%,#e8955a 100%)}
+.sunstage .sunrays{position:absolute;left:50%;bottom:-40%;width:180%;aspect-ratio:1;transform:translateX(-50%);background:repeating-conic-gradient(rgba(255,226,150,.22) 0 8deg,transparent 8deg 18deg);border-radius:50%;animation:sunspin 9s linear infinite}
+.sunstage .sundisc{position:absolute;left:50%;bottom:-36%;width:42%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,#fff6d8 0,#ffd27a 45%,#ff9a4a 72%,transparent 74%);box-shadow:0 0 60px 20px rgba(255,190,110,.55);animation:sunup 1.6s cubic-bezier(.2,.8,.2,1) both}
+.sunstage .sunland{position:absolute;left:0;right:0;bottom:0;height:22%;background:linear-gradient(180deg,#2b1c16,#130d0a)}
+.sunkj{position:absolute;top:12px;left:0;right:0;text-align:center;font-family:var(--display);font-size:1.6rem;font-weight:800;color:#fff1d6;text-shadow:0 2px 12px rgba(0,0,0,.6);letter-spacing:.1em}
+@keyframes sunup{from{transform:translate(-50%,40%);opacity:.3}to{transform:translate(-50%,-14%);opacity:1}}
+@keyframes sunspin{to{transform:translateX(-50%) rotate(360deg)}}
+.frenzystage{position:relative;min-height:150px;display:grid;place-items:center;background:radial-gradient(circle at 50% 60%,rgba(216,40,30,.55),rgba(30,8,6,.95) 70%)}
+.frenzystage .calmteam .gl{box-shadow:0 0 0 2px #ff5a3a,0 0 22px 6px rgba(255,60,30,.7);animation:frenzy .5s ease-in-out infinite alternate}
+@keyframes frenzy{to{transform:scale(1.08)}}
+@media (prefers-reduced-motion:reduce){.sunstage .sunrays,.frenzystage .gl{animation:none}}
+/* Nov 3, 2026: synergy reveal, last stand, Upper Moon entrance, double KO and five more specials */
+.synintro{position:fixed;inset:0;z-index:95;display:grid;place-content:center;gap:16px;padding:24px;background:rgba(10,8,6,.78);backdrop-filter:blur(3px);animation:fadein .25s ease-out;transition:opacity .5s}
+.synintro.out{opacity:0}
+.synside{display:grid;justify-items:center;gap:6px;text-align:center}
+.synwho{display:flex;gap:4px}
+.synwho .gl.sm{width:38px;height:38px;box-shadow:0 0 0 2px var(--tc),0 0 18px var(--tc);animation:synglow 1.2s ease-in-out infinite alternate}
+.synside>b{color:var(--tc);font-family:var(--display);font-size:1.15rem}
+.synchip{padding:5px 12px;border-radius:999px;border:1px solid var(--tc);background:rgba(255,255,255,.06);font-weight:700;font-size:.86rem;animation:synin .45s calc(.25s + var(--i)*.18s) both}
+@keyframes synin{from{opacity:0;transform:translateY(8px) scale(.9)}}
+@keyframes synglow{to{box-shadow:0 0 0 2px var(--tc),0 0 30px var(--tc)}}
+@keyframes fadein{from{opacity:0}}
+body.laststand::after{content:"";position:fixed;inset:0;z-index:60;pointer-events:none;box-shadow:inset 0 0 90px 24px rgba(220,30,30,.55);animation:heartbeat 1.1s ease-in-out infinite}
+@keyframes heartbeat{0%,40%,100%{opacity:.35}12%,28%{opacity:1}}
+.sfx-upper{display:grid;place-items:center;background:radial-gradient(circle,rgba(120,10,10,.55),transparent 65%)}
+.upeye{display:grid;justify-items:center;gap:6px;animation:upin 1.4s ease-out both}
+.upeye b{font-family:var(--display);font-size:16vmin;line-height:1;color:#ffd6c8;text-shadow:0 0 22px #ff2a2a,0 0 60px #b30000;letter-spacing:.06em}
+.upeye small{font-weight:800;font-size:4vmin;color:#ffb3a3;letter-spacing:.2em;text-transform:uppercase}
+@keyframes upin{0%{opacity:0;transform:scale(1.6);filter:blur(8px)}25%{opacity:1;transform:scale(1);filter:none}80%{opacity:1}100%{opacity:0}}
+.sfx-doubleko{display:grid;place-items:center}
+.dko{font-family:var(--display);font-size:14vmin;color:#fff3e0;text-shadow:0 0 18px var(--accent),0 4px 0 #000;transform:rotate(-6deg);animation:dko 1.3s cubic-bezier(.2,.9,.3,1.2) both}
+@keyframes dko{0%{opacity:0;transform:rotate(-6deg) scale(2.2)}20%{opacity:1;transform:rotate(-6deg) scale(1)}85%{opacity:1}100%{opacity:0}}
+.sfx-waterwheel svg{animation:wwspin 1.3s ease-out both}
+.sfx-waterwheel path{fill:none;stroke:#7fd1ff;stroke-width:3;stroke-linecap:round;filter:drop-shadow(0 0 6px #4aa8ff)}
+@keyframes wwspin{0%{opacity:0;transform:rotate(-90deg) scale(.5)}30%{opacity:1}100%{opacity:0;transform:rotate(270deg) scale(1.1)}}
+.sfx-burst .bflash{position:absolute;top:40%;left:50%;width:30vmin;height:30vmin;margin:-15vmin;border-radius:50%;background:radial-gradient(circle,#fff,#ffb347 40%,transparent 70%);animation:bflash .7s ease-out both}
+.sfx-burst i{position:absolute;top:40%;left:50%;width:5px;height:12vmin;background:linear-gradient(#ffe0a0,transparent);transform-origin:50% 0;transform:rotate(var(--a));animation:kunaiout .7s var(--d) ease-out both}
+@keyframes bflash{0%{transform:scale(.2);opacity:1}100%{transform:scale(1.6);opacity:0}}
+.sfx-hands .arm{position:absolute;bottom:-10%;width:14vmin;height:60vmin;inset:auto auto -10% calc(var(--x,10%));animation:armup 1.1s ease-out both}
+.sfx-hands .arm path{fill:none;stroke:#7d9a5a;stroke-width:5;stroke-linecap:round}
+.sfx-hands .a0{left:4%}.sfx-hands .a1{left:20%;animation-delay:.08s}.sfx-hands .a2{left:36%;animation-delay:.16s}.sfx-hands .a3{left:52%;animation-delay:.04s}.sfx-hands .a4{left:68%;animation-delay:.12s}.sfx-hands .a5{left:84%;animation-delay:.2s}
+@keyframes armup{0%{transform:translateY(60%)}40%{transform:translateY(0)}100%{transform:translateY(70%);opacity:0}}
+.sfx-kagura .kring{position:absolute;top:50%;left:50%;width:56vmin;height:56vmin;margin:-28vmin;border-radius:50%;border:6px solid #ff8a3a;box-shadow:0 0 30px #ff6a1a,inset 0 0 30px #ff6a1a;animation:kring 1.6s ease-in-out both}
+.sfx-kagura .k2{width:40vmin;height:40vmin;margin:-20vmin;border-color:#ffd166;animation-delay:.15s}
+.sfx-kagura i{position:absolute;top:-4%;left:var(--x);width:6px;height:6px;border-radius:50%;background:#fff;opacity:.9;animation:snow 1.8s var(--d) linear both}
+@keyframes kring{0%{opacity:0;transform:rotate(0) scale(.6)}30%{opacity:1}100%{opacity:0;transform:rotate(300deg) scale(1.1)}}
+@keyframes snow{to{transform:translateY(105vh) translateX(20px)}}
+.sfx-foxmask{display:grid;place-items:center}
+.sfx-foxmask .fox{position:relative;inset:auto;width:34vmin;height:34vmin;animation:foxin 1.5s ease-out both}
+.sfx-foxmask .fox path{fill:#f4efe6;stroke:#c9b9a3;stroke-width:1.5}
+.sfx-foxmask .fox .fm{fill:none;stroke:#d8434f;stroke-width:3;stroke-linecap:round}
+.sfx-foxmask .rip{position:absolute;top:50%;left:50%;width:30vmin;height:30vmin;margin:-15vmin;border-radius:50%;border:2px solid #9fd8ff;animation:ripple 1.4s ease-out both}
+.sfx-foxmask .r2{animation-delay:.3s}
+@keyframes foxin{0%{opacity:0;transform:scale(.7)}25%{opacity:1;transform:scale(1)}80%{opacity:1}100%{opacity:0}}
+@keyframes ripple{0%{transform:scale(.5);opacity:.9}100%{transform:scale(2.2);opacity:0}}
+@media (prefers-reduced-motion:reduce){body.laststand::after,.synwho .gl.sm{animation:none}}
+/* KO animations (CK, Nov 3, 2026): beheading, Upper Moon kanji, Muzan's burst, a slayer's snapped blade or petals, slow-motion last blow */
+.slice .sl-t{animation-name:headoff}
+.stage.rev .slice .sl-t{animation-name:headoff-l}
+@keyframes headoff{0%{transform:none;opacity:1}18%{transform:translate(4px,-10px) rotate(8deg);opacity:1}55%{transform:translate(34px,-34px) rotate(160deg);opacity:1}100%{transform:translate(70px,90px) rotate(320deg);opacity:0}}
+@keyframes headoff-l{0%{transform:none;opacity:1}18%{transform:translate(-4px,-10px) rotate(-8deg);opacity:1}55%{transform:translate(-34px,-34px) rotate(-160deg);opacity:1}100%{transform:translate(-70px,90px) rotate(-320deg);opacity:0}}
+.slice .sl-red{position:absolute;left:50%;top:50%;width:4px;height:4px;border-radius:50%;background:#d0141e;opacity:0;transform:rotate(var(--a)) translateY(0);animation:redspray .7s calc(.5s + var(--d)) ease-out forwards}
+@keyframes redspray{0%{opacity:1;transform:rotate(var(--a)) translateY(0) scale(1)}100%{opacity:0;transform:rotate(var(--a)) translateY(-38px) scale(.4)}}
+.slice .sl-line{background:#fff;box-shadow:0 0 18px 4px rgba(220,20,30,.9)}
+.slice.upcut .upk{position:absolute;inset:0;z-index:4;display:grid;place-items:center;pointer-events:none}
+.slice.upcut .upk span{grid-area:1/1;font-family:var(--display);font-size:2.2rem;font-weight:800;color:#ffe2d6;text-shadow:0 0 12px #ff2a2a,0 0 26px #b30000;animation:upglow .5s ease-out both}
+.slice.upcut .upk span:first-child{clip-path:polygon(0 0,100% 0,100% 45%,0 60%);animation:upglow .5s ease-out both,upsplit1 .6s .5s ease-in forwards}
+.slice.upcut .upk span:last-child{clip-path:polygon(0 60%,100% 45%,100% 100%,0 100%);animation:upglow .5s ease-out both,upsplit2 .6s .5s ease-in forwards}
+.slice.upcut .sl-line,.slice.upcut .sl-t,.slice.upcut .sl-red,.slice.upcut .sl-b{animation-delay:1s,1s,1s,1s}
+@keyframes upglow{from{opacity:0;transform:scale(1.5)}}
+@keyframes upsplit1{to{transform:translate(-18px,-22px) rotate(-14deg);opacity:0}}
+@keyframes upsplit2{to{transform:translate(18px,22px) rotate(12deg);opacity:0}}
+.crumble.muzanburst{overflow:visible}
+.crumble.muzanburst .cr-pic{animation:muzancrack 1.9s ease-in forwards}
+.crumble.muzanburst .veins{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+.crumble.muzanburst .veins path{fill:none;stroke:#ff3b1f;stroke-width:3.5;stroke-linecap:round;filter:drop-shadow(0 0 4px #ff2200) drop-shadow(0 0 10px #ff6a00);stroke-dasharray:120;stroke-dashoffset:120;animation:veins .7s .1s ease-out forwards,veinsout .3s 1s ease-in forwards}
+.crumble.muzanburst .shock{position:absolute;left:50%;top:50%;width:40px;height:40px;margin:-20px;border-radius:50%;border:4px solid #ffb36b;box-shadow:0 0 30px 8px rgba(255,90,20,.8),inset 0 0 20px rgba(255,200,120,.8);opacity:0;animation:shock .9s 1s ease-out forwards}
+.crumble.muzanburst .s2{border-color:#ff4a1a;animation-delay:1.12s}
+.crumble.muzanburst>i{position:absolute;left:50%;top:50%;width:var(--s);height:var(--s);border-radius:2px;background:#ffb04a;box-shadow:0 0 10px #ff3d00;opacity:0;animation:muzanfly 1.4s calc(1s + var(--d)) cubic-bezier(.15,.7,.3,1) forwards}
+@keyframes veins{to{stroke-dashoffset:0}}
+@keyframes veinsout{to{opacity:0}}
+@keyframes muzancrack{0%{filter:none;transform:none}35%{filter:brightness(1.4) saturate(1.6);transform:scale(1.04)}52%{filter:brightness(3) sepia(1) hue-rotate(-25deg) saturate(4);transform:scale(1.12)}55%{opacity:1}62%,100%{opacity:0;transform:scale(1.5);filter:brightness(4)}}
+@keyframes shock{0%{opacity:1;transform:scale(.3)}100%{opacity:0;transform:scale(9)}}
+@keyframes muzanfly{0%{opacity:1;transform:translate(0,0) rotate(0) scale(1.2)}70%{opacity:1;background:#ff6a1a}100%{opacity:0;transform:translate(var(--dx),var(--dy)) rotate(540deg) scale(.3);background:#2a120a}}
+.stage.muzko{animation:muzshake .5s .95s cubic-bezier(.36,.07,.19,.97) both;overflow:visible}
+@keyframes muzshake{10%,90%{transform:translate(-2px,1px)}20%,80%{transform:translate(4px,-2px)}30%,50%,70%{transform:translate(-7px,3px)}40%,60%{transform:translate(7px,-3px)}}
+.fall{position:relative;display:inline-block}
+.fall .fl-pic{display:block;animation:petalfade 1.8s .4s ease-in forwards}
+@keyframes petalfade{to{filter:grayscale(.6) brightness(.7);opacity:.5}}
+.fall.petals>i{position:absolute;left:var(--x);top:60%;width:9px;height:6px;border-radius:60% 0 60% 0;background:#c9a6ff;opacity:0;animation:petal 2s calc(.4s + var(--d)) ease-out forwards}
+.fall.petals>i:nth-child(odd){background:#ff9ec7}
+@keyframes petal{0%{opacity:1;transform:translate(0,0) rotate(0)}100%{opacity:0;transform:translate(var(--dx),-90px) rotate(220deg)}}
+@media (prefers-reduced-motion:reduce){.fall *,.slice.upcut .upk span,.crumble.muzanburst *{animation:none!important}}
+.sfx-final.incolor{animation-name:finalflashc}
+@keyframes finalflashc{0%{background:rgba(255,120,60,.9)}14%{background:transparent}}
+/* Special KOs (CK, Nov 3, 2026): the knockout waits for the special to land, a split-second freeze on impact, a KO stamp */
+.kolater,.kolater *{animation-play-state:paused!important}
+.stage.group.hitstop{animation:hitstop .22s .5s steps(1) both}
+@keyframes hitstop{0%{filter:brightness(2.2) contrast(1.5);transform:scale(1.03)}50%{filter:brightness(1.4);transform:scale(1.03) translate(2px,-1px)}100%{filter:none;transform:none}}
+@media (prefers-reduced-motion:reduce){.stage.group.hitstop{animation:none}}
+/* A special that lands a knockout ends on one big KO in the middle of the stage */
+.st-on{position:relative}
+.stage{position:relative}
+.koslam{position:absolute;left:50%;top:46%;z-index:8;transform:translate(-50%,-50%);font-family:var(--display);font-size:4.4rem;font-weight:800;color:#fff3e6;letter-spacing:.06em;text-shadow:0 0 18px #d8231e,0 0 40px #d8231e,0 4px 0 #000;opacity:0;pointer-events:none;animation:koslam 1.6s .62s cubic-bezier(.2,1.4,.4,1) forwards}
+.koslam::after{content:"";position:absolute;left:50%;top:50%;width:60px;height:60px;margin:-30px;border-radius:50%;border:3px solid #ff5a3a;opacity:0;animation:shock .8s .7s ease-out forwards}
+@keyframes koslam{0%{opacity:0;transform:translate(-50%,-50%) scale(3)}18%{opacity:1;transform:translate(-50%,-50%) scale(.9)}26%{transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{opacity:0}}
+@media (prefers-reduced-motion:reduce){

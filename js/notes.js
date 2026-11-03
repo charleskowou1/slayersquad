@@ -71,6 +71,10 @@ function poolNotes(){
   if(has('susamaru')&&has('yahaba')) add('team', ['susamaru','yahaba'], 'Temari & Arrows', "Susamaru and Yahaba on one team: Yahaba's arrows guide Susamaru's hits past Defend.", together(['susamaru','yahaba']));
   if(has('kanae')&&has('shinobu')) add('team', ['kanae','shinobu'], 'Kocho Sisters', "Kanae and Shinobu on one team: Shinobu's poison lasts 4 rounds instead of 3.", together(['kanae','shinobu']));
   if(has('kanae')&&has('kanao')) add('team', ['kanae','kanao'], "Kanae's student", 'Kanae and Kanao on one team: Kanao gets +1 PWR.', together(['kanae','kanao']));
+  if(has('sanemi')&&has('genya')) add('team', ['sanemi','genya'], 'Brothers', 'Sanemi and Genya on one team: both get +2 PWR.', together(['sanemi','genya']));
+  if(has('obanai')&&has('mitsuri')) add('team', ['obanai','mitsuri'], 'Love Hashira', 'Obanai and Mitsuri on one team: both get +1 PWR and +1 SPD.', together(['obanai','mitsuri']));
+  if(has('rengoku')&&has('tanjiro')) add('team', ['rengoku','tanjiro'], 'Set Your Heart Ablaze', 'Rengoku and any Tanjiro on one team: Tanjiro gets +1 PWR and Rengoku +1 DEF.', together(['rengoku','tanjiro']));
+  if(has('giyu')&&has('sabito')) add('team', ['giyu','sabito'], 'Old Friends', 'Giyu and Sabito on one team: Giyu gets +2 PWR and +1 DEF, Sabito +1 SPD.', together(['giyu','sabito']));
   if(has('typezero')&&has('muichiro')) add('team', ['typezero','muichiro'], 'Training partner', 'Yoriichi Type Zero and Muichiro on one team: Muichiro gets +1 PWR.', together(['typezero','muichiro']));
   const wiveList=['hinatsuru','makio','suma'].filter(has);
   if(wiveList.length===3) add('team', wiveList, 'The Three Wives', 'Hinatsuru, Makio and Suma on one team: all three get +1 SPD.', together(wiveList));
@@ -93,6 +97,9 @@ function poolNotes(){
   if(has('kagaya')&&markable.length) add('team', ['kagaya',...markable], 'Final Resolve', "Kagaya's special knocks himself out and every Hashira on his team who has a Mark awakens it. If an enemy knocks him out first, nobody awakens.", withAnchor('kagaya',markable));
 
   // opposing teams
+  if(has('rengoku')&&has('akaza')) add('vs', ['rengoku','akaza'], 'Rival', 'Facing Akaza, Rengoku gets +2 PWR.', facing(['rengoku'],['akaza']));
+  const avengers=['kanao','inosuke'].filter(has);
+  if(has('doma')&&avengers.length) add('vs', [...avengers,'doma'], 'Revenge on Doma', 'Facing Doma, Kanao and Inosuke get +2 SPD, and their hits on Doma do 4 more damage and ignore his DEF.', facing(avengers,['doma']));
   if(has('kaigaku')&&has('zenitsu')) add('vs', ['zenitsu','kaigaku'], 'Rivals', 'Facing Kaigaku, Zenitsu gets +2 PWR.', facing(['zenitsu'],['kaigaku']));
   if(has('muzan')&&has('yoriichi')) add('vs', ['muzan','yoriichi'], 'Muzan fears the Sun', 'Facing Yoriichi, Muzan gets −3 PWR and −2 SPD.', facing(['muzan'],['yoriichi']));
   if(has('kokushibo')&&has('yoriichi')) add('vs', ['kokushibo','yoriichi'], 'Kokushibo shaken', 'Facing Yoriichi, Kokushibo gets −1 DEF.', facing(['kokushibo'],['yoriichi']));

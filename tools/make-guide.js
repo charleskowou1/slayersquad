@@ -110,11 +110,17 @@ out(`Same team:
 - Kocho Sisters: Kanae + Shinobu → Shinobu's poison lasts 4 rounds instead of 3.
 - Kanae's student: Kanae + Kanao → Kanao +1 PWR.
 - Training partner: Yoriichi Type Zero + Muichiro → Muichiro +1 PWR.
+- Brothers: Sanemi + Genya → both +2 PWR.
+- Love Hashira: Obanai + Mitsuri → both +1 PWR, +1 SPD.
+- Set Your Heart Ablaze: Rengoku + any Tanjiro → Tanjiro +1 PWR, Rengoku +1 DEF.
+- Old Friends: Giyu + Sabito → Giyu +2 PWR +1 DEF, Sabito +1 SPD.
 Opposing teams:
 - Muzan fears the Sun: Muzan facing Yoriichi → Muzan −3 PWR, −2 SPD.
 - Kokushibo shaken: Kokushibo facing Yoriichi → −1 DEF.
 - Tamayo's medicine: Muzan facing Tamayo → Muzan regen −2.
 - Rivals: Zenitsu facing Kaigaku → Zenitsu +2 PWR.
+- Rival: Rengoku facing Akaza → Rengoku +2 PWR.
+- Revenge on Doma: Kanao or Inosuke facing Doma → +2 SPD, and +4 damage on Doma through his DEF.
 - Wisteria Body: a demon that knocks out Shinobu loses 5 HP every round after (not Akaza: he never eats women).
 - Sun Breathing: Yoriichi's special stops every demon it hits from regenerating for good (not Demon King Tanjiro: sun-proof).
 Special rules on single cards:

@@ -57,9 +57,20 @@ const FX_ART = {
 // Akaza's and Doma's are drawn on their targets instead, so the eye stays on the damage. Tengen's plays on every hit, like
 // a drum. Rengoku has one for each special (tiger, then ninth for Ninth Form).
 const SPECIAL_FX = {zenitsu:'bolt', muichiro:'mist', tengen:'drum', inosuke:'claws', tanjiro:'firering', rengoku:'tiger', zohakuten:'dragons', kaigaku:'darkbolt', sanemi:'tornado', gyutaro:'sickles', susamaru:'temari', sekido:'redbolt', suma:'kunai', akaza:'annihil', yoriichi:'sunform', yoriichi_old:'sunform',
-  muzan:'whips', muzan_final:'whips2', gyomei:'flail', mitsuri:'ribbon', obanai:'snake', enmu:'sleep'};
+  muzan:'whips', muzan_final:'whips2', gyomei:'flail', mitsuri:'ribbon', obanai:'snake', enmu:'sleep',
+  urokodaki:'waterwheel', makio:'burst', hand:'hands', tanjuro:'kagura', sabito:'foxmask'};   // CK, Nov 3, 2026: the last specials without their own moment
+const UPPER_RANK = ['','壱','弐','参','肆','伍','陸'];
 const whipArt = n => `<svg viewBox="0 0 100 100" preserveAspectRatio="none">${rep(n, i=>`<path style="--d:${i*.06}s" d="M${i%2?104:-4} ${16+i*(70/n)} C30 ${(i*37)%100} 70 ${100-(i*53)%100} ${i%2?-4:104} ${30+(i*29)%50}"/>`)}</svg>`;
 const SFX_ART = {
+  // Nov 3, 2026: Urokodaki's water wheel, Makio's blast, the Hand Demon's arms, Tanjuro's Hinokami dance in the snow, Sabito's fox mask
+  waterwheel: () => `<svg viewBox="0 0 100 100"><g class="ww">${rep(8,i=>`<path d="M50 50 L50 14 A36 36 0 0 1 ${50+36*Math.sin((i+1)*Math.PI/4)} ${50-36*Math.cos((i+1)*Math.PI/4)}" transform="rotate(${i*45} 50 50)"/>`)}</g></svg>`,
+  burst: () => `<span class="bflash"></span>${rep(12,i=>`<i style="--a:${i*30}deg;--d:${(i%3)*.05}s"></i>`)}`,
+  hands: () => rep(6,i=>`<svg class="arm a${i}" viewBox="0 0 40 100"><path d="M20 100 C14 70 24 50 18 30 C16 22 10 18 8 10 M18 30 C22 20 28 16 30 6 M18 30 C20 22 22 14 20 2 M18 30 C14 24 12 18 14 8"/></svg>`),
+  kagura: () => `<span class="kring"></span><span class="kring k2"></span>${rep(14,i=>`<i style="--x:${(i*29)%100}%;--d:${(i%7)*.12}s"></i>`)}`,
+  foxmask: () => `<svg class="fox" viewBox="0 0 100 100"><path d="M50 12 C70 12 84 24 86 44 C88 64 72 86 50 90 C28 86 12 64 14 44 C16 24 30 12 50 12 Z"/><path class="fm" d="M28 40 L42 46 M72 40 L58 46 M44 30 C48 26 52 26 56 30 M30 62 C40 58 44 66 50 66 C56 66 60 58 70 62"/></svg><span class="rip"></span><span class="rip r2"></span>`,
+  // Nov 3, 2026: an Upper Moon's first move of the match, and two fighters falling on the same beat
+  upper: m => `<span class="upeye"><b>上弦の${UPPER_RANK[+(((BYID[m.u.id]||{}).type||'').match(/\d/)||[0])[0]]||''}</b><small>${m.u.name}</small></span>`,
+  doubleko: () => '<b class="dko">Double KO</b>',
   bolt: () => `<svg viewBox="0 0 100 40" preserveAspectRatio="none"><polyline class="b1" points="-2,12 18,20 30,8 46,24 60,10 76,26 102,14"/><polyline class="b2" points="-2,12 18,20 30,8 46,24 60,10 76,26 102,14"/></svg>`,
   mist: () => rep(5, i=>`<i style="--d:${i*.09}s;--y:${8+i*19}%"></i>`),
   drum: () => rep(3, i=>`<i style="--d:${i*.16}s"></i>`),

@@ -33,6 +33,31 @@ function rosterDrift(now){
   requestAnimationFrame(rosterDrift);
 }
 ['touchstart','touchmove','wheel','pointerdown','scroll'].forEach(ev=>document.addEventListener(ev,e=>{ if(ev==='scroll' && Date.now()>=ROSTER_ROW.until) return; if(e.target.closest && e.target.closest('.artstrip')){ ROSTER_ROW.until=Date.now()+4000; const el=document.querySelector('.artstrip'); if(el) rosterPlace(el); } },{passive:true, capture:true}));
+// Synergy reveal: once per match, at the first move screen, the teams' active synergies light up for a moment (tap to skip)
+function synergyIntro(){
+  S.synShown=true; const sides=players().map(p=>({p, list:(S.syn&&S.syn[p]||[]).filter(x=>x[0]!=='!')})).filter(x=>x.list.length); if(!sides.length) return;
+  const el=document.createElement('div'); el.className='synintro'; el.setAttribute('role','status');
+  el.innerHTML=sides.map(x=>`<div class="synside" style="--tc:${pc(x.p)}"><div class="synwho">${S.teams[x.p].filter(u=>!u.spawn).map(u=>seal(u,'sm')).join('')}</div><b>${esc(nm(x.p))}</b>${x.list.map((t,i)=>`<span class="synchip" style="--i:${i}">${esc(t)}</span>`).join('')}</div>`).join('');
+  el.addEventListener('click',()=>el.remove()); document.body.appendChild(el); setTimeout(()=>el.classList.add('out'),2600); setTimeout(()=>el.remove(),3200);
+}
+/* KO test matches (localhost only): ?test=<name> starts a battle one hit from that knockout. Tap Attack on the fighter
+   (or Fight) and watch. CK, Nov 3, 2026. */
+const KO_TESTS = {
+  petals:   {you:['akaza'], foe:['kanao'], note:'Kanao falls: butterfly petals.'},
+  behead:   {you:['tanjiro'], foe:['hand','swamp'], note:'A demon is beheaded (not the last blow, so normal speed).'},
+  upper:    {you:['gyomei'], foe:['akaza'], note:'An Upper Moon: the kanji shatters, then the cut.'},
+  muzan:    {you:['yoriichi'], foe:['muzan'], note:'Muzan cracks, the stage shakes, and he explodes.'},
+  special:  {you:['tanjiro'], foe:['akaza'], note:'Use Tanjiro’s special (Hinokami Kagura): it lands the cut in the same moment.'},
+};
+function koTest(){
+  const name=(new URLSearchParams(location.search).get('test')||'').toLowerCase(), t=KO_TESTS[name]; if(!t || !/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) return;
+  Object.assign(S,{mode:'cpu', n:2, duo:false, names:[playerName()||'You','Test'], askName:null, unlockAll:true, budget:UNLIMITED, maxTeam:6});
+  S.picks=[t.you.slice(), t.foe.slice()]; startBattle(); S.synShown=true;
+  S.teams[1].forEach((u,i)=>{ if(i===0) u.hp=1; u.pow=0; u.regen=0; u.revive=0; u.cd=9; u.spd=0; });   // first enemy one hit from down, and harmless
+  S.teams[0].forEach(u=>{ u.spd=99; });
+  note(t.note+' Tap Attack on the enemy, then Fight.'); render();
+}
+setTimeout(koTest, 900);
 function render(){
   if(isOnline()) S.planFor=S.me;
   const ctl=typeof isCtl==='function' && isCtl(), view = ctl ? ctlViewName() : viewName();   // a phone controlling the TV shows only its moves
@@ -64,6 +89,9 @@ function render(){
   // Story battles fight in front of the battle's place picture (img/places/, the same one as its cutscenes)
   const place=['plan','result','pass','scout','ready','over'].includes(view) && (st ? PLACE_ART[st.id]||PLACE_ART[st.arc] : S.place && PLACE_ART[S.place]);   // story: the battle's place; other modes: the match's
   document.body.classList.toggle('placebg', !!place);
+  // Last stand: your final fighter under 25% gets a heartbeat and red edges while you choose
+  { const me=S.teams && (S.planFor??S.me??0), mine=S.teams && S.teams[me] && alive(me); document.body.classList.toggle('laststand', view==='plan' && !!mine && mine.length===1 && mine[0].hp<=mine[0].max*.25); }
+  if(view==='plan' && S.round===1 && S.teams && !S.synShown) synergyIntro();
   if(place) document.body.style.setProperty('--placebg', `url('${place}')`);
   cloudCheck();   // back up saved progress a few seconds after it changes
   queueMicrotask(rosterKeep);
@@ -72,6 +100,7 @@ function render(){
   // reuse the picture elements already on screen: a redraw never has to decode them again, so nothing blinks
   const pics=new Map(); app.querySelectorAll('img:not([data-k])').forEach(im=>{ const k=im.getAttribute('src'); if(!pics.has(k)) pics.set(k,[]); pics.get(k).push(im); });
   beforeAwake(()=>{ app.innerHTML=VIEWS[view](); sheet.innerHTML=vSheet(); });
+  if(app.querySelector('.kolater')) setTimeout(()=>app.querySelectorAll('.kolater').forEach(e=>e.classList.remove('kolater')), quickMotion()?150:620);   // a special's knockout waits for the special to land
   app.querySelectorAll('img:not([data-k])').forEach(im=>{ const old=(pics.get(im.getAttribute('src'))||[]).shift(); if(old){ old.className=im.className; im.replaceWith(old); } });
   app.querySelectorAll('video[data-k],img[data-k]').forEach(v=>{ const old=vids.get(v.dataset.k); if(old){ v.replaceWith(old); if(old.tagName==='VIDEO') playVid(old); } else if(v.tagName==='VIDEO'){ v.onended=()=>{ if(v.duration<CLIP_LOOP){ v.currentTime=0; playVid(v); } }; playVid(v); } });
   warmClips();
@@ -366,7 +395,7 @@ const ACTIONS = {
 (function splash(){
   const el=document.getElementById('splash'); if(!el) return;
   let quiet=false; try{ quiet=sessionStorage.getItem('squad-draft-quiet')==='1'; sessionStorage.removeItem('squad-draft-quiet'); }catch(e){}
-  if(quiet || /nosplash/.test(location.search) || navigator.webdriver){ el.remove(); return; }   // quiet: the game just reloaded itself for an update
+  if(quiet || /[?&]test=/.test(location.search) || /nosplash/.test(location.search) || navigator.webdriver){ el.remove(); return; }   // quiet: the game just reloaded itself for an update
   let gone=false;
   const go=()=>{ if(gone) return; gone=true; unlockSound(); sfx('intro'); el.classList.add('go');
     setTimeout(()=>{ el.classList.add('out'); setTimeout(()=>{ el.remove(); if(UPDATE_READY && S.phase==='setup') reloadQuiet(); }, 700); }, quickMotion()?300:2400); };   // an update that arrived during the splash applies once it's gone

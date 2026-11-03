@@ -67,12 +67,18 @@ const SYN = [
   { name: 'Kocho Sisters', fams: ['kanae', 'shinobu'], all: true, text: 'Kanae + Shinobu: poison lasts 4 rounds.' },
   { name: "Kanae's student", fams: ['kanae', 'kanao'], all: true, text: 'Kanae + Kanao: Kanao +1 PWR.' },
   { name: 'Training partner', fams: ['typezero', 'muichiro'], all: true, text: 'Type Zero + Muichiro: Muichiro +1 PWR.' },
+  { name: 'Brothers', fams: ['sanemi', 'genya'], all: true, text: 'Sanemi + Genya: both +2 PWR.' },
+  { name: 'Love Hashira', fams: ['obanai', 'mitsuri'], all: true, text: 'Obanai + Mitsuri: both +1 PWR, +1 SPD.' },
+  { name: 'Set Your Heart Ablaze', fams: ['rengoku', 'tanjiro'], all: true, text: 'Rengoku + Tanjiro: Tanjiro +1 PWR, Rengoku +1 DEF.' },
+  { name: 'Old Friends', fams: ['giyu', 'sabito'], all: true, text: 'Giyu + Sabito: Giyu +2 PWR +1 DEF, Sabito +1 SPD.' },
 ];
 const VERSUS = [
   { fams: ['muzan', 'yoriichi'], text: 'Muzan fears the Sun: against Yoriichi, Muzan −3 PWR −2 SPD.' },
   { fams: ['kokushibo', 'yoriichi'], text: 'Against Yoriichi, Kokushibo −1 DEF.' },
   { fams: ['muzan', 'tamayo'], text: "Tamayo's medicine: against Tamayo, Muzan −2 regeneration." },
   { fams: ['zenitsu', 'kaigaku'], text: 'Rival: against Kaigaku, Zenitsu +2 PWR.' },
+  { fams: ['rengoku', 'akaza'], text: 'Rival: against Akaza, Rengoku +2 PWR.' },
+  { fams: ['kanao', 'inosuke', 'doma'], text: 'Revenge on Doma: against Doma, Kanao and Inosuke +2 SPD, and +4 damage on Doma through his DEF.' },
   { fams: ['shinobu'], demonFoe: true, text: "Shinobu's wisteria: a demon (not Akaza) that knocks her out loses 5 HP every round." },
 ];
 function synergiesOf(c) {

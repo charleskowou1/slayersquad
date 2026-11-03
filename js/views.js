@@ -271,7 +271,7 @@ function dailyCard(){
   const ch=DAILY_CACHE&&DAILY_CACHE.day===todayKey()?DAILY_CACHE:null, done=dailyDone(), streak=dailyStreak();
   if(!ch) return `<div class="daily slim loading"><div class="eyebrow">Daily challenge</div></div>`;
   return `<div class="daily slim${done?' done':''}"><div class="dbody"><div class="eyebrow">Daily challenge${streak?` · 🔥 ${streak}`:''}</div>
-      <div class="dgoal">${esc(DAILY_GOALS[ch.goal.type](ch.goal))}</div></div>
+      <div class="dgoalrow"><div class="dgoal">${esc(DAILY_GOALS[ch.goal.type](ch.goal))}</div><span class="dmini" aria-label="Their team">${ch.enemy.map(id=>seal(BYID[id],'sm')).join('')}</span></div></div>
     <button class="btn small${done?' ghost':''}" data-a="daily">${done?'✓ Done':'Play'}</button></div>`;
 }
 // Own-pace online games on the home screen: who against, and whether it's your turn (your turn first, then newest)
@@ -825,13 +825,16 @@ function stage(line){
   const pop=amt?`<span class="pop ${amt[1]==='-'?'dmg':'gain'}">${amt[1]==='-'?'−':'+'}${amt[2]}</span>`:'';
   const calm=calmSides(), ring=(u,role)=>role==='on'&&by&&!sameSide(by.p,u.p)&&calm.has(u.p)?waterRing():'';   // the water shows on whoever is being attacked
   const cut=type==='ko' && slicedBy(line,on), dust=crumbleKind(line), act=line.move==='special'&&by?' by-'+by.sk:'';
-  const who=(u,role)=>`<div class="st-${role}">${role==='on'&&dust?crumblePic(dust,seal(u,'stg')):role==='on'&&cut?slicePic(u,seal(u,'stg'),cutStyle(line)):seal(u,'stg')}${ring(u,role)}${role==='on'&&line.gone?kDoors:''}${role==='by'?byFx(line):''}${role==='on'?art+pop+targetFx(line):''}${role==='by'&&type==='special'&&style?fxArt(style,'aura'):''}<span class="st-nm" style="color:${pc(u.p)}">${esc(u.name)}</span></div>`;
+  const muz=type==='ko' && on && on.fam==='muzan', fell=type==='ko' && on && !dust && !cut && !muz && PETAL_FAMS.includes(on.fam);
+  const who=(u,role)=>`<div class="st-${role}">${role==='on'&&muz?muzanPic(seal(u,'stg')):role==='on'&&dust?crumblePic(dust,seal(u,'stg')):role==='on'&&cut?slicePic(u,seal(u,'stg'),cutStyle(line)):role==='on'&&fell?fallPic(u,seal(u,'stg')):seal(u,'stg')}${ring(u,role)}${role==='on'&&line.gone?kDoors:''}${role==='by'?byFx(line):''}${role==='on'?art+pop+targetFx(line):''}${role==='by'&&type==='special'&&style?fxArt(style,'aura'):''}<span class="st-nm" style="color:${pc(u.p)}">${esc(u.name)}</span></div>`;
   if(line.helper){ const h=BYID[line.helper];   // a back-pocket helper acting
     return `<div class="stage fx-${type} solo helperfx" aria-hidden="true"><span class="st-mark">${FX_MARK[type]||''}</span><div class="st-on">${seal(h,'stg')}<span class="st-nm">${esc(h.short)}</span></div></div>`; }
   const mark=`<span class="st-mark">${style&&(type==='hit'||type==='special')?STYLE_KANJI[style]:FX_MARK[type]||''}</span>`;
   const solo=on||by;
   if(line.calm && by) return stageCalm(by);
-  return `<div class="stage fx-${type||'none'}${cut||dust?' sliced':''}${line.gone?' goneaway':''}${line.shrink?' shrinking':''}${line.cover?' covering':''}${act} ${duo?'duo':'solo'}${rev?' rev':''}${style?' sty sty-'+style:''}" aria-hidden="true">
+  if(line.sunrise) return `<div class="stage sunstage" aria-hidden="true"><span class="sunrays"></span><span class="sundisc"></span><span class="sunland"></span><b class="sunkj">日の出</b></div>`;   // nobody acts at sunrise, so it gets its own picture
+  if(line.frenzy){ const foe=players().find(p=>alive(p).some(u=>u.demon)); return `<div class="stage frenzystage" aria-hidden="true"><div class="calmteam">${(foe===undefined?[]:alive(foe)).slice(0,6).map(u=>seal(u,'stg')).join('')}</div><b class="sunkj">狂</b></div>`; }
+  return `<div class="stage fx-${type||'none'}${cut||dust||muz||fell?' sliced':''}${muz?' muzko':''}${line.gone?' goneaway':''}${line.shrink?' shrinking':''}${line.cover?' covering':''}${act} ${duo?'duo':'solo'}${rev?' rev':''}${style?' sty sty-'+style:''}" aria-hidden="true">
     ${duo ? (rev ? who(on,'on')+mark+who(by,'by') : who(by,'by')+mark+who(on,'on')) : solo ? mark+who(solo, on?'on':'by') : mark}</div>`;
 }
 // A slayer's killing blow on a demon cuts the card in two: the top half slides off (CK)
@@ -841,12 +844,22 @@ const cutStyle = l => { const a=l&&l.by&&findU(l.by); return a ? styleOf(a, l.mo
 // A demon burned away by the sun turns to ash; one killed by Shinobu turns purple and crumbles
 const crumbleKind = l => l && l.fx==='ko' ? (l.resolve?'resolve':l.wist?'wist':l.ash?'ash':'') : '';
 const crumblePic = (kind, html) => `<span class="crumble ${kind}"><span class="cr-pic">${html}</span>${rep(10, i=>`<i style="--x:${(i*37)%100}%;--dx:${((i*53)%60)-30}px;--d:${(i%5)*.09}s"></i>`)}</span>`;
-const slicePic = (u, html, style='slash') => `<span class="slice cut-${style}"><span class="sl-b">${html}</span><span class="sl-t">${html}</span><i class="sl-line"></i></span>`;
+// The cut: the head half flies off and spins, a red spray at the cut (CK, Nov 3, 2026). An Upper Moon's rank kanji shatters first.
+const slicePic = (u, html, style='slash') => `<span class="slice cut-${style}${BYID[u.id]&&BYID[u.id].upper?' upcut':''}">${BYID[u.id]&&BYID[u.id].upper?`<b class="upk" aria-hidden="true"><span>上弦</span><span>上弦</span></b>`:''}<span class="sl-b">${html}</span><span class="sl-t">${html}</span><i class="sl-line"></i>${rep(7,i=>`<i class="sl-red" style="--a:${-60+i*20}deg;--d:${i*.03}s"></i>`)}</span>`;
+// A special that knocks someone out ends on a big KO in the middle of the stage (CK, Nov 3, 2026; ink and hanko marks tried and dropped)
+const koSlam = () => '<b class="koslam" aria-hidden="true">KO</b>';
+// Shinobu, Kanae and Kanao fall in butterfly petals (CK kept these; other slayers fall as before)
+const PETAL_FAMS = ['shinobu','kanae','kanao'];
+const fallPic = (u, html) => `<span class="fall petals"><span class="fl-pic">${html}</span>${rep(12,i=>`<i style="--x:${(i*31)%100}%;--dx:${((i*47)%80)-40}px;--d:${(i%6)*.12}s"></i>`)}</span>`;
+// Muzan's knockout (CK: the first one was weak): red veins crack across his card, the stage shakes, then he explodes in a
+// shockwave of burning pieces that fly across the battle area
+const muzanPic = html => `<span class="crumble muzanburst"><span class="cr-pic">${html}</span><svg class="veins" viewBox="0 0 100 100" aria-hidden="true"><path d="M50 50 L22 14 M50 50 L84 20 M50 50 L90 62 M50 50 L64 92 M50 50 L18 80 M50 50 L8 44 M34 30 L20 34 M70 34 L78 46 M58 72 L74 78 M32 66 L24 56"/></svg><b class="shock"></b><b class="shock s2"></b>${rep(56,i=>{ const a=i*6.43, r=90+((i*37)%170); return `<i style="--dx:${Math.round(Math.cos(a*Math.PI/180)*r)}px;--dy:${Math.round(Math.sin(a*Math.PI/180)*r)}px;--s:${4+(i*7)%9}px;--d:${(i%8)*.03}s"></i>`; })}</span>`;
 // A special's big moment for this beat (effects.js): over the whole screen, on its first hit (every hit for Tengen)
 const SPECIAL_HITS = ['hit','ko','miss','block'];
 // Which special a hit belongs to: the nearest announcement above it
 function sigFor(l){ for(let i=S.log.indexOf(l);i>=0;i--){ const m=S.log[i]; if(m.fx==='special' && m.by===l.by) return m.sig; } return null; }
 function fxName(lines, from){
+  const sup=lines.find(x=>x.by && x.move==='special' && ['heal','buff'].includes(x.fx) && ['tanjuro','sabito'].includes((findU(x.by)||{}).sk)); if(sup) return SPECIAL_FX[findU(sup.by).sk];   // support specials that don't hit
   const l=lines.find(x=>x.by && x.move==='special' && (SPECIAL_HITS.includes(x.fx) || (x.fx==='stun' && !x.on))), by=l&&findU(l.by); let name=by&&SPECIAL_FX[by.sk];
   if(!name) return null;
   if(name==='annihil' && sigFor(l)!=='annihilation') return null;
@@ -860,17 +873,20 @@ function momentOf(lines, to, cur){
   const hlp=lines.find(l=>l.helper && SFX_ART['h_'+l.helper]); if(hlp) return {k:'h_'+hlp.helper, on:hlp.on};
   if(lines.some(l=>l.merged)) return {k:'merge'};
   if(lines.some(l=>l.sunrise)) return {k:'sunsweep'};
+  { const l=lines.find(x=>x.by && (x.move==='special'||x.move==='attack') && (BYID[(findU(x.by)||{}).id]||{}).upper), u=l&&findU(l.by), key=S.round+':'+(S.play?S.play.k:0);   // an Upper Moon's first move this match
+    if(u){ S.upSeen=S.upSeen||{}; if(!S.upSeen[u.uid] || S.upSeen[u.uid]===key){ S.upSeen[u.uid]=key; return {k:'upper', u}; } } }
   if(lines.some(l=>l.kind==='drum')) return {k:'tilt'};
   if(lines.some(l=>l.fx==='stun' && l.move==='attack' && l.by && (findU(l.by)||{}).sk==='nakime')) return {k:'biwa'};
   if(lines.some(l=>l.fx==='spawn' && l.on && findU(l.on) && findU(l.on).sk==='hantengu')) return {k:'crack'};
   const ko=lines.filter(l=>l.fx==='ko'); if(!ko.length) return null;
-  if(S.final && !S.log.slice(to+1).some(l=>l.fx==='ko')) return {k:'final'};
+  if(S.final && !S.log.slice(to+1).some(l=>l.fx==='ko')) return {k:'final', color:ko.some(l=>(findU(l.on)||{}).fam==='muzan')};   // Muzan's explosion stays in colour
+  if(ko.length>=2) return {k:'doubleko'};
   for(const p of players()){ const up=S.teams[p].filter(u=>(cur.hp[u.uid]||0)>0);
     if(up.length===1 && ko.some(l=>{ const u=findU(l.on); return u && u.p===p; })) return {k:'lone', u:up[0]}; }
   return null;
 }
 const momentFx = m => !m ? '' : SFX_ART[m.k] ? `<div class="sfx sfx-${m.k}" aria-hidden="true">${SFX_ART[m.k](m)}</div>`
-  : m.k==='final' ? '<div class="sfx sfx-final" aria-hidden="true"></div>'
+  : m.k==='final' ? `<div class="sfx sfx-final${m.color?' incolor':''}" aria-hidden="true"></div>`
   : `<div class="sfx sfx-lone" aria-hidden="true"><span style="--tc:${pc(m.u.p)}">${seal(m.u,'sm')}<b>${esc(m.u.name)} stands alone</b></span></div>`;
 // One Attack's several strikes as one quick beat: quick lunges, a number per strike
 const flurryPct = lines => lines.reduce((a,l)=>a+(+((l.t.match(/\[-(\d+)%\]/)||[])[1]||0)),0);
@@ -953,11 +969,13 @@ function stageGroup(lines){
   const by=findU(lines[0].by), style=styleOf(by,'special'), rev=by.p!==leftSide();
   const hits=lines.filter(l=>GROUP_FX.includes(l.fx));
   const target=l=>{ const t=findU(l.on), amt=l.t.match(/\[([+-])(\d+%)\]/), ko=lines.some(m=>m.fx==='ko'&&m.on===l.on);
-    const koL=lines.find(m=>m.fx==='ko'&&m.on===l.on), cut=ko && slicedBy(koL,t), dust=crumbleKind(koL);
-    return `<div class="st-on${ko?(cut||dust?' sliced':' koed'):''}${l.fx!=='hit'?' missed':''}">${dust?crumblePic(dust,seal(t,'stg')):cut?slicePic(t,seal(t,'stg'),cutStyle(koL)):seal(t,'stg')}${calmSides().has(t.p)?waterRing():''}${targetFx(l)}${l.fx==='hit'?fxArt(style):''}${amt?`<span class="pop dmg">−${amt[2]}</span>`:l.fx!=='hit'?`<span class="pop">${l.fx==='miss'?'miss':'blocked'}</span>`:''}<span class="st-nm" style="color:${pc(t.p)}">${esc(t.name)}</span></div>`; };
+    const koL=lines.find(m=>m.fx==='ko'&&m.on===l.on), cut=ko && slicedBy(koL,t), dust=crumbleKind(koL), muz=ko && t.fam==='muzan', fell=ko && !cut && !dust && !muz && PETAL_FAMS.includes(t.fam);
+    const pic=muz?muzanPic(seal(t,'stg')):dust?crumblePic(dust,seal(t,'stg')):cut?slicePic(t,seal(t,'stg'),cutStyle(koL)):fell?fallPic(t,seal(t,'stg')):seal(t,'stg');
+    return `<div class="st-on${ko?(cut||dust||muz||fell?' sliced':' koed'):''}${l.fx!=='hit'?' missed':''}">${ko&&pic.startsWith('<span')?`<span class="kolater">${pic}</span>`:pic}${calmSides().has(t.p)?waterRing():''}${targetFx(l)}${l.fx==='hit'?fxArt(style):''}${ko?'':amt?`<span class="pop dmg">−${amt[2]}</span>`:l.fx!=='hit'?`<span class="pop">${l.fx==='miss'?'miss':'blocked'}</span>`:''}<span class="st-nm" style="color:${pc(t.p)}">${esc(t.name)}</span></div>`; };
   const attacker=`<div class="st-by">${seal(by,'stg')}<span class="st-nm" style="color:${pc(by.p)}">${esc(by.name)}</span></div>`;
   const row=`<div class="st-targets">${hits.map(target).join('')}</div>`, mark=`<span class="st-mark">${STYLE_KANJI[style]}</span>`;
-  return `<div class="stage group duo fx-hit sty sty-${style}${rev?' rev':''}" aria-hidden="true">${rev?row+mark+attacker:attacker+mark+row}</div>`;
+  const muzko=lines.some(m=>m.fx==='ko' && (findU(m.on)||{}).fam==='muzan');
+  return `<div class="stage group duo fx-hit sty sty-${style}${rev?' rev':''}${hits.length===1?' one':''}${muzko?' muzko':''}${lines.some(m=>m.fx==='ko')?' hitstop':''}" aria-hidden="true">${rev?row+mark+attacker:attacker+mark+row}${lines.some(m=>m.fx==='ko')?koSlam():''}</div>`;
 }
 // During playback each team is a slim row of small portraits with a thin health line, so the stage is the focus.
 // `moment` gives HP at this beat; `involved` = uids in the current action.
@@ -971,6 +989,9 @@ function miniTeam(p, moment, involved){
 // One line for a group attack: "Frozen Lotus hits 4 enemies · 1 knocked out"
 function groupSummary(lines){
   const by=findU(lines[0].by), n=lines.filter(l=>l.fx==='hit').length, ko=lines.filter(l=>l.fx==='ko').length;
+  if(n===1 && ko===1){ const k=lines.find(l=>l.fx==='ko'), t=findU(k.on), sig=(sigOfLine(by,{sig:sigFor(lines[0])})||by.sig).name.split(':')[0];
+    const verb=t.fam==='muzan'?'destroys':slicedBy(k,t)?'cuts down':'strikes down';
+    return `${seal(by,'ls')}<b>${esc(by.name)}’s ${esc(sig)}</b> ${verb} <b class="dmg">${esc(t.name)}</b>!`; }
   return `${seal(by,'ls')}<b>${esc(by.sig.name.split(':')[0])}</b> hits ${plural(n,'enemy').replace('enemys','enemies')}${ko?` · <b class="dmg">${ko} knocked out</b>`:''}`;
 }
 // Knockouts and hits of 30%+ shake the stage
