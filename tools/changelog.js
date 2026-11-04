@@ -2,6 +2,7 @@
 // (CACHE 'squad-draft-vNN'), which goes up with every push. tools/make-guide.js prints this at the top of the guide.
 // Add a line here with every push (CK, Oct 28, 2026), then rebuild the guide: node tools/make-guide.js
 module.exports = [
+  [119, '2026-11-04', 'New soundtrack: the made-in-code music is gone. Home rotates Kamado Nezuko’s Song, from the edge and Gurenge; drafting plays Tengen’s theme; battles play the Hashira or Zenitsu themes and boss fights Akaza’s or Zohakuten’s; the story finale and credits play Nezuko’s Song. Settings shows the song playing with a Next button. Music starts on Low.'],
   [118, '2026-11-04', 'Admin page: totals include Nov 2–3, which were counted per browser before people counting started.'],
   [117, '2026-11-03', 'Admin page: time filters (today, 7 days, 30 days, all time), players counted as people across their devices on New York days, came-back rate; search setup (title, robots.txt, sitemap, game details for Google, an About section under the home screen).'],
   [116, '2026-11-03', 'Admin page: a Where list counts each browser once by its time zone (a rough region, no location permission).'],

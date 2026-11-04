@@ -1,16 +1,15 @@
 /* ================= SOUND AND MUSIC =================
-   Everything is made on the fly with the Web Audio API: no audio files (nothing to license on the public site).
+   Effects are made on the fly with the Web Audio API. Music is a library of songs in music/ (see TRACKS below).
    Phones only allow sound after a tap, so audio starts on the first tap (unlockSound in app.js).
    Two volumes in Settings: Music and Effects (Off / Low / Medium / High), saved per phone.
    - Effects: hits, knockouts, heals… plus one sound per breathing style (water swirl, thunder crack, flame roar…),
      a cut-in sound when a special fires, and scene sounds (typing ticks, the unlock sting).
-   - Music: short looping pieces composed from Japanese scales (miyako-bushi, in-sen) with koto-like plucks,
-     a shakuhachi-like flute, soft pads and taiko drums. One theme per kind of screen (menu, draft, battle) and a mood
-     per story arc; music(name) cross-fades to it. */
+   - Music: songs from the music library, one per kind of screen (home, draft, battle, boss battle, credits) and per
+     story arc; music(name) cross-fades to it. */
 const VOL_LEVELS = [0, .35, .7, 1];   // Off, Low, Medium, High
 const VOL_KEY = 'squad-draft-volume';
-// defaults (CK): music off, effects low
-function loadVolumes(){ try{ const v=JSON.parse(localStorage.getItem(VOL_KEY)); if(v) return v; }catch(e){} return {music:0, sfx:1}; }
+// defaults: music low (CK, Nov 4, 2026: the new music library, Nezuko's Song on the home screen), effects low
+function loadVolumes(){ try{ const v=JSON.parse(localStorage.getItem(VOL_KEY)); if(v) return v; }catch(e){} return {music:1, sfx:1}; }
 function saveVolumes(v){ try{ localStorage.setItem(VOL_KEY, JSON.stringify(v)) }catch(e){} }
 let AC = null, NOISE = null, SFX_OUT = null, MUSIC_OUT = null;
 // Called on every tap (not just the first): phones only let audio start or resume inside a tap, and they pause it
@@ -33,6 +32,7 @@ function unlockSound(){
     try{ const b=AC.createBuffer(1,1,22050), src=AC.createBufferSource(); src.buffer=b; src.connect(AC.destination); src.start(0); }catch(e){}
   }
   if(MUSIC.want && !MUSIC.playing) startMusic(MUSIC.want);
+  playMusicEl();   // a song a phone refused to start without a tap
 }
 function applyVolumes(){
   if(!AC) return; const v=S.vol||loadVolumes();
@@ -189,88 +189,101 @@ function typeTicks(chars){
 }
 function stopTypeTicks(){ if(TYPE_OUT){ try{ TYPE_OUT.disconnect(); }catch(e){} TYPE_OUT=null; } }
 
-/* ---------- music ---------- */
-// Scales as semitones from the root. Miyako-bushi (the classic koto sound) for calm, in-sen for darker, yo for bright.
-const SCALES = {miyako:[0,1,5,7,8], insen:[0,1,5,7,10], yo:[0,2,5,7,9]};
-// theme: tempo, root (MIDI note), scale, chord progression (scale degrees), and which instruments play
-const THEMES = {
-  menu:   {bpm:52,  root:50, scale:'yo',     prog:[0,3,1,3], koto:'slow', flute:.25,pad:.7, taiko:0,  bass:.3},   // calm (CK: the old one wasn't)
-  draft:  {bpm:88,  root:52, scale:'yo',     prog:[0,2,3,1], koto:'arp',  flute:.3, pad:.3, taiko:.3, bass:.6},
-  // battle (CK: more intense): faster, a driving bass line, hi-hats, shamisen-like power stabs and a taiko fill every 4 bars
-  battle: {bpm:140, root:50, scale:'insen',  prog:[0,0,3,2,0,0,4,1], koto:'stab', flute:.55,pad:.3, taiko:1, bass:1, drive:1, hats:1, power:1, fill:1},
-  calm:   {bpm:66,  root:55, scale:'yo',     prog:[0,3,1,4], koto:'arp',  flute:.7, pad:.6, taiko:0,  bass:.4},
-  dark:   {bpm:70,  root:47, scale:'insen',  prog:[0,1,0,3], koto:'slow', flute:.5, pad:.7, taiko:.2, bass:.6},
-  epic:   {bpm:104, root:50, scale:'miyako', prog:[0,3,4,2], koto:'arp',  flute:.6, pad:.5, taiko:.8, bass:.8, drive:.6, hats:.5, fill:1},
-};
-// story arcs → mood for their scenes and map
-const ARC_MOOD = {dream1:'calm', dream2:'calm', dream3:'epic', dream4:'dark', dream5:'epic', six:'epic', prologue:'calm', asakusa:'calm', tsuzumi:'dark', natagumo:'dark', mugen:'epic', district:'epic', swordsmith:'calm', flashback:'epic', castle:'dark', dawn:'epic'};
-const MUSIC = {want:null, playing:null, timer:null, step:0, next:0, theme:null, mel:null, bus:null};
+// a koto-like pluck (the splash sting uses it)
 const midiHz = m => 440*Math.pow(2,(m-69)/12);
-// a note of the theme's scale: degree (can go past one octave) above the root
-const noteOf = (th, deg, oct=0) => { const sc=SCALES[th.scale], n=sc.length, o=Math.floor(deg/n); return th.root + sc[((deg%n)+n)%n] + 12*(o+oct); };
-// instruments (all into the theme's own bus, so themes can cross-fade)
 function pluck(f,t,len,vol,bus){ const o=AC.createOscillator(), g=AC.createGain(), lp=AC.createBiquadFilter();
   o.type='triangle'; o.frequency.value=f; lp.type='lowpass'; lp.frequency.setValueAtTime(f*6,t); lp.frequency.exponentialRampToValueAtTime(f*1.5,t+len);
   g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(vol,t+.005); g.gain.exponentialRampToValueAtTime(.001,t+len);
   o.connect(lp).connect(g).connect(bus); o.start(t); o.stop(t+len+.05); }
-function flute(f,t,len,vol,bus){ const o=AC.createOscillator(), g=AC.createGain(), lfo=AC.createOscillator(), lg=AC.createGain();
-  o.type='sine'; o.frequency.value=f; lfo.frequency.value=5; lg.gain.value=f*.012; lfo.connect(lg).connect(o.frequency);
-  g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(vol,t+.09); g.gain.setValueAtTime(vol,t+len*.7); g.gain.linearRampToValueAtTime(0,t+len);
-  o.connect(g).connect(bus); o.start(t); lfo.start(t); o.stop(t+len+.05); lfo.stop(t+len+.05); }
-function pad(fs,t,len,vol,bus){ fs.forEach(f=>[-6,6].forEach(c=>{ const o=AC.createOscillator(), g=AC.createGain(), lp=AC.createBiquadFilter();
-  o.type='sawtooth'; o.frequency.value=f; o.detune.value=c; lp.type='lowpass'; lp.frequency.value=700;
-  g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(vol,t+len*.35); g.gain.linearRampToValueAtTime(0,t+len);
-  o.connect(lp).connect(g).connect(bus); o.start(t); o.stop(t+len+.05); })); }
-function bassNote(f,t,len,vol,bus){ const o=AC.createOscillator(), g=AC.createGain();
-  o.type='triangle'; o.frequency.value=f; g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(.001,t+len);
-  o.connect(g).connect(bus); o.start(t); o.stop(t+len+.05); }
-// battle drive: a closed hi-hat tick, and a bright plucked power chord (sawtooth through a closing filter)
-function hat(t,vol,bus){ hiss('highpass',7000,9000,.035,vol,t-AC.currentTime,bus,.7); }
-function powerStab(fs,t,len,vol,bus){ fs.forEach(f=>{ const o=AC.createOscillator(), g=AC.createGain(), lp=AC.createBiquadFilter();
-  o.type='sawtooth'; o.frequency.value=f; lp.type='lowpass'; lp.Q.value=4; lp.frequency.setValueAtTime(f*8,t); lp.frequency.exponentialRampToValueAtTime(f*1.2,t+len);
-  g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(.001,t+len);
-  o.connect(lp).connect(g).connect(bus); o.start(t); o.stop(t+len+.05); }); }
-// a simple seeded melody per theme (the same tune every time that theme plays)
-function makeMelody(name){ let h=0; for(const c of name) h=(h*31+c.charCodeAt(0))>>>0; const rnd=()=>((h=(h*1103515245+12345)>>>0)/4294967296);
-  const out=[]; let d=4; for(let i=0;i<32;i++){ if(rnd()<.45){ out.push(null); continue; } d=Math.max(2,Math.min(9,d+[-2,-1,-1,0,1,1,2][Math.floor(rnd()*7)])); out.push({deg:d, len:rnd()<.3?4:rnd()<.5?2:1}); } return out; }
-// play one 16th-note step of the current theme at time t
-function musicStep(t){
-  const th=MUSIC.theme, bus=MUSIC.bus, s=MUSIC.step, bar=Math.floor(s/16)%th.prog.length, beat=s%16, root=th.prog[bar], q=60/th.bpm/4;
-  const chord=[root, root+2, root+4];
-  if(th.koto==='arp' && beat%2===0) pluck(midiHz(noteOf(th, chord[(beat/2)%3]+(beat>=8?3:0), 1)), t, q*5, .09, bus);
-  if(th.koto==='stab' && [0,3,6,10,12].includes(beat)) pluck(midiHz(noteOf(th, chord[beat%3], 1)), t, q*2, .1, bus);
-  if(th.koto==='slow' && beat%4===0) pluck(midiHz(noteOf(th, chord[(beat/4)%3], 1)), t, q*10, .08, bus);
-  if(th.bass && (beat===0 || (th.taiko>.5 && beat===8))) bassNote(midiHz(noteOf(th, root, -1)), t, q*(beat===0?7:5), .14*th.bass, bus);
-  if(th.pad && beat===0) pad([midiHz(noteOf(th,root)), midiHz(noteOf(th,root+2))], t, q*16, .018*th.pad, bus);
-  if(th.taiko){ const pat=th.taiko>.5 ? [0,3,6,8,11,14] : [0,8]; if(pat.includes(beat)) taikoHit(t-AC.currentTime, (beat===0?.32:.2)*th.taiko, bus); }
-  if(th.drive && beat%2===0) bassNote(midiHz(noteOf(th, root, beat%8===4?0:-1)), t, q*1.7, .09*th.drive, bus);   // 8th-note bass, jumping an octave
-  if(th.hats) { if(beat%2===1) hat(t, .045*th.hats, bus); else if(th.hats>.7 && beat%4===2) hat(t, .025, bus); }
-  if(th.power && [0,3,6,10].includes(beat)) powerStab([midiHz(noteOf(th,root)), midiHz(noteOf(th,root+2)), midiHz(noteOf(th,root,1))], t, q*(beat===0?3:1.6), (beat===0?.028:.02)*th.power, bus);
-  if(th.fill && bar%4===3 && beat>=12) taikoHit(t-AC.currentTime, (.16+.05*(beat-12))*th.fill, bus);   // drum roll into the next phrase
-  if(th.flute && beat%4===0){ const m=MUSIC.mel[(s/4)%MUSIC.mel.length]; if(m && Math.random()<.85) flute(midiHz(noteOf(th, m.deg, 1)), t, q*4*m.len*.95, .05*th.flute, bus); }
-  MUSIC.step++;
+
+/* ---------- music ---------- */
+// The music library (CK, Nov 4, 2026: the old music made from tones in code was scrapped). Files in music/, trimmed and
+// levelled by the scratch mkmusic.py. Each plays through an <audio> element routed into MUSIC_OUT, so the Music volume in
+// Settings controls it on every phone (iPhones ignore an audio element's own volume). Streamed, never in the offline cache.
+const TRACKS = {
+  nezuko:        'music/nezuko-lullaby.mp3',        // Kamado Nezuko's Song (ufotable): home rotation, story map, calm scenes
+  from_the_edge: 'music/from-the-edge.mp3',         // FictionJunction ft. LiSA, the Season 1 ending: home rotation
+  gurenge:       'music/gurenge.mp3',               // LiSA, the Season 1 opening (TV size): home rotation
+  nezuko_finale: 'music/nezuko-finale.mp3',         // the same song's orchestral climax: story finale and end credits
+  tengen:        'music/tengen.mp3',                // drafting and who-picks-first
+  hashira:       'music/hashira.mp3',               // battles (one of three per match)
+  zenitsu:       'music/zenitsu-thunderclap.mp3',
+  zenitsu_mugen: 'music/zenitsu-mugen.mp3',
+  akaza:         'music/akaza.mp3',                 // boss battles (Upper Moons, Muzan, Final Form) and epic scenes
+  zohakuten:     'music/zohakuten.mp3',             // boss battles and dark scenes
+};
+// names shown in Settings → Now playing
+const SONG_TITLES = {nezuko:'Kamado Nezuko’s Song', nezuko_finale:'Kamado Nezuko’s Song (finale)', from_the_edge:'from the edge · FictionJunction ft. LiSA',
+  gurenge:'Gurenge · LiSA', tengen:'Tengen Uzui Theme', hashira:'Hashira Theme', zenitsu:'Zenitsu Theme · Thunderclap and Flash',
+  zenitsu_mugen:'Zenitsu Theme · Mugen Train', akaza:'Akaza Theme', zohakuten:'Zohakuten Theme'};
+// Home screen rotation (CK, Nov 4, 2026): each time the game opens it starts on the next song, and one song follows another
+const HOME_TRACKS = ['nezuko', 'from_the_edge', 'gurenge'], BATTLE_TRACKS = ['hashira', 'zenitsu', 'zenitsu_mugen'], BOSS_TRACKS = ['akaza', 'zohakuten'];
+const HOME_KEY = 'squad-draft-home-song';
+let HOME_AT = 0; try{ HOME_AT = (((+localStorage.getItem(HOME_KEY))||0) + 1) % HOME_TRACKS.length; localStorage.setItem(HOME_KEY, HOME_AT); }catch(e){}
+const homeTrack = () => HOME_TRACKS[HOME_AT];
+// story arcs → the track for their scenes
+const ARC_MOOD = {dream1:'nezuko', dream2:'nezuko', dream3:'hashira', dream4:'zohakuten', dream5:'akaza', six:'akaza', prologue:'nezuko', asakusa:'nezuko', tsuzumi:'zohakuten', natagumo:'zohakuten', mugen:'hashira', district:'akaza', swordsmith:'nezuko', flashback:'hashira', castle:'zohakuten', dawn:'akaza'};
+// two players (A/B) so tracks cross-fade; each keeps its place per track, so coming back to the menu resumes the song
+const MUSIC = {want:null, playing:null, cur:null, pos:{}, skip:{}};
+function musicPlayer(){
+  const el=new Audio(); el.loop=true; el.preload='auto'; el.setAttribute('playsinline','');
+  const bus=AC.createGain(); bus.gain.value=0; try{ AC.createMediaElementSource(el).connect(bus); }catch(e){} bus.connect(MUSIC_OUT);
+  const p={el, bus, name:null};
+  el.addEventListener('ended', ()=>{ if(MUSIC.cur===p && HOME_TRACKS.includes(p.name)){ nextSong(); if(S.settings && typeof render==='function') render(); } });   // home songs play one after another
+  return p;
 }
 function startMusic(name){
   if(!AC){ MUSIC.want=name; return; }
   if(MUSIC.playing===name) return;
-  // fade the old theme out, start the new one on a fresh bus
-  if(MUSIC.bus){ const old=MUSIC.bus; old.gain.setTargetAtTime(0, AC.currentTime, .4); setTimeout(()=>{ try{ old.disconnect(); }catch(e){} }, 2500); }
-  clearInterval(MUSIC.timer); MUSIC.playing=name; MUSIC.want=name;
-  if(!name || !THEMES[name]){ MUSIC.bus=null; return; }
-  MUSIC.theme=THEMES[name]; MUSIC.mel=makeMelody(name); MUSIC.step=0; MUSIC.next=AC.currentTime+.15;
-  MUSIC.bus=AC.createGain(); MUSIC.bus.gain.setValueAtTime(0,AC.currentTime); MUSIC.bus.gain.setTargetAtTime(1,AC.currentTime,.6); MUSIC.bus.connect(MUSIC_OUT);
-  MUSIC.timer=setInterval(()=>{ if(!MUSIC.bus) return; if(AC.state!=='running'){ MUSIC.next=AC.currentTime+.1; return; }
-    const q=60/MUSIC.theme.bpm/4; while(MUSIC.next < AC.currentTime+.2){ try{ musicStep(MUSIC.next); }catch(e){} MUSIC.next+=q; } }, 40);
+  MUSIC.playing=name; MUSIC.want=name;
+  if(!MUSIC.a){ MUSIC.a=musicPlayer(); MUSIC.b=musicPlayer(); }
+  const old=MUSIC.cur;
+  if(old && old.name){   // fade out and remember where it was
+    MUSIC.pos[old.name]=old.el.currentTime; old.bus.gain.setTargetAtTime(0, AC.currentTime, .35);
+    const was=old.name; setTimeout(()=>{ if(old.name===was && MUSIC.cur!==old) old.el.pause(); }, 1600);
+  }
+  if(!name || !TRACKS[name]){ MUSIC.cur=null; return; }
+  const p = old===MUSIC.a ? MUSIC.b : MUSIC.a; p.name=name; MUSIC.cur=p;
+  if(!p.el.src.endsWith(TRACKS[name])){ p.el.src=TRACKS[name]; }
+  p.el.loop = !HOME_TRACKS.includes(name);
+  try{ p.el.currentTime=MUSIC.pos[name]||0; }catch(e){}
+  p.bus.gain.cancelScheduledValues(AC.currentTime); p.bus.gain.setValueAtTime(0, AC.currentTime); p.bus.gain.setTargetAtTime(1, AC.currentTime+.05, .5);
+  playMusicEl();
 }
-// Which theme a screen plays (called on every redraw; does nothing if it's already playing)
-function music(name){ if((S.vol||loadVolumes()).music===0){ startMusic(null); MUSIC.want=name; return; } startMusic(name); }
+// phones only start audio inside a tap: if a start is refused, the next tap anywhere tries again (unlockSound calls this)
+function playMusicEl(){ const p=MUSIC.cur; if(!p || !p.el.paused || document.hidden) return; try{ const r=p.el.play(); if(r&&r.catch) r.catch(()=>{}); }catch(e){} }
+// leaving the game pauses the song; coming back carries on
+if(typeof document!=='undefined') document.addEventListener('visibilitychange', ()=>{ const p=MUSIC.cur; if(!p) return; if(document.hidden) p.el.pause(); else playMusicEl(); });
+// Which track a screen plays (called on every redraw; does nothing if it's already playing)
+function music(name){ if(name==='home') name=homeTrack(); if((S.vol||loadVolumes()).music===0){ startMusic(null); MUSIC.want=name; return; } startMusic(name); }
+// Settings → Next: the next song of the same kind (home rotation, battle songs, boss songs), from its start
+function songList(name){ return [HOME_TRACKS, BATTLE_TRACKS, BOSS_TRACKS].find(l=>l.includes(name)) || null; }
+function nextSong(){
+  const now=MUSIC.playing, list=songList(now); if(!list) return;
+  const next=list[(list.indexOf(now)+1)%list.length]; MUSIC.pos[next]=0;
+  if(list===HOME_TRACKS){ HOME_AT=HOME_TRACKS.indexOf(next); try{ localStorage.setItem(HOME_KEY, HOME_AT); }catch(e){} }
+  else MUSIC.skip[matchKey()]=next;   // this match keeps the song picked
+  startMusic(next);
+}
+// one battle track per match, kept for the whole match (picked from who's in it, so a rematch keeps its song)
+const matchKey = () => JSON.stringify(S.picks||[]) + (S.stage??'');
+const pickOf = (list, key) => { let h=0; for(const c of key) h=(h*31+c.charCodeAt(0))>>>0; return list[h%list.length]; };
+function battleTrack(){
+  const ids=(S.teams||[]).flat().map(u=>u.id), fam=id=>(BYID[id]||{}).fam||id;
+  const boss = S.mode==='final' || S.mode==='rush' || S.coop==='final' || ids.some(id=>(BYID[id]||{}).upper || fam(id)==='muzan');
+  if(MUSIC.skip[matchKey()]) return MUSIC.skip[matchKey()];
+  if(!boss) return pickOf(BATTLE_TRACKS, matchKey());
+  if(ids.some(id=>fam(id)==='hantengu')) return 'zohakuten';
+  if(ids.some(id=>fam(id)==='akaza')) return 'akaza';
+  return pickOf(BOSS_TRACKS, matchKey());
+}
 function musicFor(view){
   const st = S.mode==='story' && typeof STAGES!=='undefined' && STAGES[S.stage];
-  if(['setup','modeset','codex','lobby','tvhome'].includes(view)) return 'menu';
-  if(['spin','draft'].includes(view)) return 'draft';
-  if(view==='story') return 'calm';
-  if(view==='credits' || (view==='scene' && S.sceneFinale)) return 'calm';   // the story finale and end credits
-  if(view==='scene') return st ? ARC_MOOD[st.arc]||'calm' : 'calm';
-  if(['plan','pass','ready','result','scout','reveal'].includes(view)) return 'battle';
+  if(['setup','modeset','codex','lobby','tvhome'].includes(view)) return 'home';
+  if(view==='story') return 'nezuko';
+  if(view==='credits' || (view==='scene' && S.sceneFinale)) return 'nezuko_finale';   // the story finale and end credits
+  if(['spin','draft'].includes(view)) return 'tengen';
+  if(view==='scene') return st ? ARC_MOOD[st.arc]||'nezuko' : 'nezuko';
+  if(['plan','pass','ready','result','scout','reveal','order','rally'].includes(view)) return battleTrack();
   return null;   // the win screen: just the win / lose fanfare
 }

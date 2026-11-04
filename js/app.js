@@ -384,6 +384,7 @@ const ACTIONS = {
   undo(){ if(typeof isCtl==='function' && isCtl()) return ctlSend({a:'undo'}); if(isOnline()) return onlineUndo(); undoPick(); },
   repeat(){ repeatPlans(S.planFor); advanceFocus(S.planFor); },
   speed(v){ S.speed=v; try{ localStorage.setItem('squad-draft-speed',v) }catch(e){} },
+  nextsong(){ nextSong(); },
   volmusic(v){ S.vol={...S.vol, music:+v}; saveVolumes(S.vol); applyVolumes(); },
   volsfx(v){ S.vol={...S.vol, sfx:+v}; saveVolumes(S.vol); applyVolumes(); sfx('pick'); },
   storymap(){ keepNames(); clearTimeout(S._t); S.mode='story'; S.phase='story'; S.storySel=nextStage(); S.storyScroll=true; },

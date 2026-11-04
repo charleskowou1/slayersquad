@@ -682,7 +682,9 @@ function vSettings(){
     <div class="setgroup"><div class="tlabel">Playback speed</div>
       ${seg('speed',S.speed||'normal',[['slow','Slow'],['normal','Normal'],['fast','Fast']])}
       <div class="hint">How long each action stays on screen during a round.</div></div>
-    <div class="setgroup"><div class="tlabel">Music</div>${seg('volmusic',(S.vol||loadVolumes()).music,[[0,'Off'],[1,'Low'],[2,'Medium'],[3,'High']])}</div>
+    <div class="setgroup"><div class="tlabel">Music</div>${seg('volmusic',(S.vol||loadVolumes()).music,[[0,'Off'],[1,'Low'],[2,'Medium'],[3,'High']])}
+      ${typeof MUSIC!=='undefined' && MUSIC.playing && SONG_TITLES[MUSIC.playing] ? `<div class="nowplay"><div class="np-t"><span class="np-k">♪ Now playing</span><b>${esc(SONG_TITLES[MUSIC.playing])}</b></div>
+        ${songList(MUSIC.playing) ? `<button class="btn small ghost" data-a="nextsong" aria-label="Next song">Next ⏭</button>` : ''}</div>` : ''}</div>
     <div class="setgroup"><div class="tlabel">Sound effects</div>${seg('volsfx',(S.vol||loadVolumes()).sfx,[[0,'Off'],[1,'Low'],[2,'Medium'],[3,'High']])}</div>
     <div class="setgroup"><div class="tlabel">Move clips</div>${seg('clips',S.clipsOn===false?'off':'on',[['on','On'],['off','Off']])}
       <div class="hint">Short anime clips for some specials and moments during a round. Needs internet.</div></div>
