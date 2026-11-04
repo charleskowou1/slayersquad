@@ -1,5 +1,6 @@
 /* ================= APP =================
    Rendering and taps. The only file that touches the DOM. */
+const BASE_TITLE = document.title;   // the full title from index.html, kept for search results
 const app = document.getElementById('app'), sheet = document.getElementById('sheet');
 const VIEWS = {reveal:vReveal, ceremony:vCeremony, order:vOrder, credits:vCredits, setup:vSetup, modeset:vModeSet, codex:vCodex, lobby:vLobby, story:vStory, scene:vScene, scout:vScout, spin:vSpin, draft:vDraft, pass:vPass, plan:vPlan, ready:vReady, result:vResult, over:vOver};
 const quickMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -118,7 +119,7 @@ function render(){
   if(view==='over' && !scored && (isPractice() || S.mode==='story')){ scored=true;   // story and practice don't count toward stats
     if(S.winner!==0) sfx('lose'); }   // story wins are saved (and celebrated) before the ending scene
   if(view==='over' && !scored && isAsync()){ const g=myGame(S.asyncCode); if(g && g.scored===S.matchNo) scored=true; else setGame(S.asyncCode,{scored:S.matchNo}); }   // a reopened game isn't counted twice
-  if(view==='plan' && S.round===1 && !matchOn){ matchOn=modeKey(); track([`m_${matchOn}_start`, `d_${todayKey()}_games`]); }
+  if(view==='plan' && S.round===1 && !matchOn){ matchOn=modeKey(); track([`m_${matchOn}_start`, `d_${trackDay()}_games`]); }
   if(view==='over' && matchOn){ track([`m_${matchOn}_finish`]); matchOn=null; ACTIONS.tipok('played'); }
   if(view==='setup') matchOn=null;
   if(view==='over' && !scored){ scored=true; postStats(statsGame()); if(S.winner>=0){ const sc=loadScore(); players().filter(q=>sameSide(q,S.winner)).forEach(q=>{ const n=S.names[q]; sc[n]=(sc[n]||0)+1; }); saveScore(sc); } recordMatch();
@@ -127,6 +128,7 @@ function render(){
   // keep fold-out sections (How to play, records…) open across redraws
   const open=[...app.querySelectorAll('details[id]')].filter(d=>d.open).map(d=>d.id);
   document.body.classList.toggle('localmode', S.mode==='local');
+  document.body.classList.toggle('home', view==='setup' && !S.tv);   // the About footer under the home screen
   // Until Dawn: a sun climbs over the battle screen as the rounds count down to sunrise (stage.sunrise)
   const st=S.mode==='story' && STAGES[S.stage], fighting=['plan','result','pass','scout','ready'].includes(view);
   // the sun climbs over the battle: Until Dawn (story) over its rounds; every other battle in the 4 rounds before
@@ -783,7 +785,7 @@ async function watchGames(){
 }
 function gamesBadge(){
   const n=gamesToPlay();
-  document.title = n ? `(${n}) Slayer Squad` : 'Slayer Squad';
+  document.title = n ? `(${n}) Slayer Squad` : BASE_TITLE;
   try{ if(n && navigator.setAppBadge) navigator.setAppBadge(n); else if(navigator.clearAppBadge) navigator.clearAppBadge(); }catch(e){}
 }
 
@@ -799,18 +801,36 @@ function statsGame(){
 // Anonymous counters for CK's admin page: no names, just how often things happen. Skipped on his own browser.
 let matchOn=null;
 const modeKey = () => (typeof isTV==='function'&&isTV()?'tv_':'')+(S.coop?'coop_'+S.coop:S.mode==='online'?'online'+S.n:S.mode);
+// Every tracked day is a New York date (CK's time zone), so every player's day rolls over at the same moment. admin.js uses the same zone.
+const TRACK_TZ='America/New_York';
+const trackDay = () => { try{ return new Intl.DateTimeFormat('en-CA',{timeZone:TRACK_TZ, year:'numeric', month:'2-digit', day:'2-digit'}).format(new Date()); }catch(e){ return todayKey(); } };
+const trackOff = () => { try{ return !FIREBASE_CONFIG || !navigator.onLine || navigator.webdriver || /HeadlessChrome/.test(navigator.userAgent) || /notrack/.test(location.search) || location.hostname==='localhost' || !!localStorage.getItem('squad-draft-admin'); }catch(e){ return true; } };   // test browsers don't count (Claude's live tests counted once, Nov 2026)
 function track(keys){
-  try{ if(!FIREBASE_CONFIG || !navigator.onLine || navigator.webdriver || /HeadlessChrome/.test(navigator.userAgent) || /notrack/.test(location.search) || location.hostname==='localhost' || localStorage.getItem('squad-draft-admin')) return; }catch(e){ return; }   // test browsers don't count (Claude's live tests counted once, Nov 2026)
-  firebaseReady().then(db=>{ const inc=firebase.database.ServerValue.increment(1), up={}; keys.forEach(k=>up[k]=inc); return db.ref('track').update(up); }).catch(()=>{});
+  if(trackOff()) return; const day=trackDay();
+  // mode and story counters also get a dated copy, so the admin page can filter them by time
+  firebaseReady().then(db=>{ const inc=firebase.database.ServerValue.increment(1), up={}; keys.forEach(k=>{ up[k]=inc; if(/^[ms]_/.test(k)) up[`d_${day}_${k}`]=inc; }); return db.ref('track').update(up); }).catch(()=>{});
 }
-function trackOpen(){
-  const day=todayKey(), keys=[`d_${day}_opens`]; let t={}; try{ t=JSON.parse(localStorage.getItem('squad-draft-track'))||{} }catch(e){}
-  if(t.day!==day) keys.push(`d_${day}_players`);
-  if(!t.day){ const ua=navigator.userAgent||''; keys.push('players', `d_${day}_new`, 'dev_'+(/iphone|ipad|ipod/i.test(ua)?'ios':/android/i.test(ua)?'android':'computer')); }
+// This browser's anonymous id (random; backed up with the save, but a restoring device keeps its own)
+const trackId = () => { try{ let id=localStorage.getItem('squad-draft-pid'); if(!/^[a-z0-9]{12}$/.test(id||'')){ id=Array.from({length:12},()=>'abcdefghijkmnpqrstuvwxyz23456789'[Math.floor(Math.random()*32)]).join(''); localStorage.setItem('squad-draft-pid',id); } return id; }catch(e){ return null; } };
+// A scrambled fingerprint of the recovery code: browsers sharing a code (phone + iPad, old + new address) count as one person. The code itself never leaves the save.
+async function codeMark(){ try{ const c=loadCloud().code; if(!c || !crypto.subtle) return ''; const h=new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode('slayer-squad:'+c))); return Array.from(h.slice(0,6),b=>b.toString(16).padStart(2,'0')).join(''); }catch(e){ return ''; } }
+async function trackOpen(){
+  const day=trackDay(), keys=[`d_${day}_opens`]; let t={}; try{ t=JSON.parse(localStorage.getItem('squad-draft-track'))||{} }catch(e){}
+  const ua=navigator.userAgent||'', dev=/iphone|ipad|ipod/i.test(ua)?'ios':/android/i.test(ua)?'android':'computer', firstDay=t.day!==day;
+  if(firstDay) keys.push(`d_${day}_players`);
+  if(!t.day) keys.push('players', `d_${day}_new`, 'dev_'+dev);
   try{ localStorage.setItem('squad-draft-track',JSON.stringify({day})) }catch(e){}
   // Rough region, once per browser (existing players too): the device's time zone, e.g. America/Chicago. No location permission, no IP.
-  try{ if(navigator.onLine && !localStorage.getItem('squad-draft-where')){ const tz=(Intl.DateTimeFormat().resolvedOptions().timeZone||'Unknown').replace(/[.$#\[\]\/]/g,'~').slice(0,50); keys.push('where_'+tz); localStorage.setItem('squad-draft-where','1'); } }catch(e){}
+  let tz='Unknown'; try{ tz=(Intl.DateTimeFormat().resolvedOptions().timeZone||'Unknown').slice(0,50); }catch(e){}
+  try{ if(navigator.onLine && !localStorage.getItem('squad-draft-where')){ keys.push('where_'+tz.replace(/[.$#\[\]\/]/g,'~')); localStorage.setItem('squad-draft-where','1'); } }catch(e){}
   track(keys);
+  // People: one entry per browser with the days it played (once a day), its device, time zone and code fingerprint.
+  // `old` marks browsers that played before this was added, so they don't show as new.
+  if(trackOff()) return; const id=trackId(); if(!id) return;
+  let seen=''; try{ seen=localStorage.getItem('squad-draft-seen')||''; }catch(e){}
+  const mark=await codeMark(); if(seen===day+'|'+mark) return;
+  const up={dev, tz, ['days/'+day]:true}; if(mark) up.p=mark; if(t.day && !seen) up.old=true;
+  firebaseReady().then(db=>db.ref('seen/'+id).update(up)).then(()=>{ try{ localStorage.setItem('squad-draft-seen', day+'|'+mark); }catch(e){} }).catch(()=>{});
 }
 setTimeout(trackOpen, 5000);
 setTimeout(arriveFromMove, 800);
@@ -851,7 +871,7 @@ async function loadGlobalStats(){
    writes over the rev it last saw. Anything else is another device's save, and the two are combined (mergeSaves) so neither
    loses anything and the player never has to choose. Restoring combines the same way, so a code can only add progress. */
 const CLOUD_KEY = 'squad-draft-cloud', CODE_ABC = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
-const NOT_BACKED = ['squad-draft-cloud','squad-draft-data','squad-draft-install-later','squad-draft-push','squad-draft-admin','squad-draft-track','squad-draft-phone','squad-draft-ctl'];   // this device only: admin flag, tracking record, phone id, TV controller
+const NOT_BACKED = ['squad-draft-cloud','squad-draft-data','squad-draft-install-later','squad-draft-push','squad-draft-admin','squad-draft-track','squad-draft-seen','squad-draft-where','squad-draft-pid','squad-draft-phone','squad-draft-ctl'];   // this device only: admin flag, tracking record, phone id, TV controller
 const loadCloud = () => { try{ return JSON.parse(localStorage.getItem(CLOUD_KEY))||{} }catch(e){ return {} } };
 const saveCloud = c => { try{ localStorage.setItem(CLOUD_KEY, JSON.stringify(c)) }catch(e){} };
 const newSaveCode = () => Array.from({length:12},()=>CODE_ABC[Math.floor(Math.random()*CODE_ABC.length)]).join('');

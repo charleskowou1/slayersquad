@@ -2,6 +2,7 @@
 // (CACHE 'squad-draft-vNN'), which goes up with every push. tools/make-guide.js prints this at the top of the guide.
 // Add a line here with every push (CK, Oct 28, 2026), then rebuild the guide: node tools/make-guide.js
 module.exports = [
+  [117, '2026-11-03', 'Admin page: time filters (today, 7 days, 30 days, all time), players counted as people across their devices on New York days, came-back rate; search setup (title, robots.txt, sitemap, game details for Google, an About section under the home screen).'],
   [116, '2026-11-03', 'Admin page: a Where list counts each browser once by its time zone (a rough region, no location permission).'],
   [115, '2026-11-03', 'An Upper Moon’s title now appears on their first special, not their first move.'],
   [114, '2026-11-03', 'Character dodges and guards (Muichiro’s mist, the Swamp Demon’s dive, Hantengu shrinking, Tanjiro standing over an ally, and more), also in group attacks; new synergy cut-ins naming who gets each bonus; Muzan’s full-screen death; new specials for Gyokko, Kanao, Demon King Tanjiro, Awakened Nezuko, Murata and Sabito; Yoriichi’s sunlight sweep restored; a softer last stand; the online timer waits while you watch.'],

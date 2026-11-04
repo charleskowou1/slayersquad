@@ -2301,3 +2301,10 @@ body.laststand #laststand{display:block;position:fixed;inset:0;z-index:58;pointe
 @keyframes bloomout{to{opacity:0}}
 .tfx .pinkfire{fill:#ff5ea8;stroke:#ffd0e6;stroke-width:1;opacity:0;transform-box:fill-box;transform-origin:50% 100%;filter:drop-shadow(0 0 4px #ff3d8f);animation:pinkfire 1.4s var(--d) ease-out both}
 @keyframes pinkfire{0%{opacity:0;transform:scaleY(.1)}25%{opacity:.95;transform:scaleY(1)}55%{transform:scaleY(.85)}80%{opacity:.85;transform:scaleY(1.05)}100%{opacity:0;transform:scaleY(.6) translateY(-6px)}}
+
+/* About footer (index.html): under the home screen only, quiet text for new visitors and search engines */
+.about{display:none;max-width:560px;margin:0 auto;padding:8px 20px calc(48px + env(safe-area-inset-bottom,0px));color:var(--muted);font-size:.82rem;line-height:1.6}
+body.home .about{display:block;margin-top:-84px}
+.about h2{margin:0 0 8px;padding-top:18px;border-top:1px solid var(--line);font:600 .95rem var(--display);color:var(--ink-2);letter-spacing:.02em}
+.about p{margin:0 0 10px}.about ul{margin:0 0 10px;padding-left:18px}.about li{margin:0 0 5px}.about b{color:var(--ink-2);font-weight:500}
+.about .fine{font-size:.74rem;opacity:.8}

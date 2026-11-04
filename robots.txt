@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /admin
+Disallow: /worker/
+Disallow: /tools/
+
+Sitemap: https://slayersquad.app/sitemap.xml

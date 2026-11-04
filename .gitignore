@@ -8,3 +8,4 @@ tools/node_modules/
 tools/package-lock.json
 .wrangler/
 worker/.wrangler/
+admin-preview.html
