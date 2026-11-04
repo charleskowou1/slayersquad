@@ -808,6 +808,8 @@ function trackOpen(){
   if(t.day!==day) keys.push(`d_${day}_players`);
   if(!t.day){ const ua=navigator.userAgent||''; keys.push('players', `d_${day}_new`, 'dev_'+(/iphone|ipad|ipod/i.test(ua)?'ios':/android/i.test(ua)?'android':'computer')); }
   try{ localStorage.setItem('squad-draft-track',JSON.stringify({day})) }catch(e){}
+  // Rough region, once per browser (existing players too): the device's time zone, e.g. America/Chicago. No location permission, no IP.
+  try{ if(navigator.onLine && !localStorage.getItem('squad-draft-where')){ const tz=(Intl.DateTimeFormat().resolvedOptions().timeZone||'Unknown').replace(/[.$#\[\]\/]/g,'~').slice(0,50); keys.push('where_'+tz); localStorage.setItem('squad-draft-where','1'); } }catch(e){}
   track(keys);
 }
 setTimeout(trackOpen, 5000);

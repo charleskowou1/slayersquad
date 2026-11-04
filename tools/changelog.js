@@ -2,6 +2,7 @@
 // (CACHE 'squad-draft-vNN'), which goes up with every push. tools/make-guide.js prints this at the top of the guide.
 // Add a line here with every push (CK, Oct 28, 2026), then rebuild the guide: node tools/make-guide.js
 module.exports = [
+  [116, '2026-11-03', 'Admin page: a Where list counts each browser once by its time zone (a rough region, no location permission).'],
   [115, '2026-11-03', 'An Upper Moon’s title now appears on their first special, not their first move.'],
   [114, '2026-11-03', 'Character dodges and guards (Muichiro’s mist, the Swamp Demon’s dive, Hantengu shrinking, Tanjiro standing over an ally, and more), also in group attacks; new synergy cut-ins naming who gets each bonus; Muzan’s full-screen death; new specials for Gyokko, Kanao, Demon King Tanjiro, Awakened Nezuko, Murata and Sabito; Yoriichi’s sunlight sweep restored; a softer last stand; the online timer waits while you watch.'],
   [113, '2026-11-03', 'Six new synergies (Brothers, Love Hashira, Set Your Heart Ablaze, Old Friends, Rival: Rengoku vs Akaza, Revenge on Doma); synergy reveal, Upper Moon entrance, last stand and Double KO animations; new specials for Urokodaki, Makio, the Hand Demon, Tanjuro and Sabito; new knockouts (beheading, Upper Moon kanji shatter, Muzan explodes, butterfly petals) and specials land the knockout with a KO; a picture for sunrise; enemy cards on the Daily tile.'],
