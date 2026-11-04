@@ -73,10 +73,14 @@ function draw(uid, t, stats, reports, denied, seen){
   const span=RANGE==='today'?1:RANGE==='all'?null:+RANGE, isAll=span===null;
   const days=isAll?daysFrom(firstDay,today):dayKeys(span), prev=isAll?[]:daysFrom(shiftDay(days[0],-span),shiftDay(days[0],-1));
   const inRange=(q,list)=>list.some(x=>q.days.has(x));
-  const activeIn=list=>hasSeen?plist.filter(q=>inRange(q,list)).length:sum(list.map(x=>d(x,'players')));
+  // Days before the people count started (seenStart) only have the old per-browser daily counts, so ranges that reach back
+  // add those, minus players from then who have since shown up in the new count (old:true), so they aren't counted twice.
+  const pre=list=>hasSeen?list.filter(x=>x<seenStart):list;
+  const activeIn=list=>{ const old=sum(pre(list).map(x=>d(x,'players'))); if(!hasSeen) return old;
+    const ppl=plist.filter(q=>inRange(q,list)); return ppl.length+(old?Math.max(0, old-ppl.filter(q=>q.old).length):0); };
   const active=activeIn(days), before=isAll?null:activeIn(prev);
   const trend=before?Math.round((active-before)/before*100):null;
-  const newIn=list=>hasSeen?plist.filter(q=>!q.old&&list.includes(q.first)).length:sum(list.map(x=>d(x,'new')));
+  const newIn=list=>sum(pre(list).map(x=>d(x,'new')))+(hasSeen?plist.filter(q=>!q.old&&list.includes(q.first)).length:0);
   const fresh=newIn(days), returning=Math.max(0,active-fresh);
   const games=sum(days.map(x=>d(x,'games'))), opens=sum(days.map(x=>d(x,'opens')));
   const browsersActive=hasSeen?Object.values(seen).filter(b=>days.some(x=>(b.days||{})[x])).length:null;
@@ -90,14 +94,18 @@ function draw(uid, t, stats, reports, denied, seen){
   const chars=Object.entries(stats.chars||{}).filter(([id])=>BYID[id]).map(([id,c])=>({id, name:BYID[id].name, p:c.p||0, w:c.w||0})).sort((a,b)=>b.p-a.p).slice(0,10);
   const placeName=k=>{ const parts=k.split(/[~\/]/), city=parts[parts.length-1].replace(/_/g,' '); return parts.length>1?`${city} · ${parts[0]}`:city; };
   const act=plist.filter(q=>inRange(q,days)), tally=(list,f)=>{ const m={}; list.forEach(q=>{ const k=f(q); if(k) m[k]=(m[k]||0)+1; }); return m; };
-  const whereMap=hasSeen?tally(act,q=>q.tz):Object.fromEntries(Object.keys(t).filter(k=>k.startsWith('where_')).map(k=>[k.slice(6),t[k]]));
+  const oldWhere=Object.fromEntries(Object.keys(t).filter(k=>k.startsWith('where_')).map(k=>[k.slice(6).replace(/~/g,'/'),t[k]]));
+  const reachesBack=hasSeen&&days[0]<seenStart, both=(a,b)=>{ const m={...a}; Object.entries(b).forEach(([k,v])=>{ m[k]=Math.max(m[k]||0,v); }); return m; };
+  const whereMap=!hasSeen?oldWhere:reachesBack?both(oldWhere,tally(act,q=>q.tz)):tally(act,q=>q.tz);
   const wheres=Object.entries(whereMap).map(([k,v])=>[placeName(k),v]).sort((a,b)=>b[1]-a[1]);
-  const devMap=hasSeen?tally(act,q=>q.dev):{ios:t.dev_ios||0, android:t.dev_android||0, computer:t.dev_computer||0};
+  const oldDev={ios:t.dev_ios||0, android:t.dev_android||0, computer:t.dev_computer||0};
+  const devMap=!hasSeen?oldDev:reachesBack?both(oldDev,tally(act,q=>q.dev)):tally(act,q=>q.dev);
   const devs=[['ios','iPhone / iPad'],['android','Android'],['computer','Computer']].map(([k,n])=>({k,n,v:devMap[k]||0})), devTotal=sum(devs.map(x=>x.v));
   const reps=Object.entries(reports||{}).sort((a,b)=>b[1].at-a[1].at), crashes=reps.filter(([,r])=>r.auto).length;
   const tile=(n,label,note)=>`<div class="tile"><b>${n}</b><span>${label}</span>${note?`<small>${note}</small>`:''}</div>`;
   const story=(rows,first)=>rows.length?`<div class="funnel">${rows.map(r=>{ const rate=pct(r.wins,r.tries), hard=r.tries>=5&&rate<50;
       return `<div class="frow${hard?' hard':''}" title="${esc(r.title)}: ${r.wins} wins of ${r.tries} tries"><em>${r.n}</em><span>${esc(r.title)}${hard?' <i class="tag red">hard</i>':''}</span><small>${r.tries} tries · <b>${rate}%</b> won</small><u><i style="width:${Math.max(2,r.tries/first*100)}%"></i><i class="won" style="width:${Math.max(0,r.wins/first*100)}%"></i></u></div>`; }).join('')}</div>`:'<p class="empty">Nothing in this time range.</p>';
+  const mixNote=hasSeen&&days[0]<seenStart&&sum(pre(days).map(x=>d(x,'players')))?`<p class="mixnote">Days before ${new Date(seenStart+'T12:00').toLocaleDateString([], {month:'short', day:'numeric'})} were counted per browser, so totals reaching back to them are close estimates.</p>`:'';
   const datedFrom=Object.keys(t).map(k=>k.match(/^d_(\d{4}-\d{2}-\d{2})_[ms]_/)).filter(Boolean).map(m=>m[1]).sort()[0];
   const datedNote=isAll?'':datedFrom?` Counted by day since ${new Date(datedFrom+'T12:00').toLocaleDateString([], {month:'short', day:'numeric'})}.`:' Daily counts start with this update; until then use All time.';
   document.getElementById('sub').textContent=`Updated ${new Date().toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})} · New York time`;
@@ -112,8 +120,9 @@ function draw(uid, t, stats, reports, denied, seen){
     ${isAll?`<div class="weekbox"><span class="lbl">Came back another day</span><b>${pct(cameBack,settled.length)}%</b><small>${fmt(cameBack)} of ${fmt(settled.length)} people</small></div>`
       :`<div class="weekbox"><span class="lbl">${RANGE==='today'?'Yesterday':'The '+span+' days before'}</span><b>${fmt(before)}</b><small>${trend===null?'players':`<i class="${trend>=0?'up':'down'}">${trend>=0?'▲':'▼'} ${Math.abs(trend)}%</i> now vs then`}</small></div>`}
   </section>
+  ${mixNote}
   <div class="tiles">
-    ${tile(fmt(hasSeen?plist.length:t.players),'Players ever',hasSeen?`people · ${fmt(Object.keys(seen).length)} browsers`:'browsers, not people')}
+    ${tile(fmt(hasSeen?plist.length+Math.max(0,sum(allDays.filter(x=>x<seenStart).filter((x,i,a)=>a.indexOf(x)===i).map(x=>d(x,'new')))-plist.filter(q=>q.old).length):t.players),'Players ever',hasSeen?`people · ${fmt(Object.keys(seen).length)} browsers`:'browsers, not people')}
     ${tile(fmt(fresh),'New players',rangeName)}
     ${tile(fmt(games),'Games started',`${fmt(opens)} opens`)}
     ${tile(hasSeen?pct(cameBack,settled.length)+'%':'–','Came back','played on 2+ days')}
