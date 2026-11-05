@@ -262,7 +262,7 @@ const MAIN_STAGES = [
       ['yoriichi_old',"Brother. How sad. I'm here to cut you down."]]},
   {id:'kokushibo', arc:'castle', title:'Upper Moon One', place:'Infinity Castle, deep', foe:'Kokushibo', mine:['muichiro','genya','kiriya'], enemy:['kokushibo'], level:'hard',
     stars:{standing:2, rounds:7},
-    boosts:[{side:1, hp:1.65, pow:5, label:'Kokushibo: +65% HP, +5 PWR'}],
+    boosts:[{side:1, hp:1.9, pow:5, label:'Kokushibo: +90% HP, +5 PWR'}],   // was +65%: retuned Nov 5, 2026 when Sanemi and Gyomei started arriving with their synergies
     beats:[{when:'round', round:3, id:'sanemi', text:'Hands off my brother!'}, {when:'round', round:4, id:'gyomei', text:'Namu Amida Butsu. It ends here.'}],
     phases:[{id:'kokushibo', at:.5, pow:2, spd:1, ready:true, label:'+2 PWR, +1 SPD, special ready', line:'My blade grows. Moon Breathing, Sixteenth Form.'}],
     outro:[['kokushibo','What is this… monster I’ve become?'],['','Kokushibo crumbles. The Hashira who fought him gave everything.'],['sanemi','Genya… hang on.']],
@@ -397,14 +397,14 @@ const DREAM_STAGES = [
     scene:[['tanjiro_demon',"Why would you leave? They're alive here. Father. Mother. Rengoku."],['tanjiro','None of this is real.'],['tanjiro_demon',"It's real enough. Stay, and nobody ever dies again. Isn't that what you wanted?"],['tanjiro','…More than anything.']],
     outro:[['tanjiro','But Nezuko is calling me. The real Nezuko.'],['tanjiro_demon',"Then you'll lose them all a second time."],['tanjiro','I know.'],['','The shadow breaks. Muzan stands behind it, where he has always been.'],['muzan_final',"Then I'll keep this world for myself."]]},
   {id:'dr_nine', pockets:['goto'], arc:'dream5', title:'Nine Hashira', place:'Where the dream is breaking', foe:'Final Muzan', mine:['giyu','shinobu','rengoku','muichiro','mitsuri','obanai','sanemi','gyomei','tengen'], enemy:['muzan_final'], level:'hard', waves:3,
-    boosts:[{side:1, hp:3.6, pow:2, label:'Muzan: +260% HP, +2 PWR'}],
+    boosts:[{side:1, hp:3.8, pow:2, label:'Muzan: +280% HP, +2 PWR'}],   // was +260%: retuned Nov 5, 2026 (later waves now get their synergies)
     phases:[{id:'muzan_final', at:.25, rally:true, pow:3, label:'+3 PWR', line:'Why won\'t you stay DEAD?!', reply:{id:'rengoku', text:'Because he remembers us!'}}],
     blurb:'Three at a time. Choose the order. Everyone left charges in at the end.',
     scene:[['muzan_final',"You cling to the dead, boy. So I'll use them. I've lived in your grief since the last sunrise."],['tanjiro',"I can't beat him alone."],['rengoku','You never had to!'],['giyu','Tanjiro. Stay behind us.'],['shinobu','Just once more, all of us.'],['gyomei','Namu Amida Butsu. Hashira, to your places.']],
     outro:[['muzan_final',"You'll wake up alone. You'll beg to come back here."],['sanemi','Shut up.'],['tanjiro',"He's fading. All of it's fading."],['rengoku','Then there\'s one thing left to do, young Kamado.']]},
   {id:'dr_waking', pockets:['aoi'], arc:'dream5', title:'Waking', place:'The last dawn', foe:"Muzan's Will", mine:['tanjiro','giyu'], enemy:['muzan'], level:'hard',
     twist:{protect:'tanjiro', reinforce:[{id:'rengoku',round:2},{id:'tengen_retired',round:3},{id:'shinobu',round:4},{id:'kanae',round:5},{id:'sabito',round:6},{id:'makomo',round:7}]},
-    boosts:[{side:1, hp:1.8, label:"Muzan's Will: +80% HP"}],
+    boosts:[{side:1, hp:1.5, label:"Muzan's Will: +50% HP"}],   // was +80%: arrivals' synergies made Tanjiro Muzan's target (Nov 5, 2026)
     blurb:'Keep Tanjiro alive. If he falls, it all ends.',
     scene:[['muzan','Everything you love ends the moment you open your eyes.'],['tanjiro',"I know. I've already lived through it."],['rengoku',"Go on. We'll walk with you as far as we can."]],
     outro:[['','The dream turns to morning. They stand together one last time.'],['tanjuro',"You remembered the dance. That's all a father could ask."],['shinobu','Smile, Tanjiro. It suits you.'],['kanae','Thank you for looking after my sister.'],['sabito',"You never needed us to swing for you."],['makomo',"Be happy. That's an order."],['rengoku','Set your heart ablaze. Now, and always.'],['tanjiro','Thank you. All of you. Goodbye.'],['','Everything turns to white.']]},

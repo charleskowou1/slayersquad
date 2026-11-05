@@ -210,9 +210,12 @@ details ul b{color:var(--fg)}
 
 /* draft: card detail, centred */
 .scrim{position:fixed;inset:0;z-index:5;background:rgba(0,0,0,.62);animation:fade .15s ease-out}
-.modal{position:fixed;inset:0;z-index:6;display:grid;place-items:center;pointer-events:none;
+/* Flex, not grid: iPhones (WebKit) let a grid item's max-height:100% grow with its content, so a tall card (lots of
+   synergy notes) ran up under the status bar. The panel's height is also capped by the screen itself, below. */
+.modal{position:fixed;inset:0;z-index:6;display:flex;align-items:center;justify-content:center;pointer-events:none;
   padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
 .modal .in{pointer-events:auto;position:relative;width:100%;max-width:460px;max-height:100%;overflow-y:auto;overscroll-behavior:contain;
+  max-height:calc(100vh - 32px);max-height:calc(100dvh - max(16px,env(safe-area-inset-top,0px)) - max(16px,env(safe-area-inset-bottom,0px)));
   background:var(--surface);border:1px solid var(--line-2);border-radius:18px;padding:20px 18px 18px;box-shadow:0 24px 60px rgba(0,0,0,.6);
   display:flex;flex-direction:column;gap:12px;animation:rise .18s ease-out}
 .modal .in > *{flex-shrink:0}   /* a long card scrolls: its picture and header never squash */
@@ -2315,3 +2318,5 @@ body.home .about{display:block;margin-top:-84px}
 .nowplay .np-k{font-size:.66rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 .nowplay b{font-weight:500;font-size:.9rem;line-height:1.3;color:var(--ink-2)}
 .nowplay .btn{flex:none}
+/* While a pop-up is open the page behind it doesn't scroll (iPhones scrolled the draft behind a card) */
+body:has(#sheet .modal){overflow:hidden}

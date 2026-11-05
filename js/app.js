@@ -161,6 +161,7 @@ function render(){
   app.querySelectorAll('video[data-k],img[data-k]').forEach(v=>{ const old=vids.get(v.dataset.k); if(old){ v.replaceWith(old); if(old.tagName==='VIDEO') playVid(old); } else if(v.tagName==='VIDEO'){ v.onended=()=>{ if(v.duration<CLIP_LOOP){ v.currentTime=0; playVid(v); } }; playVid(v); } });
   warmClips();
   open.forEach(id=>{ const d=document.getElementById(id); if(d) d.open=true; });
+  if(S.reveal){ S.reveal=false; const f=app.querySelector('.fighter.open'); if(f) requestAnimationFrame(()=>keepAboveBar(f)); }   // move screen: the fighter you're choosing for stays above the Lock bar
   if(view==='story' && S.storyScroll){ S.storyScroll=false; const el=app.querySelector('.srow.sel'); if(el) el.scrollIntoView({block:'center'}); else window.scrollTo(0,0); }
   if(!ctl && S.phase==='draft' && S.mode==='cpu' && turn()!==0){ clearTimeout(S._t); S._t=setTimeout(()=>{ if(S.banning) cpuBan(); else cpuDraftStep(S.level); render(); },700); }
   if(!ctl && S.phase==='spin' && S.spin && S.spin.state==='done' && S.spin.cards && spinShown!==S.spin.cards.join()){ spinShown=S.spin.cards.join(); sfx('ding'); }   // the number is revealed
@@ -241,6 +242,13 @@ function startDraft(){
 const nextChooser = p => { for(let q=p+1;q<nPlayers();q++) if(alive(q).length) return q; return -1; };
 function toSpin(){ S.phase='spin'; S.spin=newGuess(); S.tvLocked={}; window.scrollTo(0,0); }   // who picks first: the number game
 // After a fighter's move is complete, open the next one that still needs a move
+// Scroll a fighter's move buttons into view above the sticky Lock bar (iPhones: with 6 fighters the bar covered them)
+function keepAboveBar(el){
+  const bar=app.querySelector('.actionbar'), limit=Math.min(innerHeight, bar ? bar.getBoundingClientRect().top : innerHeight) - 10;
+  const r=el.getBoundingClientRect(), top=60;   // 60: clear of the status bar and the top of the page
+  if(r.bottom>limit) window.scrollBy({top:Math.min(r.bottom-limit, r.top-top), behavior:quickMotion()?'auto':'smooth'});
+  else if(r.top<top) window.scrollBy({top:r.top-top, behavior:quickMotion()?'auto':'smooth'});
+}
 function advanceFocus(p){ const n=alive(p).find(u=>!u.stun && !unitReady(u)); S.focus = n ? n.uid : 'none'; }
 function newPlanTurn(){ S.focus=null; S.info=null; window.scrollTo(0,0); }
 // A story win: save it, remember what it unlocks (first win only), then play the ending scene before the results
@@ -422,9 +430,9 @@ const ACTIONS = {
   ambush(v){ S.plans[S.planFor].ambush=v; },   // Kiriya's trap: which of your fighters it goes around
   rescout(){ if(typeof isCtl==='function' && isCtl()) return ctlRescout(); if(isOnline()){ S.scouting=true; S.planFor=S.me; newPlanTurn(); const f=alive(S.me).find(u=>!u.stun); if(f) S.focus=f.uid; return; } S.scouting=true; S.planFor=S.scoutP; S.phase='plan'; S.passScout=false; newPlanTurn(); const f=alive(S.planFor).find(u=>!u.stun); if(f) S.focus=f.uid; },   // open the first fighter to change
   keepmoves(){ if(typeof isCtl==='function' && isCtl()) return ctlKeep(); if(isOnline()) return onlineKeepMoves(); nextScoutOrFight(); },
-  focus(v){ S.focus = focusOf(S.planFor)===v ? 'none' : v; },
-  act(v,b){ const u=findU(b.dataset.u); setMove(u,v); if(unitReady(u)) advanceFocus(u.p); },
-  tgt(v,b){ const u=findU(b.dataset.u); S.plans[u.p][u.uid].t=v; advanceFocus(u.p); },
+  focus(v){ S.focus = focusOf(S.planFor)===v ? 'none' : v; S.reveal=true; },
+  act(v,b){ const u=findU(b.dataset.u); setMove(u,v); if(unitReady(u)) advanceFocus(u.p); S.reveal=true; },
+  tgt(v,b){ const u=findU(b.dataset.u); S.plans[u.p][u.uid].t=v; advanceFocus(u.p); S.reveal=true; },
   lockMoves(){
     if(typeof isCtl==='function' && isCtl()) return ctlLock();   // controller: send the picks to the TV
     if(isOnline()){ onlineLockMoves(); return newPlanTurn(); }

@@ -1008,4 +1008,22 @@ function reinforcements(){
 }
 function nextWave(){ if(S.waveQ && S.waveQ.length) arrive({id:S.waveQ.shift()}); }
 function arrive(r){ r.came=true; const u=mkUnit(r.id,0); S.teams[0].push(u);
-  L(`${u.name} arrives to fight alongside ${S.names[0]}!`,'h',{spawn:[u.uid], ...fx('spawn',null,u)}); }
+  L(`${u.name} arrives to fight alongside ${S.names[0]}!`,'h',{spawn:[u.uid], ...fx('spawn',null,u)});
+  if(!S.noArriveSyn) arriveSynergies(u); }
+// A fighter who joins mid-fight (story reinforcements, Nine Hashira waves) gets the synergies and matchups they'd have
+// had from the start, and so does anyone they complete one with (CK, Nov 5, 2026: Kanao and Inosuke never got Revenge
+// on Doma). synergies() runs on copies of the living fighters, rebuilt from their cards, with and without the newcomer,
+// and only the difference is applied, so nothing counts twice.
+function arriveSynergies(nu){
+  const real={teams:S.teams, sib:S.sib, twins:S.twins}, F=['pow','spd','def','regen'];
+  const copy=x=>{ const c=BYID[x.id]; return {uid:x.uid, id:x.id, fam:x.fam, p:x.p, demon:x.demon, mark:x.mark, alive:true, pow:c.pow, spd:c.spd, def:c.def, regen:c.regen||0}; };
+  const run=withNew=>{ S.teams=real.teams.map(t=>t.filter(x=>x.alive && (withNew || x!==nu)).map(copy)); S.sib=players().map(()=>false); S.twins=players().map(()=>false);
+    const names=players().map(p=>synergies(p)), by={}; S.teams.flat().forEach(x=>{ by[x.uid]=x; }); return {by, names, sib:S.sib, twins:S.twins}; };
+  let before, after;
+  try{ before=run(false); after=run(true); } finally { Object.assign(S, real); }
+  S.teams.flat().forEach(x=>{ const a=after.by[x.uid]; if(!a) return; const b=before.by[x.uid] || copy(x);
+    F.forEach(k=>{ x[k]+=a[k]-b[k]; });
+    ['revenge','pierceAll','poisonTurns'].forEach(k=>{ if(a[k] && !b[k]) x[k]=a[k]; }); });
+  players().forEach(p=>{ if(after.sib[p]) S.sib[p]=true; if(after.twins[p]) S.twins[p]=true;
+    const got=after.names[p].filter(n=>!before.names[p].includes(n)); if(got.length && S.syn) S.syn[p]=[...new Set([...(S.syn[p]||[]), ...got])]; });
+}

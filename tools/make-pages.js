@@ -151,6 +151,7 @@ ${GROUPS.map(([name, blurb, ids]) => `<h2>${esc(name)}</h2><p>${esc(blurb)}</p><
     ['Is Slayer Squad free?', 'Yes. It runs in your browser on iPhone, Android or a computer, with nothing to buy and nothing to download. You can add it to your Home Screen to play it like an app.'],
     ['Can I play with friends?', 'Yes: Play Friends online with a code or invite link (2 to 4 players), Quick Match to find an opponent, co-op against the computer, or Same Phone to pass one phone between two players.'],
     ['Do I need an account?', 'No. Your progress saves on your device, and Settings gives you a recovery code to back it up or move it to another device.'],
+    ['I found a bug. Where do I report it?', 'Slayer Squad is brand new, so thank you! Tap ⚙ Settings → Found a bug? in the game, or email slayersquadgame@gmail.com.'],
     ['Is it an official Demon Slayer game?', 'No. Slayer Squad is an unofficial fan game, not affiliated with or endorsed by the creators.'],
   ];
   const body = `<h1>How to play Slayer Squad</h1>

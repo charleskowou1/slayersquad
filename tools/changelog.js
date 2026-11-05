@@ -2,6 +2,7 @@
 // (CACHE 'squad-draft-vNN'), which goes up with every push. tools/make-guide.js prints this at the top of the guide.
 // Add a line here with every push (CK, Oct 28, 2026), then rebuild the guide: node tools/make-guide.js
 module.exports = [
+  [122, '2026-11-05', 'Fighters who join mid-battle now get their synergies (Kanao and Inosuke get Revenge on Doma, so Petals of Futility can be 3-starred); Upper Moon One, Nine Hashira and Waking retuned to match; iPhone fixes: tall character cards fit the screen, and the move screen keeps your fighter’s buttons above the Lock bar; bug reports: Settings or slayersquadgame@gmail.com.'],
   [121, '2026-11-05', 'New How to Play and Characters pages on slayersquad.app (one page per card, linked from the home screen’s About text); Settings no longer jumps to the top when you send a bug report; dev tools are no longer published with the site.'],
   [120, '2026-11-04', 'Admin page: a Came from card counts new players by the link they opened (slayersquad.app/?from=tiktok, ?from=ig…).'],
   [119, '2026-11-04', 'New soundtrack: the made-in-code music is gone. Home rotates Kamado Nezuko’s Song, from the edge and Gurenge; drafting plays Tengen’s theme; battles play the Hashira or Zenitsu themes and boss fights Akaza’s or Zohakuten’s; the story finale and credits play Nezuko’s Song. Settings shows the song playing with a Next button. Music starts on Low.'],
