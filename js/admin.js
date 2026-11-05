@@ -1,5 +1,5 @@
 /* CK's private numbers page (admin.html): nothing links to it. Counters come from track() in app.js, written as flat keys in Firebase
-   track/: players, dev_<device>, where_<time zone, / as ~>, d_<date>_<opens|players|new|games>, m_<mode>_<start|finish>, s_<stage>_<try|win>,
+   track/: players, dev_<device>, where_<time zone, / as ~>, d_<date>_<opens|players|new|games>, m_<mode>_<start|finish>, src_<link source>, s_<stage>_<try|win>,
    and (from v117) dated copies d_<date>_m_… / d_<date>_s_…. seen/<browser id>: {dev, tz, p (recovery-code fingerprint), old, days/<date>}: people are
    browsers grouped by p. Dates are New York days (TRACK_TZ in app.js). Reading needs the rules this page prints, which only let CK's browser
    read them. Opening it also turns tracking off in this browser. */
@@ -98,6 +98,9 @@ function draw(uid, t, stats, reports, denied, seen){
   const reachesBack=hasSeen&&days[0]<seenStart, both=(a,b)=>{ const m={...a}; Object.entries(b).forEach(([k,v])=>{ m[k]=Math.max(m[k]||0,v); }); return m; };
   const whereMap=!hasSeen?oldWhere:reachesBack?both(oldWhere,tally(act,q=>q.tz)):tally(act,q=>q.tz);
   const wheres=Object.entries(whereMap).map(([k,v])=>[placeName(k),v]).sort((a,b)=>b[1]-a[1]);
+  const srcName=k=>({direct:'Typed it in / other', tiktok:'TikTok', ig:'Instagram', instagram:'Instagram', yt:'YouTube', youtube:'YouTube', x:'X', twitter:'X', reddit:'Reddit', discord:'Discord'})[k]||k;
+  const srcs=Object.keys(t).filter(k=>/^src_/.test(k)).map(k=>[srcName(k.slice(4)),ctr(k)]).filter(m=>m[1]).reduce((m,[n,v])=>{ m[n]=(m[n]||0)+v; return m; },{});
+  const froms=Object.entries(srcs).sort((a,b)=>b[1]-a[1]);
   const oldDev={ios:t.dev_ios||0, android:t.dev_android||0, computer:t.dev_computer||0};
   const devMap=!hasSeen?oldDev:reachesBack?both(oldDev,tally(act,q=>q.dev)):tally(act,q=>q.dev);
   const devs=[['ios','iPhone / iPad'],['android','Android'],['computer','Computer']].map(([k,n])=>({k,n,v:devMap[k]||0})), devTotal=sum(devs.map(x=>x.v));
@@ -130,6 +133,9 @@ function draw(uid, t, stats, reports, denied, seen){
   ${card('Players each day',`People who opened the game each New York day. Hover or tap a day.`,`<div id="chart" class="chart"></div>`,'','日')}
   <div class="grid2">
     ${card('Where',`People active in ${rangeName}, by their device's time zone. A rough region, not an exact city.`,rowsOf(wheres.slice(0,12),Math.max(0,...wheres.map(m=>m[1]))),'','地')}
+    ${card('Came from',`New players in ${rangeName}, by the link they opened (slayersquad.app/?from=tiktok). Counted from Nov 4, 2026.`,froms.length?rowsOf(froms.slice(0,10),Math.max(...froms.map(m=>m[1]))):'<p class="empty">Nothing yet. Share links with ?from= on the end.</p>','','源')}
+  </div>
+  <div>
     ${card('Devices',`People active in ${rangeName}.`,devTotal?`<div class="stack" role="img" aria-label="${devs.map(x=>`${x.n} ${pct(x.v,devTotal)}%`).join(', ')}">${devs.filter(x=>x.v).map(x=>`<i style="flex:${x.v};background:${DEV_COLORS[x.k]}" title="${x.n}: ${x.v}"></i>`).join('')}</div>
       <div class="legend">${devs.map(x=>`<div><i style="background:${DEV_COLORS[x.k]}"></i><span>${x.n}</span><b>${pct(x.v,devTotal)}%</b><small>${fmt(x.v)}</small></div>`).join('')}</div>`:'<p class="empty">Nothing in this time range.</p>','','機')}
   </div>

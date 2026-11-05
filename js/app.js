@@ -809,17 +809,21 @@ const trackOff = () => { try{ return !FIREBASE_CONFIG || !navigator.onLine || na
 function track(keys){
   if(trackOff()) return; const day=trackDay();
   // mode and story counters also get a dated copy, so the admin page can filter them by time
-  firebaseReady().then(db=>{ const inc=firebase.database.ServerValue.increment(1), up={}; keys.forEach(k=>{ up[k]=inc; if(/^[ms]_/.test(k)) up[`d_${day}_${k}`]=inc; }); return db.ref('track').update(up); }).catch(()=>{});
+  firebaseReady().then(db=>{ const inc=firebase.database.ServerValue.increment(1), up={}; keys.forEach(k=>{ up[k]=inc; if(/^([ms]|src)_/.test(k)) up[`d_${day}_${k}`]=inc; }); return db.ref('track').update(up); }).catch(()=>{});
 }
 // This browser's anonymous id (random; backed up with the save, but a restoring device keeps its own)
 const trackId = () => { try{ let id=localStorage.getItem('squad-draft-pid'); if(!/^[a-z0-9]{12}$/.test(id||'')){ id=Array.from({length:12},()=>'abcdefghijkmnpqrstuvwxyz23456789'[Math.floor(Math.random()*32)]).join(''); localStorage.setItem('squad-draft-pid',id); } return id; }catch(e){ return null; } };
 // A scrambled fingerprint of the recovery code: browsers sharing a code (phone + iPad, old + new address) count as one person. The code itself never leaves the save.
 async function codeMark(){ try{ const c=loadCloud().code; if(!c || !crypto.subtle) return ''; const h=new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode('slayer-squad:'+c))); return Array.from(h.slice(0,6),b=>b.toString(16).padStart(2,'0')).join(''); }catch(e){ return ''; } }
+// Read at load, before invite or restore links clear the address bar.
+const FROM_PARAM = (()=>{ try{ return (new URLSearchParams(location.search).get('from')||'').toLowerCase().replace(/[^a-z0-9_-]/g,'').slice(0,20); }catch(e){ return ''; } })();
 async function trackOpen(){
   const day=trackDay(), keys=[`d_${day}_opens`]; let t={}; try{ t=JSON.parse(localStorage.getItem('squad-draft-track'))||{} }catch(e){}
   const ua=navigator.userAgent||'', dev=/iphone|ipad|ipod/i.test(ua)?'ios':/android/i.test(ua)?'android':'computer', firstDay=t.day!==day;
   if(firstDay) keys.push(`d_${day}_players`);
   if(!t.day) keys.push('players', `d_${day}_new`, 'dev_'+dev);
+  // Where a new player came from: links like slayersquad.app/?from=tiktok (letters, numbers, - and _ only). Counted once per browser.
+  if(!t.day) keys.push('src_'+(FROM_PARAM||'direct'));
   try{ localStorage.setItem('squad-draft-track',JSON.stringify({day})) }catch(e){}
   // Rough region, once per browser (existing players too): the device's time zone, e.g. America/Chicago. No location permission, no IP.
   let tz='Unknown'; try{ tz=(Intl.DateTimeFormat().resolvedOptions().timeZone||'Unknown').slice(0,50); }catch(e){}
