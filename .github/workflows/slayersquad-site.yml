@@ -17,8 +17,12 @@ jobs:
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      # Publish the game only: dev tools and notes stay in the repo. Same list as _config.yml's exclude (the old address).
+      - run: rsync -a --exclude=/_site --exclude=/.git --exclude=/.github --exclude=/.gitignore --exclude=/_config.yml --exclude=/tools/ --exclude=/worker/ --exclude=/README.md ./ _site/
+      # The game changes with every deploy: date the home page in the sitemap (tools/make-pages.js dates the other pages)
+      - run: sed -i "s|<loc>https://slayersquad.app/</loc><lastmod>[^<]*</lastmod>|<loc>https://slayersquad.app/</loc><lastmod>$(date -u +%F)</lastmod>|" _site/sitemap.xml
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: _site
       - id: deploy
         uses: actions/deploy-pages@v4

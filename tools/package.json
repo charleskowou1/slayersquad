@@ -1,6 +1,9 @@
 {
   "name": "slayer-squad-tools",
   "private": true,
-  "description": "Builds the Roster Playbook (make-playbook.js); the game itself needs no packages",
-  "dependencies": { "docx": "^9.0.0" }
+  "description": "Builds the Roster Playbook (make-playbook.js) and the stats spreadsheet (make-stats.js); the game itself needs no packages",
+  "dependencies": {
+    "docx": "^9.0.0",
+    "exceljs": "^4.4.0"
+  }
 }

@@ -1,0 +1,8 @@
+# The old address (charleskowou1.github.io/squad-draft/) is built from this branch by GitHub Pages' Jekyll.
+# Everything is published except what's listed here: dev tools and notes stay in the repo but off the site.
+# slayersquad.app is published by .github/workflows/slayersquad-site.yml, which skips the same list: change both together.
+# Never add a CNAME file or move the game files: players' saves and installed apps belong to these exact addresses.
+exclude:
+  - tools/
+  - worker/
+  - README.md

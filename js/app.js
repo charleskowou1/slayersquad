@@ -152,7 +152,10 @@ function render(){
   const vids=new Map([...app.querySelectorAll('video[data-k],img[data-k]')].map(v=>[v.dataset.k,v]));   // a clip already playing keeps playing
   // reuse the picture elements already on screen: a redraw never has to decode them again, so nothing blinks
   const pics=new Map(); app.querySelectorAll('img:not([data-k])').forEach(im=>{ const k=im.getAttribute('src'); if(!pics.has(k)) pics.set(k,[]); pics.get(k).push(im); });
+  // a pop-up redrawn as the same pop-up keeps its scroll (Settings' bug report sits at the bottom and jumped to the top on Send)
+  const mIn=sheet.querySelector('.modal .in'), mKey=mIn&&mIn.getAttribute('aria-label'), mTop=mIn?mIn.scrollTop:0;
   beforeAwake(()=>{ app.innerHTML=VIEWS[view](); sheet.innerHTML=vSheet(); });
+  { const n=sheet.querySelector('.modal .in'); if(n && mKey && n.getAttribute('aria-label')===mKey) n.scrollTop=mTop; }
   if(app.querySelector('.kolater')) setTimeout(()=>app.querySelectorAll('.kolater').forEach(e=>e.classList.remove('kolater')), quickMotion()?150:620);   // a special's knockout waits for the special to land
   app.querySelectorAll('img:not([data-k])').forEach(im=>{ const old=(pics.get(im.getAttribute('src'))||[]).shift(); if(old){ old.className=im.className; im.replaceWith(old); } });
   app.querySelectorAll('video[data-k],img[data-k]').forEach(v=>{ const old=vids.get(v.dataset.k); if(old){ v.replaceWith(old); if(old.tagName==='VIDEO') playVid(old); } else if(v.tagName==='VIDEO'){ v.onended=()=>{ if(v.duration<CLIP_LOOP){ v.currentTime=0; playVid(v); } }; playVid(v); } });
@@ -357,7 +360,8 @@ const ACTIONS = {
   reportopen(){ S.reportOpen=!S.reportOpen; S.reportMsg=''; },
   reportsend(){ const el=document.getElementById('reportbox'), msg=el&&el.value.trim(); if(!msg) return;
     S.reportText=msg; S.reportMsg='Sending…';
-    sendReport(msg).then(()=>{ S.reportText=''; S.reportOpen=false; S.reportMsg='Sent. Thank you!'; }).catch(()=>{ S.reportMsg='That didn’t send. Check your connection and try again.'; }).finally(render); },
+    sendReport(msg).then(()=>{ S.reportText=''; S.reportOpen=false; S.reportMsg='Sent. Thank you!'; }).catch(()=>{ S.reportMsg='That didn’t send. Check your connection and try again.'; })
+      .finally(()=>{ render(); const m=document.getElementById('reportmsg'); if(m) m.scrollIntoView({block:'nearest'}); }); },   // keep "Sent" in view
   quit(v){ S.settings=false; S.quitAsk=false; S.play=null; clearTimeout(S._t); if(v==='map') ACTIONS.storymap(); else ACTIONS.home(); window.scrollTo(0,0); },   // story: leave a battle from Settings
   placecfg(v){ try{ localStorage.setItem(PLACE_KEY,v) }catch(e){} },   // Settings → Battle background
   settab(v){ S.setTab=v; if(v==='stats') loadGlobalStats(); },

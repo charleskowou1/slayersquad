@@ -698,7 +698,7 @@ function vSettings(){
       ${S.reportOpen?`<textarea id="reportbox" class="reportbox" maxlength="500" rows="4" placeholder="What happened, and what were you doing?" aria-label="Describe the bug">${esc(S.reportText||'')}</textarea>
       <div class="row"><button class="btn small" data-a="reportsend">Send</button><button class="btn ghost small" data-a="reportopen">Cancel</button></div>
       <div class="hint">Sends your message and your device type. Nothing else.</div>`:`<button class="btn ghost small" data-a="reportopen">Report a bug</button>`}
-      ${S.reportMsg?`<div class="hint">${esc(S.reportMsg)}</div>`:''}</div>
+      ${S.reportMsg?`<div class="hint" id="reportmsg" role="status">${esc(S.reportMsg)}</div>`:''}</div>
     ${S.mode==='story' && !['story','setup','modeset'].includes(S.phase)?`<div class="setgroup"><div class="tlabel">Leave this battle</div>
       <div class="row"><button class="btn ghost" data-a="quit" data-v="map">Quit to story map</button><button class="btn ghost" data-a="quit" data-v="home">Quit to home screen</button></div>
       <div class="hint">The battle isn't saved. You can start it again from the story map.</div></div>`:''}
