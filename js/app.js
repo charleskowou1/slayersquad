@@ -92,6 +92,18 @@ const KO_TESTS = {
   petals:   {you:['akaza'], foe:['kanao'], note:'Kanao falls: butterfly petals.'},
   behead:   {you:['tanjiro'], foe:['hand','swamp'], note:'A demon is beheaded (not the last blow, so normal speed).'},
   muzan:    {you:['yoriichi'], foe:['muzan'], note:'Muzan cracks, the stage shakes, and he explodes.'},
+  // battle animations (CK, Nov 6, 2026)
+  b_impact: {you:['rengoku'], foe:['hand','swamp'], keep:true, setup:()=>{ S.teams[0][0].pow=30; const h=S.teams[1][0]; h.max=h.hp=50; S.teams[1].forEach(u=>{u.pow=0;u.cd=9;u.spd=0;}); S.teams[0][0].spd=99; }, note:'Attack the Hand Demon: a 40%+ hit flashes an inverted manga frame.'},
+  b_ghost:  {you:['tanjiro','zenitsu','inosuke'], foe:['akaza','hand'], keep:true, setup:()=>{ S.teams[1].forEach(u=>{u.pow=0;u.cd=9;u.spd=0;}); }, note:'Attack anyone: the health bars drop at once and a white chip drains after.'},
+  b_clash:  {you:['tanjiro'], foe:['akaza','hand'], keep:true, setup:()=>{ const a=S.teams[1][0]; a.spd=99; S.teams[1][1].pow=0; }, note:'Pick Defend and Fight: Akaza’s hit meets crossed blades.'},
+  b_breath: {you:['rengoku','tanjiro'], foe:['akaza','hand'], keep:true, setup:()=>{ S.teams[0].forEach(u=>{u.cd=0;}); S.teams[1].forEach(u=>{u.pow=0;u.cd=9;u.max=u.hp=200;}); }, note:'Use a special: air streams into the slayer before the move (全集中).'},
+  b_blur:   {you:['zenitsu','tanjiro'], foe:['akaza','hand'], keep:true, setup:()=>{ S.teams[0][0].spd=14; S.teams[1].forEach(u=>{u.pow=0;u.cd=9;u.max=u.hp=200;}); }, note:'Attack with Zenitsu (SPD 14): he leaves afterimages. Tanjiro (slower) doesn’t.'},
+  // draft and story map animations (CK, Nov 6, 2026)
+  p_rare:   {custom:testDraft, note:'Yoriichi and Final Muzan are dealt: their cards flip in with a gold shine.'},
+  p_pick:   {custom:testDraft, note:'Draft any card: it flies into your team box. The computer’s picks do too.'},
+  p_journey:{custom:()=>{ Object.assign(S,{campaign:'main'}); try{ localStorage.setItem(STORY_KEY, JSON.stringify({cleared:MAIN_STAGES.slice(0,3).map(s=>s.id)})); localStorage.setItem(MAP_SEEN_KEY, JSON.stringify({main:2})); }catch(e){} ACTIONS.storymap(); S.storySel=null; S.storyScroll=false; window.scrollTo(0,0); }, note:'You just won Final Selection: the trail fills gold and the next stop lights up. (This test overwrites story progress in this browser.)'},
+  p_stars:  {custom:()=>{ Object.assign(S,{mode:'story', campaign:'main', stage:1, phase:'scene', sceneOutro:true, sceneUnlock:true, unlockAt:0, newUnlocks:[], goalsNow:[true,true,true], starsGot:3, starsBest:0, sceneAt:0, sceneVs:false}); }, note:'The stars stamp in one at a time.'},
+  kagaya:   {you:['kagaya','giyu','sanemi'], foe:['akaza'], keep:true, setup:()=>{ S.teams[0][0].cd=0; S.teams[1].forEach(u=>{u.pow=0;u.cd=9;u.spd=1;}); }, note:'Use Kagaya’s special, Final Resolve: he glows, then explodes.'},
   special:  {you:['tanjiro'], foe:['akaza'], note:'Use Tanjiro’s special (Hinokami Kagura): it lands the cut in the same moment.'},
   synergy:  {you:['rengoku','tanjiro','sanemi','genya'], foe:['akaza','doma','gyutaro'], keep:true, syn:true, note:'The synergy panel opens now.'},
   laststand:{you:['rengoku'], foe:['akaza','doma'], keep:true, setup:()=>{ S.teams[0][0].hp=4; }, note:'Your last fighter is under 25%: the red glow.'},
@@ -101,8 +113,25 @@ const KO_TESTS = {
   doubleko: {you:['mitsuri_mark'], foe:['hand','swamp'], keep:true, setup:()=>{ S.teams[1].forEach(u=>{ u.hp=1; u.pow=0; u.revive=0; }); S.teams[0][0].cd=0; }, note:'Use Mitsuri’s special: both fall at once.'},
   specials: {you:['urokodaki','makio','sabito','tanjuro'], foe:['akaza','doma'], keep:true, setup:()=>{ S.teams[0].forEach(u=>u.cd=0); S.teams[1].forEach(u=>{ u.pow=0; }); }, note:'Use each fighter’s special to see the new effects.'},
 };
+// The journey advances (CK, Nov 6, 2026). The map remembers how many battles it last showed won (per campaign); when there's a new
+// win, the finished chapter's trail fills gold and the next stop lights up, once. First visit: nothing to animate.
+const MAP_SEEN_KEY = 'squad-draft-map-seen';
+function mapAdvance(){
+  let seen={}; try{ seen=JSON.parse(localStorage.getItem(MAP_SEEN_KEY))||{}; }catch(e){}
+  const c=S.campaign||'main', won=storyWon(), was=seen[c];
+  S.mapAdv = was!==undefined && won>was ? {cleared:Math.max(0,nextStage()-1)} : null;
+  seen[c]=won; try{ localStorage.setItem(MAP_SEEN_KEY, JSON.stringify(seen)); }catch(e){}
+  clearTimeout(mapAdvance.t); if(S.mapAdv) mapAdvance.t=setTimeout(()=>{ S.mapAdv=null; }, 4000);
+}
+// Test setups that aren't battles: a draft with rare cards dealt, the story map after a win, the win stars
+function testDraft(){
+  Object.assign(S,{mode:'cpu', n:2, duo:false, names:[playerName()||'You','Test'], askName:null, unlockAll:true, budget:30, maxTeam:6, poolType:'random'});
+  newDraft(0); const want=['yoriichi','muzan_final'], fams=want.map(id=>BYID[id].fam);
+  S.pool=[...want, ...S.pool.filter(id=>!fams.includes(BYID[id].fam))].slice(0, Math.max(S.pool.length,want.length));
+}
 function koTest(){
   const name=(new URLSearchParams(location.search).get('test')||'').toLowerCase(), t=KO_TESTS[name]; if(!t || !/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) return;
+  if(t.custom){ t.custom(); note(t.note); render(); return; }
   Object.assign(S,{mode:'cpu', n:2, duo:false, names:[playerName()||'You','Test'], askName:null, unlockAll:true, budget:UNLIMITED, maxTeam:6});
   S.picks=[t.you.slice(), t.foe.slice()]; startBattle(); S.synShown=!t.syn;
   if(!t.keep){ S.teams[1].forEach((u,i)=>{ if(i===0) u.hp=1; u.pow=0; u.regen=0; u.revive=0; u.cd=9; u.spd=0; }); S.teams[0].forEach(u=>{ u.spd=99; }); }   // first enemy one hit from down, and harmless
@@ -385,6 +414,7 @@ const ACTIONS = {
   codex(){ keepNames(); S.phase='codex'; S.codexSel=null; S.codexHome=false; window.scrollTo(0,0); },
   codexf(v){ S.codexF=v; },
   codexsel(v){ S.codexSel=v; },
+  qrmine(){ qrMine(); },   // laptop sides: the QR with this computer's progress
   codexopen(v){ keepNames(); S.phase='codex'; S.codexSel=v; S.codexHome=true; window.scrollTo(0,0); },   // from the home roster: closing the card goes back home
   daily(){ keepNames(); clearTimeout(S._t); S.play=null; S.final=false; startDaily(); window.scrollTo(0,0); },
   info(v){ S.info=v; },
@@ -399,7 +429,7 @@ const ACTIONS = {
   nextsong(){ nextSong(); },
   volmusic(v){ S.vol={...S.vol, music:+v}; saveVolumes(S.vol); applyVolumes(); },
   volsfx(v){ S.vol={...S.vol, sfx:+v}; saveVolumes(S.vol); applyVolumes(); sfx('pick'); },
-  storymap(){ keepNames(); clearTimeout(S._t); S.mode='story'; S.phase='story'; S.storySel=nextStage(); S.storyScroll=true; },
+  storymap(){ keepNames(); clearTimeout(S._t); S.mode='story'; S.phase='story'; S.storySel=nextStage(); S.storyScroll=true; mapAdvance(); },
   campaign(v){ setCampaign(v); S.storySel=nextStage(); S.storyScroll=true; window.scrollTo(0,0); },
   dreamstart(){ setCampaign('dream'); ACTIONS.storymap(); },
   orderpick(v){ S.waveOrder=S.waveOrder||[]; const i=S.waveOrder.indexOf(v); if(i>=0) S.waveOrder.splice(i,1); else S.waveOrder.push(v); },
@@ -956,7 +986,7 @@ async function moveSite(){ S.moveMsg='Saving your progress…'; render(); const 
 async function arriveFromMove(){
   const raw=(new URLSearchParams(location.search).get('restore')||'').toUpperCase().replace(/[^A-Z0-9]/g,''); if(!raw) return;
   history.replaceState(null,'',location.pathname);   // the code doesn't stay in the address bar or browser history
-  const ok=raw.length===12 && await restoreCode(raw); note(ok ? 'Welcome to slayersquad.app! Your progress came with you.' : 'We couldn’t bring your progress over. Enter your code in Settings → Save.'); render();
+  const ok=raw.length===12 && await restoreCode(raw); note(ok ? (FROM_PARAM==='qr' ? 'Your progress came over from your computer. Both now share one save.' : 'Welcome to slayersquad.app! Your progress came with you.') : 'We couldn’t bring your progress over. Enter your code in Settings → Save.'); render();
 }
 /* Invite links: slayersquad.app/join/?c=CODE shows its own link preview, then opens the game at ?join=CODE and joins that room. Players who've never named themselves see the code
    filled in and only have to tap Join. */
@@ -1035,6 +1065,49 @@ setTimeout(()=>{ dailyChallenge(); if(S.phase==='setup') render(); }, 60);
 setTimeout(watchGames, 200);   // own-pace games on the home screen   // own-pace games on the home screen: whose turn it is
 render();
 findArt(); findScenePics(); findPlaces();
+// Laptop sides: the character spotlight (index.html #spot). Unlocked characters only, so it never spoils the story.
+// Changes every 20 s while the sides are on screen; tapping it on the home screen opens the card in the Codex.
+// Laptop sides: "Bring my progress" swaps the plain QR for one with this computer's recovery code (?restore=CODE&from=qr),
+// so scanning it opens the game on the phone with this progress added (arriveFromMove). The code is personal, so it's
+// only shown on a click and goes back to the plain QR after 2 minutes or on "Hide my code".
+const QRM={plain:null, timer:0};
+function qrSet(card, cap, sub, url, btn, mine){
+  const $=id=>document.getElementById(id);
+  if(card!=null) $('qrcard').innerHTML=card; $('qrcap').textContent=cap; $('qrsub').textContent=sub; $('qrurl').textContent=url;
+  $('qrmine').textContent=btn; $('qrmine').disabled=false; $('qrcard').classList.toggle('mine',!!mine); $('qrurl').classList.toggle('warn',!!mine);
+}
+const qrPlain = () => { clearTimeout(QRM.timer); qrSet(QRM.plain,'Play on your phone','Scan with your camera','slayersquad.app','Bring my progress',false); };
+const loadQR = () => window.qrcode ? Promise.resolve() : new Promise((ok,no)=>{ const t=document.createElement('script'); t.src='js/qr.js'; t.onload=ok; t.onerror=no; document.head.appendChild(t); });
+function qrSvg(text){
+  const q=qrcode(0,'M'); q.addData(text); q.make(); const n=q.getModuleCount(); let d='';
+  for(let r=0;r<n;r++) for(let c=0;c<n;c++) if(q.isDark(r,c)) d+=`M${c} ${r}h1v1h-1z`;
+  return `<svg class="qrsvg" role="img" aria-label="QR code with your progress" viewBox="0 0 ${n} ${n}" shape-rendering="crispEdges"><path fill="#1d1915" d="${d}"/></svg>`;
+}
+async function qrMine(){
+  const card=document.getElementById('qrcard'), btn=document.getElementById('qrmine'); if(!card||!btn) return;
+  if(QRM.plain==null) QRM.plain=card.innerHTML;
+  if(card.classList.contains('mine')) return qrPlain();
+  if(!hasProgress(saveData())) return qrSet(null,'Play on your phone','No progress on this computer yet. Play a battle first.','slayersquad.app','Bring my progress',false);
+  btn.textContent='Saving your progress…'; btn.disabled=true;
+  await cloudBackup(true); const c=loadCloud();
+  if(!c.code || CLOUD.status){ btn.disabled=false; btn.textContent='Bring my progress';
+    return qrSet(null,'Play on your phone','Couldn’t save your progress. Check your internet and try again.','slayersquad.app','Try again',false); }
+  try{ await loadQR(); }catch(e){ return qrSet(null,'Play on your phone','Couldn’t make the code. Check your internet and try again.','slayersquad.app','Try again',false); }
+  qrSet(qrSvg(`${NEW_SITE}?restore=${c.code}&from=qr`),'Bring your progress','Scan with your phone’s camera','This code is yours. Don’t share it.','Hide my code',true);
+  clearTimeout(QRM.timer); QRM.timer=setTimeout(qrPlain, 120000);
+}
+const SPOT={last:null};
+function sideSpot(){
+  const el=document.getElementById('spot'); if(!el || getComputedStyle(el.closest('.sides')).display==='none') return;
+  const pool=ROSTER.filter(c=>!c.spawn && !c.helper && ART[c.id] && isUnlocked(c.id) && loreOf(c) && c.id!==SPOT.last); if(!pool.length) return;
+  const c=pool[Math.floor(Math.random()*pool.length)], [line,bio]=loreOf(c); SPOT.last=c.id;
+  const fill=()=>{ el.dataset.a='codexopen'; el.dataset.v=c.id;
+    el.innerHTML=`<div class="sc${c.demon?' demon':''}"><img src="${ART[c.id]}" alt=""><i>${esc(c.short)}</i></div><b class="snm">${esc(c.name)}</b><span class="lxsty">${esc(c.type||'')} · ${c.cost} pts</span>${line?`<q>${esc(line)}</q>`:''}${bio?`<p>${esc(bio)}</p>`:''}${c.sig?`<span class="ssig">技 ${esc(c.sig.name)}</span>`:''}`;
+    el.classList.remove('out'); };
+  if(el.innerHTML){ el.classList.add('out'); setTimeout(fill,600); } else fill();
+}
+sideSpot(); setInterval(()=>{ if(!document.hidden) sideSpot(); }, 20000);
+matchMedia('(min-width:1100px) and (min-height:560px)').addEventListener('change', sideSpot);
 // Offline support and home-screen install (only works when served over http/https, not from a local file)
 // Updates: a phone that keeps the game open in the background never reloads it, so check for a new version whenever
 // the game comes back to the screen; when one arrives, reload right away on the home screen, or on the next return home.

@@ -55,7 +55,7 @@ function health(u, o={}){
   const live=o.hp===undefined, hp=live?u.hp:o.hp, up=live?u.alive:hp>0;
   const h=up?pct(u,hp):0, low=up && h<=LOW ? ' low' : '';
   const from=o.from===undefined ? h : Math.max(0,pct(u,o.from));
-  const bar=`<span class="bar${low}" role="img" aria-label="${h}% health"><i class="${from!==h?'drain':''}" style="width:${h}%;--from:${from}%"></i></span>`;
+  const bar=`<span class="bar${low}" role="img" aria-label="${h}% health"><i class="${from<h?'drain':''}" style="width:${h}%;--from:${from}%"></i>${from>h?`<b class="dmgghost" style="left:${h}%;width:${from-h}%"></b>`:''}</span>`;   // ghost damage: the bar drops at once, a white chip lags then drains
   const pctTag=`<span class="hp${low}">${up?h+'%':'KO'}</span>`;
   // simple tiles: name on its own line, percent beside the bar, so narrow tiles don't cut the name off
   if(o.simple) return `<span class="un"><span class="nm">${esc(u.name)}</span></span><span class="hprow">${bar}${pctTag}</span>`;
@@ -406,12 +406,18 @@ function vSpin(){
 }
 
 /* ---------- draft ---------- */
+/* Rare pull shimmer and pick fly-in (CK, Nov 6, 2026). Each runs in a time window from its first draw, so a redraw mid-animation
+   neither restarts nor cuts it: rare cards (Yoriichis, Final Muzan, Demon King Tanjiro) flip in with a gold shine; picks drop into the team box. */
+const RARE_PULLS = ['yoriichi','yoriichi_old','muzan_final','tanjiro_demon'], FRESH_AT = {};
+const freshFor = (key, ms) => { const t=FRESH_AT[key] ?? (FRESH_AT[key]=Date.now()); return Date.now()-t < ms; };
+const rareFresh = c => RARE_PULLS.includes(c.id) && freshFor('rare|'+c.id+'|'+(S.pool||[]).join(','), 3200);
+const pickFresh = (q,id,i) => freshFor(`pick|${q}|${i}|${id}|${(S.pool||[]).join(',')}`, 900);
 function cardHTML(c,p){
   const owner=S.picks.findIndex(t=>t.includes(c.id)), ban=(S.bans||[]).find(b=>BYID[b.id].fam===c.fam);
   const ok = S.banning ? canBan(p,c.id) : canPick(p,c.id);
   const badge = c.legend?'Legend':c.mark?'✦ Mark':'';
   // picture-first card: art on top (kanji if no picture), name and type over its lower edge, stats below
-  return `<button class="card ${glyphCls(c)}${ok?'':' off'}${S.sel===c.id?' sel':''}${owner>=0?' taken':''}" data-a="sel" data-v="${c.id}" ${ok?'':'aria-disabled="true"'}>
+  return `<button class="card ${glyphCls(c)}${ok?'':' off'}${S.sel===c.id?' sel':''}${owner>=0?' taken':''}${rareFresh(c)?' rarepull':''}" data-a="sel" data-v="${c.id}" ${ok?'':'aria-disabled="true"'}>${rareFresh(c)?'<span class="rshine" aria-hidden="true"></span>':''}
     <span class="cart">${ART[c.id]?`<img decoding="sync" src="${ART[c.id]}" alt="">`:`<span class="ck">${c.g}</span>`}</span>
     <span class="cost${c.cost>=12?' big':''}">${c.cost}<small>pts</small></span>
     ${badge?`<span class="badge">${badge}</span>`:''}
@@ -423,7 +429,7 @@ function teamBox(q,p){
   return `<${study?`button data-a="theirs" aria-expanded="${!!S.showTheirs}"`:'div'} class="tbox${p===q&&!S.locked[q]?' active':''}${study?' studybox':''}" style="--tc:${pc(q)}">
     <div class="tn"><span>${nm(q)}${q===myP()&&soloView()&&S.mode!=='story'?' <small>(you)</small>':''}${S.duo?` <small class="tside">Team ${sideOf(q)+1}</small>`:''}</span><span>${study?(S.showTheirs?'Hide ▴':'Tap to study ▾'):S.locked[q]?'Locked':budget()>=UNLIMITED?`${spent(q)} pts`:left+' pts left'}</span></div>
     <div class="meter" role="img" aria-label="${spent(q)} of ${budget()} points spent"><i style="width:${Math.min(100,spent(q)/budget()*100)}%"></i></div>
-    <div class="slots">${S.picks[q].map(id=>seal(BYID[id],'xs')).join('')}${!S.locked[q]&&fighterIds(q).length<teamCap()?'<span class="slot empty"></span>':''}</div></${study?'button':'div'}>`;
+    <div class="slots">${S.picks[q].map((id,i)=>pickFresh(q,id,i)?`<span class="flyin">${seal(BYID[id],'xs')}</span>`:seal(BYID[id],'xs')).join('')}${!S.locked[q]&&fighterIds(q).length<teamCap()?'<span class="slot empty"></span>':''}</div></${study?'button':'div'}>`;
 }
 function vDraft(){
   // cpuTurn = the other side is picking (the computer, or the other phone online): this phone waits
@@ -815,6 +821,13 @@ const leftSide = () => soloView() ? myP() : 0;
 // The fight stage for one playback line: the attacker's picture lunges at the target's, a mark flashes on impact,
 // and the health change floats up. Lines with one fighter (regen, poison, specials…) animate just that fighter.
 const FX_MARK = {hit:'斬', miss:'避', block:'防', ko:'KO', heal:'癒', revive:'蘇', poison:'毒', stun:'眠', guard:'守', buff:'鍛', special:'技', burn:'陽', spawn:'分'};
+/* Battle animations (CK kept these on Nov 6, 2026): impact frame on 40%+ hits, ghost damage on health bars, blade clash on guarded hits,
+   Total Concentration before a slayer's special (in cutin()), afterimages for fast fighters. Tests: ?test=b_impact|b_ghost|b_clash|b_breath|b_blur. */
+const dmgOf = l => +((/\[-(\d+)%\]/.exec(l&&l.t||'')||[])[1]||0);
+// (6) Defend took half: crossed blades and sparks where they meet
+const CLASH_ART = `<b class="bladex" aria-hidden="true"><svg viewBox="0 0 100 100"><path d="M12 88 L80 20" stroke="#e8eef6" stroke-width="5" stroke-linecap="round"/><path d="M88 88 L20 20" stroke="#cfd8e4" stroke-width="5" stroke-linecap="round"/><path d="M8 92 L20 80 M92 92 L80 80" stroke="#6a4a2a" stroke-width="8" stroke-linecap="round"/></svg>${rep(10,i=>`<i style="--a:${i*36}deg;--d:${(i%4)*.03}s"></i>`)}</b>`;
+// (8) fast fighters leave afterimages when they lunge
+const FAST = 12;
 function stage(line){
   const by=line.by&&findU(line.by), on=line.on&&findU(line.on), type=line.fx||'', duo=by&&on&&by!==on;
   // breathing style of the fighter acting (their Attack or Special look): colour, kanji mark and drawing
@@ -827,8 +840,10 @@ function stage(line){
   const pop=amt?`<span class="pop ${amt[1]==='-'?'dmg':'gain'}">${amt[1]==='-'?'−':'+'}${amt[2]}</span>`:'';
   const calm=calmSides(), ring=(u,role)=>role==='on'&&by&&!sameSide(by.p,u.p)&&calm.has(u.p)?waterRing():'';   // the water shows on whoever is being attacked
   const cut=type==='ko' && slicedBy(line,on), dust=crumbleKind(line), act=line.move==='special'&&by?' by-'+by.sk:'';
+  const dmg=dmgOf(line), impact=['hit','ko'].includes(type)&&dmg>=40, guarded=type==='hit'&&/\(guarded\)/.test(line.t);   // impact frame, blade clash
+  const fast=duo&&by&&by.spd>=FAST&&['hit','ko','miss','block'].includes(type);
   const muz=type==='ko' && on && on.fam==='muzan', fell=type==='ko' && on && !dust && !cut && !muz && PETAL_FAMS.includes(on.fam);
-  const who=(u,role)=>`<div class="st-${role}">${role==='on'&&muz?muzanPic(seal(u,'stg')):role==='on'&&dust?crumblePic(dust,seal(u,'stg')):role==='on'&&cut?slicePic(u,seal(u,'stg'),cutStyle(line)):role==='on'&&fell?fallPic(u,seal(u,'stg')):seal(u,'stg')}${ring(u,role)}${role==='on'&&line.gone?kDoors:''}${role==='by'?byFx(line):''}${role==='on'?art+pop+targetFx(line):''}${role==='by'&&type==='special'&&style?fxArt(style,'aura'):''}<span class="st-nm" style="color:${pc(u.p)}">${esc(u.name)}</span></div>`;
+  const who=(u,role)=>`<div class="st-${role}">${role==='on'&&muz?muzanPic(seal(u,'stg')):role==='on'&&dust?crumblePic(dust,seal(u,'stg')):role==='on'&&cut?slicePic(u,seal(u,'stg'),cutStyle(line)):role==='on'&&fell?fallPic(u,seal(u,'stg')):seal(u,'stg')}${ring(u,role)}${role==='on'&&line.gone?kDoors:''}${role==='by'?byFx(line):''}${role==='on'?art+pop+targetFx(line):''}${role==='by'&&fast?`<span class="afterimg" aria-hidden="true">${seal(u,'stg')}${seal(u,'stg')}</span>`:''}${role==='by'&&type==='special'&&style?fxArt(style,'aura'):''}<span class="st-nm" style="color:${pc(u.p)}">${esc(u.name)}</span></div>`;
   if(line.helper){ const h=BYID[line.helper];   // a back-pocket helper acting
     return `<div class="stage fx-${type} solo helperfx" aria-hidden="true"><span class="st-mark">${FX_MARK[type]||''}</span><div class="st-on">${seal(h,'stg')}<span class="st-nm">${esc(h.short)}</span></div></div>`; }
   const mark=`<span class="st-mark">${style&&(type==='hit'||type==='special')?STYLE_KANJI[style]:FX_MARK[type]||''}</span>`;
@@ -839,8 +854,8 @@ function stage(line){
       return `<div class="stage duo dodgestage fx-${type}${rev?' rev':''}" aria-hidden="true">${rev?tgt+att:att+tgt}</div>`; }
   if(line.sunrise) return `<div class="stage sunstage" aria-hidden="true"><span class="sunrays"></span><span class="sundisc"></span><span class="sunland"></span><b class="sunkj">日の出</b></div>`;   // nobody acts at sunrise, so it gets its own picture
   if(line.frenzy){ const foe=players().find(p=>alive(p).some(u=>u.demon)); return `<div class="stage frenzystage" aria-hidden="true"><div class="calmteam">${(foe===undefined?[]:alive(foe)).slice(0,6).map(u=>seal(u,'stg')).join('')}</div><b class="sunkj">狂</b></div>`; }
-  return `<div class="stage fx-${type||'none'}${cut||dust||muz||fell?' sliced':''}${muz?' muzko':''}${line.gone?' goneaway':''}${line.shrink?' shrinking':''}${line.cover?' covering':''}${act} ${duo?'duo':'solo'}${rev?' rev':''}${style?' sty sty-'+style:''}" aria-hidden="true">
-    ${duo ? (rev ? who(on,'on')+mark+who(by,'by') : who(by,'by')+mark+who(on,'on')) : solo ? mark+who(solo, on?'on':'by') : mark}</div>`;
+  return `<div class="stage fx-${type||'none'}${cut||dust||muz||fell?' sliced':''}${muz?' muzko':''}${dust==='resolve'?' kresstage':''}${impact?' impactframe':''}${guarded?' clash':''}${fast?' fastlunge':''}${line.gone?' goneaway':''}${line.shrink?' shrinking':''}${line.cover?' covering':''}${act} ${duo?'duo':'solo'}${rev?' rev':''}${style?' sty sty-'+style:''}" aria-hidden="true">
+    ${duo ? (rev ? who(on,'on')+mark+who(by,'by') : who(by,'by')+mark+who(on,'on')) : solo ? mark+who(solo, on?'on':'by') : mark}${impact?'<b class="impf" aria-hidden="true"></b>':''}${guarded?CLASH_ART:''}</div>`;
 }
 // A slayer's killing blow on a demon cuts the card in two: the top half slides off (CK)
 const slicedBy = (l, t) => { const a=l&&l.by&&findU(l.by); return !!(a && !l.wist && t && t.demon && !slayerSide(BYID[t.id]) && slayerSide(BYID[a.id])); };
@@ -848,7 +863,19 @@ const slicedBy = (l, t) => { const a=l&&l.by&&findU(l.by); return !!(a && !l.wis
 const cutStyle = l => { const a=l&&l.by&&findU(l.by); return a ? styleOf(a, l.move==='special'?'special':'attack') : 'slash'; };
 // A demon burned away by the sun turns to ash; one killed by Shinobu turns purple and crumbles
 const crumbleKind = l => l && l.fx==='ko' ? (l.resolve?'resolve':l.wist?'wist':l.ash?'ash':'') : '';
-const crumblePic = (kind, html) => `<span class="crumble ${kind}"><span class="cr-pic">${html}</span>${rep(10, i=>`<i style="--x:${(i*37)%100}%;--dx:${((i*53)%60)-30}px;--d:${(i%5)*.09}s"></i>`)}</span>`;
+// Kagaya's Final Resolve (CK, Nov 6, 2026: "make him explode, not like Muzan", then "do it better"). Muzan cracks red and bursts;
+// Kagaya goes calm: two heartbeats of gold light with rays turning behind him, then a white-out, a billowing fireball, a flat
+// shockwave rolling along the ground, burning paper/shoji shards, rising embers, a smoke column, a scorch mark, and wisteria
+// petals settling. Keeps the plain <span class="cr-pic"> so the TV board can swap in its own card (tv.js).
+const kagayaPic = html => {
+  const fire=[[0,0,1],[-26,-10,.8],[24,-14,.85],[-12,18,.7],[16,16,.75],[0,-30,.7]].map(([x,y,k],i)=>`<b class="kres-fire" style="--x:${x}px;--y:${y}px;--k:${k};--d:${i*.04}s"></b>`).join('');
+  const shards=rep(24,i=>{ const a=-175+i*(350/23)+((i*29)%12), r=90+((i*41)%130); return `<i class="kres-shard${i%3?'':' burn'}" style="--dx:${Math.round(Math.cos(a*Math.PI/180)*r)}px;--dy:${Math.round(Math.sin(a*Math.PI/180)*r*.65)-50}px;--r:${(i*67)%360}deg;--w:${6+(i*5)%11}px;--h:${8+(i*7)%13}px;--d:${(i%6)*.025}s"></i>`; });
+  const embers=rep(16,i=>`<i class="kres-ember" style="--x:${((i*23)%120)-60}px;--sx:${((i*31)%50)-25}px;--d:${1.35+(i%8)*.09}s;--t:${1.6+(i%5)*.25}s"></i>`);
+  const smoke=rep(4,i=>`<b class="kres-smoke" style="--x:${[-24,14,-6,22][i]}px;--d:${1.45+i*.14}s;--k:${[1,.85,1.15,.9][i]}"></b>`);
+  const petals=rep(16,i=>`<i class="kres-petal" style="--x:${(i*29)%100}%;--dx:${((i*37)%70)-35}px;--d:${2.05+(i%8)*.17}s"></i>`);
+  return `<span class="crumble resolve kres"><b class="kres-rays"></b><b class="kres-scorch"></b><span class="cr-pic">${html}</span><b class="kres-wash"></b>${fire}<b class="kres-ground"></b><b class="kres-ground g2"></b>${shards}${embers}${smoke}${petals}</span>`;
+};
+const crumblePic = (kind, html) => kind==='resolve' ? kagayaPic(html) : `<span class="crumble ${kind}"><span class="cr-pic">${html}</span>${rep(10, i=>`<i style="--x:${(i*37)%100}%;--dx:${((i*53)%60)-30}px;--d:${(i%5)*.09}s"></i>`)}</span>`;
 // The cut: the head half flies off and spins, a red spray at the cut (CK, Nov 3, 2026). An Upper Moon's rank kanji shatters first.
 const slicePic = (u, html, style='slash') => `<span class="slice cut-${style}${BYID[u.id]&&BYID[u.id].upper?' upcut':''}">${BYID[u.id]&&BYID[u.id].upper?`<b class="upk" aria-hidden="true"><span>上弦</span><span>上弦</span></b>`:''}<span class="sl-b">${html}</span><span class="sl-t">${html}</span><i class="sl-line"></i>${rep(7,i=>`<i class="sl-red" style="--a:${-60+i*20}deg;--d:${i*.03}s"></i>`)}</span>`;
 // A special that knocks someone out ends on a big KO in the middle of the stage (CK, Nov 3, 2026; ink and hanko marks tried and dropped)
@@ -966,7 +993,8 @@ function beforeAwake(draw){
 function cutin(u, clip, line){
   const sg=sigOfLine(u,line);   // the special this beat is for, not the one now waiting
   const style=styleOf(u,'special'), right=u.p!==leftSide();
-  return `<div class="cutin sty sty-${style}${right?' right':''}${clip?' hasclip':''}" style="--tc:${pc(u.p)}" aria-hidden="true">${line&&line.flare?'<span class="markflare2"><b>痣</b></span>':''}
+  const breath = !u.demon && slayerSide(BYID[u.id]);   // Total Concentration before a slayer's special
+  return `<div class="cutin sty sty-${style}${right?' right':''}${clip?' hasclip':''}${breath?' breathin':''}" style="--tc:${pc(u.p)}" aria-hidden="true">${line&&line.flare?'<span class="markflare2"><b>痣</b></span>':''}${breath?`<span class="tcbreath">${rep(12,i=>`<i style="--a:${i*30}deg;--d:${(i%4)*.06}s"></i>`)}<b>全集中</b></span>`:''}
     ${clip?clipVideo(clip)+'<span class="cbars"></span><span class="lines"></span><span class="cflash"></span>':'<span class="lines"></span>'}
     <div class="band"><span class="cimg">${ART[u.id]?`<img decoding="sync" src="${ART[u.id]}" alt="">`:`<span class="ck">${u.g}</span>`}</span>
       <div class="ctext"><span class="cwho" style="color:${pc(u.p)}">${esc(u.name)}</span><span class="cmove">${esc(sg.name)}</span>${(sg.quote||BYID[u.id].sig.quote)?`<span class="cquote">“${esc(sg.quote||BYID[u.id].sig.quote)}”</span>`:''}</div></div>
@@ -1005,7 +1033,7 @@ function miniTeam(p, moment, involved){
   return `<div class="mini" style="--tc:${pc(p)}">${us.map(({u,o})=>{
     const hp=o.hp===undefined?u.hp:o.hp, up=hp>0, h=up?pct(u,hp):0, from=o.from===undefined?h:Math.max(0,pct(u,o.from));
     return `<div class="m${up?'':' dead'}${involved.has(u.uid)?' inv':''}${o.flash?' '+o.flash:''}${o.calm?' calm':''}${o.lost?' lost':''}${o.smolder?' smolder':''}${o.hid?' talisman':''}">${sealBtn(u,'mini')}
-      <span class="mb${up&&h<=LOW?' low':''}"><i class="${from!==h?'drain':''}" style="width:${h}%;--from:${from}%"></i></span></div>`; }).join('')}</div>`;
+      <span class="mb${up&&h<=LOW?' low':''}"><i class="${from<h?'drain':''}" style="width:${h}%;--from:${from}%"></i>${from>h?`<b class="dmgghost" style="left:${h}%;width:${from-h}%"></b>`:''}</span></div>`; }).join('')}</div>`;
 }
 // One line for a group attack: "Frozen Lotus hits 4 enemies · 1 knocked out"
 function groupSummary(lines){
@@ -1087,9 +1115,13 @@ function mvpPanel(){
 }
 // A character from each arc, faded into its chapter card on the story map
 const ARC_ART = {dream1:['tanjuro'], dream2:['kanae'], dream3:['michikatsu'], dream4:['enmu'], dream5:['tanjiro'], six:['yoriichi'], prologue:['sabito'], asakusa:['tamayo'], tsuzumi:['kyogai'], natagumo:['rui'], mugen:['rengoku'], district:['tengen'],
-  swordsmith:['muichiro_mark'], castle:['nakime'], flashback:['yoriichi'], dawn:['muzan_final']};
+  swordsmith:['muichiro_mark'], castle:['kagaya'], flashback:['yoriichi'], dawn:['muzan_final']};
+// Story map: characters cut out of their pictures (img/deco/cut/<id>.webp, made with rembg's anime / birefnet models; Final Muzan by flood fill),
+// so they stand in front of the chapter's place picture instead of sitting in a box. A character without a cutout uses its normal picture.
+const MAP_CUTS = new Set(['akaza', 'enmu', 'kagaya', 'kanae', 'kokushibo', 'kyogai', 'michikatsu', 'muichiro_mark', 'muzan_final', 'rengoku', 'rui', 'sabito', 'tamayo', 'tanjiro', 'tanjuro', 'tengen', 'yoriichi', 'yoriichi_old']);
+const mapArt = id => MAP_CUTS.has(id) ? `img/deco/cut/${id}.webp` : ART[id];
 // Arcs that come back as several chapters (CK): the art for each part, in order
-const CHAPTER_ART = {castle:['nakime','akaza','kokushibo'], flashback:['kanae','yoriichi_old','yoriichi']};
+const CHAPTER_ART = {castle:['kagaya','akaza','kokushibo'], flashback:['kanae','yoriichi_old','yoriichi']};
 // Story map: a winding path through the arcs. Each battle is a node with its stars; tap one to open its details
 // (squads, twist, star goals, Play / Draft replay). It opens on the next battle to play.
 const starRow = (n, of=3) => `<span class="stars" aria-label="${n} of ${of} stars">${Array.from({length:of},(_,i)=>`<i class="${i<n?'on':''}">★</i>`).join('')}</span>`;
@@ -1115,31 +1147,53 @@ function vCeremony(){
     ${S.titleDone?`${line(`From this day, you are the <b>${esc(hashiraTitle())} Hashira</b>.`)}${line(`Thank you, ${name}. My child. Please, stay well.`)}<p class="muted">Your title now shows on your wins and online, and the Sunrise Theme is yours.</p>${actionbar('<button class="btn" data-a="home">Home</button>')}`
       :`<div class="tlabel">Choose your title</div><div class="titles">${seg('titlepick',S.title||'',TITLES.map(t=>[t,t]))}</div>${S.title?`<p class="cline"><b>${esc(S.title)} Hashira ${name}</b></p>`:''}${actionbar(`<button class="btn" data-a="titlesave" ${S.title?'':'disabled'}>Accept the title</button>`)}`}</div>`;
 }
+// The story map (redesigned Nov 6, 2026, CK: "decorate/design the Slayer's journey map better"): a banner with where you are,
+// then the chapters strung along a trail: gold behind you, glowing at the chapter you're on, dashed ahead, ending at the dawn.
+// Each chapter card shows its place picture (lazy: only the ones scrolled to load) and a character; ones not reached yet are greyed.
+function storyChapters(){
+  const out=[]; STAGES.forEach((st,i)=>{ const last=out[out.length-1]; if(last && last.arc===st.arc) last.idx.push(i); else out.push({arc:st.arc, idx:[i]}); });
+  const parts={}, count={}; out.forEach(c=>{ count[c.arc]=(count[c.arc]||0)+1; });
+  out.forEach((c,n)=>{ c.n=n+1; c.part=parts[c.arc]=(parts[c.arc]||0)+1; c.many=count[c.arc]>1; });
+  return out;
+}
+function journeyHead(chs, next){
+  const won=storyWon(), stars=totalStars(), all=won>=STAGES.length, here=chs.find(c=>c.idx.includes(next))||chs[chs.length-1], st=STAGES[all?STAGES.length-1:next];
+  const place=PLACE_ART[st.id]||PLACE_ART[st.arc], arc=ARCS[here.arc];
+  const track=STAGES.map((x,i)=>`<i class="${stageCleared(i)?'jt-on':i===next&&!all?'jt-at':''}"></i>`).join('');
+  const pick=CHAPTER_ART[here.arc]&&CHAPTER_ART[here.arc][here.part-1], who=(all&&(S.campaign||'main')==='main'?['tanjiro']:pick?[pick]:ARC_ART[here.arc]||[]).find(id=>ART[id]);   // a finished journey shows Tanjiro, not the last boss
+  return `<div class="jhead arc-${here.arc}">${place?`<span class="jbg" aria-hidden="true"><img decoding="sync" src="${place}" alt=""></span>`:''}${who?`<span class="jart" aria-hidden="true"><img decoding="sync" src="${mapArt(who)}" alt=""></span>`:''}
+    <div class="jtext"><span class="eyebrow">${all?'Journey complete':`Chapter ${here.n} of ${chs.length}`}</span>
+      <b class="jtitle">${all?'The sun has risen':esc(arc.title)}</b>
+      <span class="jnext">${all?'Every battle won. Chase the stars, or replay any fight.':`Next battle: <b>${esc(st.title)}</b>`}</span></div>
+    <div class="jtrack" aria-hidden="true">${track}</div>
+    <div class="jstat"><span><b>${won}</b> of ${STAGES.length} battles won</span>${starsOn()?`<span>${starRow(1,1)} <b>${stars}</b> of ${STAGES.length*3}</span>`:''}</div></div>`;
+}
 function vStory(){
-  const won=storyWon(), stars=totalStars(), next=nextStage(); let arc='', html='', start=0; const parts={};
-  STAGES.forEach((st,i)=>{
-    if(st.arc!==arc){ if(arc) html+='</div></section>'; arc=st.arc; start=i;
-      let end=i; while(end+1<STAGES.length && STAGES[end+1].arc===arc) end++;   // this chapter: a run of battles in one arc
-      const part=parts[arc]=(parts[arc]||0)+1, many=STAGES.filter((x,k)=>x.arc===arc && k>0 && STAGES[k-1].arc!==arc).length+(STAGES[0].arc===arc?1:0)>1;
-      const mine=STAGES.map((x,k)=>[x,k]).filter(([x,k])=>k>=i && k<=end), wonHere=mine.filter(([x,k])=>stageCleared(k)).length;
-      const pick=CHAPTER_ART[arc]&&CHAPTER_ART[arc][part-1], current=mine.some(([x,k])=>k===next), art=(pick?[pick]:ARC_ART[st.arc]||[]).filter(id=>ART[id]);
-      html+=`<section class="chap arc-${st.arc}${current?' current':''}${wonHere===mine.length?' done':''}">
-        ${art.length?`<span class="chapart" aria-hidden="true">${art.map(id=>`<img decoding="sync" src="${ART[id]}" alt="">`).join('')}</span>`:''}
-        <div class="chaphead"><span class="chapk">${ARCS[st.arc].g}</span><b>${esc(ARCS[st.arc].title)}${many?` · Part ${part}`:''}</b>
-          <span class="chapprog">${wonHere===mine.length?'✓ Complete':current?'Now playing':`${wonHere} of ${mine.length} won`}</span></div><div class="chaprows">`; }
-    const open=stageUnlocked(i), clear=stageCleared(i), sel=S.storySel===i, unl=STAGE_UNLOCKS[st.id]||[];
-    html+=`<div class="srow${clear?' clear':''}${open?'':' locked'}${sel?' sel':''}${st.arc==='flashback'?' flash':''}">
+  const next=nextStage(), chs=storyChapters(), main=(S.campaign||'main')==='main';
+  const html=chs.map(ch=>{
+    const st0=STAGES[ch.idx[0]], won=ch.idx.filter(stageCleared).length, done=won===ch.idx.length, now=ch.idx.includes(next) && !done, ahead=!done && !now && !ch.idx.some(stageUnlocked);
+    const pick=CHAPTER_ART[ch.arc]&&CHAPTER_ART[ch.arc][ch.part-1], art=(pick?[pick]:ARC_ART[ch.arc]||[]).filter(id=>ART[id]), place=PLACE_ART[st0.id]||PLACE_ART[ch.arc];
+    const rows=ch.idx.map(i=>{ const st=STAGES[i], open=stageUnlocked(i), clear=stageCleared(i), sel=S.storySel===i, unl=STAGE_UNLOCKS[st.id]||[];
+      return `<div class="srow${clear?' clear':''}${open?'':' locked'}${sel?' sel':''}${st.arc==='flashback'?' flash':''}${i===next&&!clear?' nextup':''}${S.mapAdv&&i===S.mapAdv.cleared?' justwon':''}${S.mapAdv&&i===next&&!clear?' justopen':''}">
       <button class="srowbtn" data-a="storysel" data-v="${i}" ${open?'':'disabled'} aria-expanded="${sel}">
         <span class="snum">${clear?'✓':open?i+1:'🔒'}</span>
         <span class="sinfo"><b>${esc(st.title)}</b>
           <span class="sfaces"><span class="muted">vs</span>${st.enemy.map(id=>seal(BYID[id],'xs')).join('')}${clear&&starsOn()?starRow(stageStars(st.id)):''}</span></span>
         ${unl.length?`<span class="sunl"><small>Unlocks</small><span>${unl.slice(0,3).map(id=>seal(BYID[id],'xs')).join('')}${unl.length>3?`<i>+${unl.length-3}</i>`:''}</span></span>`:''}
-      </button>${sel&&open?stageDetail(st,i,clear):''}</div>`;
-  });
-  html+='</div></section>';
+      </button>${sel&&open?stageDetail(st,i,clear):''}</div>`; }).join('');
+    const adv=S.mapAdv, advDone=adv&&done&&ch.idx.includes(adv.cleared), advNow=adv&&now;   // the journey advances after a new win (mapAdvance in app.js)
+    return `<div class="jleg ${done?'jdone':now?'jnow':'jtodo'}${advDone?' jadvdone':''}${advNow?' jadvnow':''}"><span class="jnode" aria-hidden="true">${done?'✓':ch.n}</span>
+      <section class="chap arc-${ch.arc}${now?' current':''}${done?' done':''}${ahead?' ahead':''}">
+        ${place?`<span class="chapbg" aria-hidden="true"><img loading="lazy" src="${place}" alt=""></span>`:''}
+        ${art.length?`<span class="chapart" aria-hidden="true">${art.map(id=>`<img decoding="sync" src="${mapArt(id)}" alt="">`).join('')}</span>`:''}
+        <div class="chaphead"><span class="chapk">${ARCS[ch.arc].g}</span><span class="chapname"><small>Chapter ${ch.n}${ch.many?` · Part ${ch.part}`:''}</small><b>${esc(ARCS[ch.arc].title)}</b></span>
+          <span class="chapprog">${done?'✓ Complete':now?'Now playing':ahead?'Ahead':`${won} of ${ch.idx.length} won`}</span></div>
+        <div class="chaprows">${rows}</div></section></div>`;
+  }).join('');
+  const end=`<div class="jleg jend${storyWon()>=STAGES.length?' jdone':''}"><span class="jnode" aria-hidden="true">${main?'暁':'終'}</span><span class="jendtxt">${main?'The last dawn':'Journey’s end'}</span></div>`;
   return `${topbar('Story mode', S.campaign==='dream'?'The Endless Dream':S.campaign==='six'?'Earned Every Star':'The Slayer’s journey')}
-    ${campaignTabs()}<div class="storytotals"><span><b>${won}</b> of ${STAGES.length} battles won</span>${stars&&starsOn()?`<span class="st3">${starRow(1,1)} <b>${stars}</b> of ${STAGES.length*3}</span>`:''}</div>
-    <div class="chapters">${html}</div>`;
+    ${campaignTabs()}${journeyHead(chs,next)}
+    <div class="chapters">${html}${end}</div>`;
 }
 function stageDetail(st,i,clear){
   const tw=twistText(st), n=stageStars(st.id), unl=STAGE_UNLOCKS[st.id]||[];
@@ -1188,7 +1242,7 @@ function vScene(){
       <span class="topbtns"><button class="btn ghost small gearmini" data-a="settings" aria-label="Settings">⚙</button><button class="btn ghost small" data-a="sceneskip">Skip</button></span></div>`;
   if(S.sceneUnlock){   // after the ending scene: what this win unlocked
     return `<div ${placeStyle(st)}class="scene arc-${st.arc} vscard unlockcard" data-a="scenenext"><span class="lbox t" aria-hidden="true"></span>${fx}${head}
-      <div class="unlocktitle"><span class="eyebrow">Battle won</span>${starsOn()?`${starRow(S.starsGot||1)}
+      <div class="unlocktitle"><span class="eyebrow">Battle won</span>${starsOn()?`<span class="stampstars">${starRow(S.starsGot||1)}</span>
         <div class="goals">${starGoals(st).map((g,k)=>`<span class="${(S.goalsNow||[])[k]?'got':''}">★ ${esc(g)}</span>`).join('')}</div>
         ${(S.starsGot||0)>(S.starsBest||0)&&S.starsBest?'<span class="muted">New best!</span>':''}`:''}
         ${S.newUnlocks&&S.newUnlocks.length?'<b>You have unlocked</b>':''}</div>

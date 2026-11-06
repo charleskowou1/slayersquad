@@ -82,7 +82,7 @@ const CLIPS = {
   mice:         {use: 'https://media.tenor.com/-t9whuidwBwAAAPo/ninju-shino-buff-mice.mp4'},
   hotaru:       {use: 'https://media.tenor.com/1Z2gMbfksGgAAAPo/haganezuka-kimetsu-no-yaiba.mp4'},
   kiriya:       {use: 'https://media.tenor.com/pNNAQOoa9zsAAAPo/kiriya-infinity-castle.mp4'},
-  kagaya:       {special: 'https://media.tenor.com/cZnt_1BjaggAAAPo/ubuyashiki-kimetsu-no-yaiba.mp4'},   // Final Resolve
+  kagaya:       {special: 'clips/kagaya-special.mp4'},   // Final Resolve: CK's Tenor clip, last 2 s cut (the fade to white; CK, Nov 6, 2026: too long, twice)
 };
 // Sounds for the same moments, same shape as CLIPS: files in sounds/ (e.g. 'sounds/doma-special.mp3').
 // A clip's sound plays instead of the usual effect for that moment.
