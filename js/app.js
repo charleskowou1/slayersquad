@@ -92,6 +92,10 @@ const KO_TESTS = {
   petals:   {you:['akaza'], foe:['kanao'], note:'Kanao falls: butterfly petals.'},
   behead:   {you:['tanjiro'], foe:['hand','swamp'], note:'A demon is beheaded (not the last blow, so normal speed).'},
   muzan:    {you:['yoriichi'], foe:['muzan'], note:'Muzan cracks, the stage shakes, and he explodes.'},
+  // mini-game prototypes (Nov 7, 2026; js/mini.js)
+  m_hilo:   {custom:()=>miniStart('hilo'), note:'Higher or Lower: guess whether the next fighter has more or less of the stat.'},
+  m_memory: {custom:()=>miniStart('memory'), note:'Corps Memory Training: find the six pairs.'},
+  m_sel:    {custom:()=>miniStart('sel'), note:'Final Selection: tap or swipe the demons until sunrise.'},
   // battle animations (CK, Nov 6, 2026)
   b_impact: {you:['rengoku'], foe:['hand','swamp'], keep:true, setup:()=>{ S.teams[0][0].pow=30; const h=S.teams[1][0]; h.max=h.hp=50; S.teams[1].forEach(u=>{u.pow=0;u.cd=9;u.spd=0;}); S.teams[0][0].spd=99; }, note:'Attack the Hand Demon: a 40%+ hit flashes an inverted manga frame.'},
   b_ghost:  {you:['tanjiro','zenitsu','inosuke'], foe:['akaza','hand'], keep:true, setup:()=>{ S.teams[1].forEach(u=>{u.pow=0;u.cd=9;u.spd=0;}); }, note:'Attack anyone: the health bars drop at once and a white chip drains after.'},
@@ -847,7 +851,10 @@ const modeKey = () => (typeof isTV==='function'&&isTV()?'tv_':'')+(S.coop?'coop_
 // Every tracked day is a New York date (CK's time zone), so every player's day rolls over at the same moment. admin.js uses the same zone.
 const TRACK_TZ='America/New_York';
 const trackDay = () => { try{ return new Intl.DateTimeFormat('en-CA',{timeZone:TRACK_TZ, year:'numeric', month:'2-digit', day:'2-digit'}).format(new Date()); }catch(e){ return todayKey(); } };
-const trackOff = () => { try{ return !FIREBASE_CONFIG || !navigator.onLine || navigator.webdriver || /HeadlessChrome/.test(navigator.userAgent) || /notrack/.test(location.search) || location.hostname==='localhost' || !!localStorage.getItem('squad-draft-admin'); }catch(e){ return true; } };   // test browsers don't count (Claude's live tests counted once, Nov 2026)
+// CK's own copy (Live Server at 127.0.0.1:5500, localhost or a file) never counts: its test links start Quickplay matches that are never
+// finished, which made Quickplay look abandoned on the admin page (Nov 7, 2026). The live site's admin flag can't reach these.
+const LOCAL_COPY = /^(localhost|127\.0\.0\.1|\[::1\]|0\.0\.0\.0)$/.test(location.hostname) || location.protocol==='file:';
+const trackOff = () => { try{ return !FIREBASE_CONFIG || !navigator.onLine || navigator.webdriver || /HeadlessChrome/.test(navigator.userAgent) || /notrack|[?&]test=/.test(location.search) || LOCAL_COPY || !!localStorage.getItem('squad-draft-admin'); }catch(e){ return true; } };   // test browsers don't count (Claude's live tests counted once, Nov 2026)
 function track(keys){
   if(trackOff()) return; const day=trackDay();
   // mode and story counters also get a dated copy, so the admin page can filter them by time
@@ -889,7 +896,7 @@ async function sendReport(msg, auto){
 }
 // Crashes report themselves (at most 3 each time the game is open)
 let CRASHES=0;
-window.addEventListener('error',e=>{ if(!e.filename || CRASHES>=3 || navigator.webdriver || location.hostname==='localhost' || !navigator.onLine) return; CRASHES++;
+window.addEventListener('error',e=>{ if(!e.filename || CRASHES>=3 || navigator.webdriver || LOCAL_COPY || !navigator.onLine) return; CRASHES++;
   sendReport(`${e.message} (${String(e.filename).split('/').pop()}:${e.lineno})`, true).catch(()=>{}); });
 function postStats(g){
   if(!g || !FIREBASE_CONFIG || !navigator.onLine) return;

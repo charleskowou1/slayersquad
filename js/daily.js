@@ -116,9 +116,9 @@ function finalTaunt(team, foes){
    Solo modes sharing one flow: your own draft (or none), the enemy revealed afterwards (startBattle → gmEnemy, phase 'reveal').
    Gauntlet and Upper Moon Rush are runs: S.series.wave counts the fights, and survivors carry into the next one (gmNext). */
 const GM = {
-  gauntlet:{title:'Gauntlet', blurb:'One squad, wave after wave. Damage carries over. How far can you get?', kj:'連', line:'Survive wave after wave', budget:30, foe:'The wave', art:'tanjiro'},
+  gauntlet:{title:'Gauntlet', blurb:'One squad, wave after wave. Damage carries over. How far can you get?', kj:'連', line:'Survive wave after wave', budget:30, foe:'The wave', art:'zohakuten'},
   rush:{title:'Upper Moon Rush', blurb:'Slayers only. Beat the Upper Moons one by one, then Muzan. Damage carries over.', kj:'月', line:'Eight fights to Muzan', budget:35, foe:'Upper Moons', art:'kokushibo'},
-  random:{title:'Random Squads', blurb:'Both teams are dealt at random, from 5 to 50 points. No draft: just play your hand.', kj:'運', line:'No draft, just your hand', budget:20, foe:'Computer', art:'zenitsu'},
+  random:{title:'Random Squads', blurb:'Both teams are dealt at random, from 5 to 50 points. No draft: just play your hand.', kj:'運', line:'No draft, just your hand', budget:20, foe:'Computer', art:'mitsuri'},
 };
 const RUSH_FIGHTS = [['kaigaku'],['gyokko'],['gyutaro','daki'],['hantengu'],['akaza'],['doma'],['kokushibo'],['muzan_final']];
 const RUSH_DEMONS = ['enmu','rui','kyogai','susamaru','yahaba','hand','swamp'], RUSH_ESCORT = 3, GM_HEAL = .2;   // what survivors get back between fights in a run

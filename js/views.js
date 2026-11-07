@@ -243,8 +243,19 @@ const pickTile = (attrs, hero, kj, title, line, stat, art) => `<button class="gm
     <span class="gmtext"><b>${esc(title)}</b><small>${esc(line)}</small></span></button>`;
 function gmList(){
   const stat=id=>{ const r=gmStats(id); return !r.played?'':id==='gauntlet'?`Best ${plural(r.best,'wave')}`:id==='rush'?`Best ${r.best} of ${RUSH_FIGHTS.length}`:triesText(r); };
-  return `<div class="gmgrid qp">${pickTile('data-a="qpmode" data-v="classic"',true,'戦','Classic','Choose your difficulty, points and pool.','','rengoku')}${gmTile('final','終','Final Form','Muzan picks the Upper Moons to beat you. Harder than Hard.',stat('final'),'muzan_final')}
-    ${Object.entries(GM).map(([id,m])=>gmTile(id,m.kj,m.title,m.line,stat(id),m.art)).join('')}${pickTile('data-a="openmode" data-v="practice"',false,'練','Practice','Draft every team yourself','','typezero')}</div>`;
+  return `<div class="qphead"><span class="qpk" aria-hidden="true">戦</span><b>Battles</b><small>Draft a squad and fight the computer</small></div><div class="gmgrid qp">${pickTile('data-a="qpmode" data-v="classic"',true,'戦','Classic','Choose your difficulty, points and pool.','','rengoku')}${gmTile('final','終','Final Form','Muzan picks the Upper Moons to beat you. Harder than Hard.',stat('final'),'muzan_final')}
+    ${Object.entries(GM).map(([id,m])=>gmTile(id,m.kj,m.title,m.line,stat(id),m.art)).join('')}${pickTile('data-a="openmode" data-v="practice"',false,'練','Practice','Draft every team yourself','','typezero')}</div>${miniList()}`;
+}
+// Quickplay → Mini-games (js/mini.js): quick games with a best score each
+function miniList(){
+  if(typeof miniBest!=='function') return '';   // tools that draw screens don't load mini.js
+  // pictures (CK, Nov 7, 2026): Urokodaki ("sharpen your judgment"), Muichiro (the Hashira who lost his memories), Sabito (CK's pick)
+  const b=g=>miniBest(g), games=[['hilo','高','Higher or Lower','Guess the stat',b('hilo')?`Best streak ${b('hilo')}`:'New',ART.urokodaki],
+    ['memory','記','Memory Training','Match the pairs',b('memory')?`Best ${b('memory')} moves`:'New',ART.muichiro],
+    ['sel','選','Final Selection','Slash until sunrise',b('sel')?`Best ${b('sel')} slain`:'New',ART.sabito]];
+  return `<div class="qphead mini"><span class="qpk" aria-hidden="true">遊</span><b>Mini-games</b><small>Quick games between battles</small></div>
+    <div class="mggrid">${games.map(([g,kj,t,l,st,art])=>`<button class="mgcard" data-a="ministart" data-v="${g}"><span class="mgart">${art?`<img decoding="sync" src="${art}" alt="">`:''}<span class="mgk" aria-hidden="true">${kj}</span></span>
+      <span class="mgname">${esc(t)}</span><span class="mgline">${esc(l)}</span><span class="mgbest${st==='New'?' new':''}">${esc(st)}</span></button>`).join('')}</div>`;
 }
 const fightName = () => { const g=S.series; return !g?gmName():S.mode==='rush'?`Fight ${g.wave} of ${RUSH_FIGHTS.length}`:`Wave ${g.wave}`; };
 function vReveal(){
