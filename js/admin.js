@@ -197,11 +197,23 @@ async function makeCode(i){
   try{ await firebase.database().ref('saves/'+c).set({v:1, at:Date.now(), rev:code(), data:{[STORY_KEY]:JSON.stringify(story), 'squad-draft-dream-reset':'1'}}); el.textContent=c.match(/.{4}/g).join('-'); }
   catch(e){ el.textContent='Could not make it: '+e.message; }
 }
+// Copy all data (CK, Nov 7, 2026): everything start() loaded, as one JSON block to paste into Claude for analysis
+let COPY_DATA=null;
+document.getElementById('copyall').onclick=async e=>{
+  const b=e.currentTarget, done=t=>{ b.textContent=t; setTimeout(()=>{ b.textContent='Copy all data'; },2500); };
+  if(!COPY_DATA) return done('Still loading…');
+  const text='Slayer Squad admin data\n'+JSON.stringify(COPY_DATA);
+  try{ await navigator.clipboard.writeText(text); }
+  catch(err){ const ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); }catch(e2){} ta.remove(); }
+  done(`Copied ✓ (${Math.max(1,Math.round(text.length/1024))} KB)`);
+};
 async function start(){
   const get=p=>firebase.database().ref(p).get().then(s=>s.val()||{});
   const uid=firebase.auth().currentUser.uid; let denied=false; const no=()=>{ denied=true; return {}; };
   const [t,reports,seen]=await Promise.all([get('track').catch(no),get('reports').catch(no),get('seen').catch(no)]);
-  draw(uid, t, await get('stats').catch(()=>({})), reports, denied, seen);
+  const stats=await get('stats').catch(()=>({}));
+  COPY_DATA={copied:new Date().toISOString(), denied, track:t, stats, seen, reports};   // what Copy all data copies
+  draw(uid, t, stats, reports, denied, seen);
 }
 document.getElementById('refresh').onclick=async e=>{ const b=e.currentTarget; b.classList.add('spin'); b.textContent='Loading…'; try{ await start(); }finally{ b.classList.remove('spin'); b.textContent='Refresh'; } };
 (async()=>{ try{ localStorage.setItem('squad-draft-admin','1') }catch(e){}
