@@ -2694,3 +2694,6 @@ body:has(#sheet .modal){overflow:hidden}
 @media (prefers-reduced-motion:reduce){.hlbadge.ask,.hlcard.rev,.hlcard.rev .hlbadge,.hlrow.slidein .hlcard{animation:none!important}}
 .hilo{gap:16px}
 .hilo .hlbtns2 button{padding:17px 10px;font-size:1.05rem}
+/* shown when a screen fails to draw (render() in app.js) */
+.drawfail{display:grid;justify-items:center;gap:10px;margin:40px auto;padding:24px 18px;max-width:360px;text-align:center;border-radius:16px;border:1px solid var(--line-2);background:var(--grain),var(--surface)}
+.drawfail b{font-family:var(--display);font-size:1.3rem}

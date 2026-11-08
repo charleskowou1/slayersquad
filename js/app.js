@@ -20,7 +20,7 @@ function playVid(v){
   PENDING_VIDS.forEach(v=>{ if(!v.isConnected){ PENDING_VIDS.delete(v); return; } const p=v.play(); if(p && p.then) p.then(()=>{ PENDING_VIDS.delete(v); v.classList.remove('vidwait'); }).catch(()=>{}); });
 }, {passive:true}));
 // Opening Latest Updates clears its New badge until the next version
-document.addEventListener('toggle',e=>{ if(e.target.id!=='updates' || !e.target.open) return; try{ localStorage.setItem('squad-draft-seen-update',LATEST_UPDATE.version); }catch(x){} const d=e.target.querySelector('.newdot'); if(d) d.remove(); },true);
+document.addEventListener('toggle',e=>{ if(e.target.id!=='updates' || !e.target.open) return; try{ if(typeof LATEST_UPDATE==='object') localStorage.setItem('squad-draft-seen-update',LATEST_UPDATE.version); }catch(x){} const d=e.target.querySelector('.newdot'); if(d) d.remove(); },true);
 // The home roster drifts on its own and you can swipe it; touching it pauses the drift for a few seconds. A redraw keeps its place.
 const ROSTER_ROW = {x:0, dir:1, until:0, on:false, at:0, speed:10};   // speed in pixels a second, the same on every screen
 // Drift moves the row on the graphics layer (smooth, fractions of a pixel); a finger gets ordinary scrolling (whole pixels), and the two hand over in place
@@ -187,7 +187,10 @@ function render(){
   const pics=new Map(); app.querySelectorAll('img:not([data-k])').forEach(im=>{ const k=im.getAttribute('src'); if(!pics.has(k)) pics.set(k,[]); pics.get(k).push(im); });
   // a pop-up redrawn as the same pop-up keeps its scroll (Settings' bug report sits at the bottom and jumped to the top on Send)
   const mIn=sheet.querySelector('.modal .in'), mKey=mIn&&mIn.getAttribute('aria-label'), mTop=mIn?mIn.scrollTop:0;
-  beforeAwake(()=>{ app.innerHTML=VIEWS[view](); sheet.innerHTML=vSheet(); });
+  // A screen that fails to draw shows a Reload card instead of a blank page, and is still reported (crashes in render were blanking the home screen)
+  beforeAwake(()=>{ try{ app.innerHTML=VIEWS[view](); sheet.innerHTML=vSheet(); }
+    catch(err){ app.innerHTML=`<div class="drawfail"><b>Something went wrong</b><span class="muted">Reloading usually fixes it. Your progress is safe.</span><button class="btn" onclick="location.reload()">Reload</button><button class="btn ghost" data-a="home">Home</button></div>`; sheet.innerHTML='';
+      if(CRASHES<3 && !navigator.webdriver && !LOCAL_COPY && navigator.onLine){ CRASHES++; sendReport(`${err&&err.message||err} (render ${view})`, true).catch(()=>{}); } } });
   { const n=sheet.querySelector('.modal .in'); if(n && mKey && n.getAttribute('aria-label')===mKey) n.scrollTop=mTop; }
   if(app.querySelector('.kolater')) setTimeout(()=>app.querySelectorAll('.kolater').forEach(e=>e.classList.remove('kolater')), quickMotion()?150:620);   // a special's knockout waits for the special to land
   app.querySelectorAll('img:not([data-k])').forEach(im=>{ const old=(pics.get(im.getAttribute('src'))||[]).shift(); if(old){ old.className=im.className; im.replaceWith(old); } });
@@ -889,7 +892,8 @@ async function trackOpen(){
 setTimeout(trackOpen, 5000);
 setTimeout(arriveFromMove, 800);
 setTimeout(arriveFromInvite, 300);
-const gameVersion = async () => { try{ return ((await caches.keys()).find(k=>k.startsWith('squad-draft-v'))||'').replace('squad-draft-v','') }catch(e){ return '' } };
+// the newest offline copy's version (a browser can still hold an older cache for a moment, which made reports say the wrong version)
+const gameVersion = async () => { try{ const n=(await caches.keys()).map(k=>+(/^squad-draft-v(\d+)$/.exec(k)||[])[1]||0); const top=Math.max(0,...n); return top?String(top):(typeof LATEST_UPDATE==='object'?String(LATEST_UPDATE.version):''); }catch(e){ return '' } };
 async function sendReport(msg, auto){
   const db=await firebaseReady();
   await db.ref('reports').push({at:Date.now(), msg:String(msg).slice(0,500), v:await gameVersion(), ua:(navigator.userAgent||'').slice(0,200), where:String(S.mode+' / '+S.phase).slice(0,60), auto:auto?1:0});

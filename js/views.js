@@ -598,8 +598,11 @@ function noteHTML(n, self){
 }
 // Hantengu's split forms, shown on his card: each form, what it becomes when it falls, and the form they merge into
 // The home screen's Latest Updates tile (js/updates.js)
-const updatesNew = () => { try{ return +localStorage.getItem('squad-draft-seen-update')!==LATEST_UPDATE.version; }catch(e){ return false; } };
-const updatesPanel = () => `<details class="panel" id="updates"><summary>Latest Updates${updatesNew()?'<i class="newdot">New</i>':''}</summary>
+// If updates.js didn't load (a dropped connection while the offline copy was switching versions: three crashes on Nov 8, 2026
+// blanked someone's home screen), the tile just isn't shown.
+const latestUpdate = () => typeof LATEST_UPDATE==='object' && LATEST_UPDATE ? LATEST_UPDATE : null;
+const updatesNew = () => { try{ return !!latestUpdate() && +localStorage.getItem('squad-draft-seen-update')!==LATEST_UPDATE.version; }catch(e){ return false; } };
+const updatesPanel = () => !latestUpdate() ? '' : `<details class="panel" id="updates"><summary>Latest Updates${updatesNew()?'<i class="newdot">New</i>':''}</summary>
     <div class="updhead"><b>Version ${LATEST_UPDATE.version}</b><span class="muted">${esc(LATEST_UPDATE.date)}</span></div>
     <ul class="updlist">${LATEST_UPDATE.notes.map(([t,d])=>`<li><b>${esc(t)}</b>${esc(d)}</li>`).join('')}</ul></details>`;
 function splitTree(c){
