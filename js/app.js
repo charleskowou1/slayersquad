@@ -173,11 +173,14 @@ function render(){
     document.body.style.setProperty('--dawn', Math.max(0, Math.min(1, (S.round-from)/(st?n-1:before))).toFixed(3));
     document.body.style.setProperty('--heat', st ? 0 : Math.max(0, Math.min(1, (S.round-sunRise())/4)).toFixed(3)); }
   // Story battles fight in front of the battle's place picture (img/places/, the same one as its cutscenes)
-  const place=['plan','result','pass','scout','ready','over'].includes(view) && (st ? PLACE_ART[st.id]||PLACE_ART[st.arc] : S.place && PLACE_ART[S.place]);   // story: the battle's place; other modes: the match's
+  const place=!ctl && ['plan','result','pass','scout','ready','over'].includes(view) && (st ? PLACE_ART[st.id]||PLACE_ART[st.arc] : S.place && PLACE_ART[S.place]);   // story: the battle's place; other modes: the match's (not on a TV controller: the TV shows it)
   document.body.classList.toggle('placebg', !!place);
   // Last stand: your final fighter under 25% gets a heartbeat and red edges while you choose
   { const me=S.teams && (S.planFor??S.me??0), mine=S.teams && S.teams[me] && alive(me); document.body.classList.toggle('laststand', view==='plan' && !!mine && mine.length===1 && mine[0].hp<=mine[0].max*.25); }
-  if(view==='plan' && S.round===1 && S.teams && !S.synShown) synergyIntro();
+  if(view==='plan' && S.round===1 && S.teams && !S.synShown && !ctl) synergyIntro();   // the TV plays the synergy cut-ins, not the controller phone
+  // TV controller: a clean phone screen (body.ctlmode), and a buzz + ding when it becomes this phone's turn to choose
+  document.body.classList.toggle('ctlmode', !!ctl);
+  if(ctl){ const mine=['plan','draft','spin','scout'].includes(view); if(mine && render.ctlWas!==view+S.round){ try{ navigator.vibrate&&navigator.vibrate([30,40,30]); }catch(e){} sfx('pick'); } render.ctlWas=mine?view+S.round:null; }
   if(place) document.body.style.setProperty('--placebg', `url('${place}')`);
   cloudCheck();   // back up saved progress a few seconds after it changes
   queueMicrotask(rosterKeep);

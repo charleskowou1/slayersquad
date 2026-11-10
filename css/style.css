@@ -2697,3 +2697,63 @@ body:has(#sheet .modal){overflow:hidden}
 /* shown when a screen fails to draw (render() in app.js) */
 .drawfail{display:grid;justify-items:center;gap:10px;margin:40px auto;padding:24px 18px;max-width:360px;text-align:center;border-radius:16px;border:1px solid var(--line-2);background:var(--grain),var(--surface)}
 .drawfail b{font-family:var(--display);font-size:1.3rem}
+
+/* TV controller phone (redesign Nov 10, 2026; vCtlWatch in tv.js): header with the TV link, a status card, buttons in the bottom bar */
+body.ctlmode .wrap{gap:12px}
+.ctlwatch{min-height:auto;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;text-align:left;gap:12px;padding:0}
+.ctlhead{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ctlhead .btn{margin-left:auto}
+.ctlpill{display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;border:1px solid var(--line-2);background:var(--surface);font-size:.78rem;font-weight:800;letter-spacing:.04em}
+.ctlpill .dot{width:8px;height:8px;border-radius:50%;background:#52b388;box-shadow:0 0 0 3px rgba(82,179,136,.25);animation:ctldot 2s ease-in-out infinite}
+.ctlpill.off .dot{background:#e05a4a;box-shadow:0 0 0 3px rgba(224,90,74,.25);animation:none}
+@keyframes ctldot{50%{box-shadow:0 0 0 6px rgba(82,179,136,0)}}
+.ctlhead .ctlwho{font-size:.86rem;font-weight:800}
+.ctlcard{display:grid;gap:10px;padding:16px;border-radius:16px;border:1px solid var(--line-2);background:var(--grain),var(--surface)}
+.ctlcard b{font-family:var(--display);font-size:1.45rem;line-height:1.15}
+.ctlcard.warn{border-color:#e05a4a}
+.ctlcard.win{text-align:center;justify-items:center;border-color:var(--gold);background:var(--grain),radial-gradient(circle at 50% 0,rgba(214,165,77,.18),transparent 70%),var(--surface)}
+.ctlcard .ctlwinner{font-size:2rem;color:var(--gold)}
+.ctlcard.win.mine .ctlwinner{animation:pop .5s ease-out}
+.ctlstat{display:grid;gap:3px}
+.ctlwaitline{color:var(--gold);font-weight:700;font-size:.88rem}
+.ctlteams{display:grid;gap:10px;width:100%}
+.ctlteam{display:grid;gap:5px;padding:9px 10px;border-radius:12px;background:rgba(0,0,0,.18);border-left:3px solid var(--tc)}
+.ctlteam.mine{background:color-mix(in srgb,var(--tc) 10%,rgba(0,0,0,.18))}
+.ctltn{font-size:.74rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--tc)}
+.ctlfs{display:flex;flex-wrap:wrap;gap:6px}
+.ctlf{position:relative;display:inline-flex;flex-direction:column;gap:3px;width:40px}
+.ctlf .gl{width:40px;height:40px}
+.ctlf i{display:block;height:3px;border-radius:2px;background:var(--tc)}
+.ctlf i.lo{background:#e05a4a}
+.ctlf.down{opacity:.35;filter:grayscale(1)}
+.ctlbtns{display:grid;gap:8px;width:100%}
+.ctlbtns .btn{width:100%;margin:0}
+.ctlbtns .btn.big{padding:16px;font-size:1.1rem}
+/* story picker */
+.ctlhero{position:relative;isolation:isolate;overflow:hidden;display:grid;gap:4px;padding:18px 16px 16px;border-radius:16px;border:1px solid var(--accent);background:var(--surface)}
+.ctlhero::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(18,15,12,.95) 35%,rgba(18,15,12,.55)),var(--pl,none) center/cover}
+.ctlhero b{font-family:var(--display);font-size:1.5rem;line-height:1.1}
+.ctlhero small{color:var(--ink-2)}
+.ctlherobtns{display:flex;gap:8px;margin-top:8px}
+.ctlherobtns .btn{flex:1}
+.ctlstory{margin-top:0}
+.ctlchap{margin:10px 2px 2px;font-size:.7rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--gold)}
+.ctlrow.cur{border-color:var(--accent)}
+.ctlrow.won .ctln{color:#52b388}
+.ctlstars{color:var(--gold);letter-spacing:1px}
+.ctlstars i{font-style:normal;color:var(--line-2)}
+.ctllock{opacity:.5}
+/* the move screen on a controller: no battle picture behind it, no tips */
+body.ctlmode .topbtns .ctlpill{margin-left:auto}
+
+/* TV lobby: scan to join, and the round-end countdown (Nov 10, 2026) */
+.tvjoin:has(.tvqrbox){display:flex;align-items:center;justify-content:center;gap:34px;text-align:left}
+.tvqrbox{display:flex;flex-direction:column;align-items:center;gap:8px;flex:none}
+.tvqrbox .qrsvg{width:168px;height:168px;padding:10px;background:#f4ecdc;border-radius:14px;box-shadow:0 0 0 3px rgba(214,165,77,.45),0 10px 30px rgba(0,0,0,.4);display:block}
+.tvqrbox .tvqrwait{background:rgba(244,236,220,.12);box-shadow:0 0 0 3px rgba(214,165,77,.2)}
+.tvqrbox span{font-size:.95rem;color:var(--ink-2)}
+.tvjoinor p{margin:0 0 8px}
+.btn.tvautob{position:relative;overflow:hidden}
+.btn.tvautob::after{content:"";position:absolute;left:0;bottom:0;height:5px;width:100%;background:var(--accent,#c8452c);transform-origin:left;animation:tvautofill var(--auto,4s) linear var(--autod,0ms) forwards}
+@keyframes tvautofill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@media (prefers-reduced-motion:reduce){ .btn.tvautob::after{animation:none;opacity:0} }

@@ -24,9 +24,10 @@ const tipsSeen = () => { try{ return JSON.parse(localStorage.getItem(TIPS_KEY))|
 // Tips show in the story's Prologue, and in a new player's first battle in any other mode except online
 const inPrologue = () => S.mode==='story' && STAGES[S.stage] && STAGES[S.stage].arc==='prologue';
 const firstBattle = () => S.mode!=='online' && !tipsSeen().includes('played');
-const tip = (id, text) => !(inPrologue() || firstBattle()) || tipsSeen().includes(id) ? '' : `<div class="tip"><span class="tipk">Tip</span><p>${text}</p><button class="btn ghost small" data-a="tipok" data-v="${id}">Got it</button></div>`;
+const tip = (id, text) => (typeof isCtl==='function'&&isCtl()) || !(inPrologue() || firstBattle()) || tipsSeen().includes(id) ? '' : `<div class="tip"><span class="tipk">Tip</span><p>${text}</p><button class="btn ghost small" data-a="tipok" data-v="${id}">Got it</button></div>`;
 // Game screens get a small ⚙ so music and sound can be changed mid-game (playback pauses while it's open)
 function topbar(eyebrow, title, quit=true){
+  if(typeof isCtl==='function' && isCtl()) return `<header class="top"><div><div class="eyebrow">${eyebrow}</div><div class="title">${title}</div></div><div class="topbtns">${ctlPill()}</div></header>`;   // TV controller: no Quit, just the TV link
   return `<header class="top"><div><div class="eyebrow">${eyebrow}</div><div class="title">${title}</div></div>
     <div class="topbtns"><button class="btn ghost small gearmini" data-a="settings" aria-label="Settings">⚙</button>${quit?(isAsync()?'<button class="btn ghost small" data-a="quit" data-v="home">Leave</button>':inMatch()?'<button class="btn ghost small" data-a="askquit">Quit</button>':S.mode==='story'?'<button class="btn ghost small" data-a="home">Back</button>':'<button class="btn ghost small" data-a="home">Quit</button>'):''}</div></header>`;
 }

@@ -198,9 +198,20 @@ function tvSeatView(q, view){
   if(view==='draft' && turn()===q && (S.tvDuo ? q<2 : q===0 && (S.mode==='cpu'||S.mode==='story'))) return 'draft';
   return 'watch';
 }
+// With a phone connected, a finished round moves on by itself after TV_AUTO_MS (nobody presses Continue between
+// rounds). Not while a pop-up is open; the TV's own button or the phone's Continue still go at once.
+const TV_AUTO_MS=4000;
+const tvAutoDue = () => S.phase==='result' && S.play && S.play.done && tvPhonesShow() && !S.quitAsk && !S.info && !S.settings;
+function tvAuto(){
+  const key = tvAutoDue() ? (S.final?'f':'r')+S.round+':'+(S.matchLog||[]).length : null;
+  if(key===TV.autoKey) return;
+  clearTimeout(TV.autoT); TV.autoKey=key; TV.autoAt=key?Date.now():0; if(!key) return;
+  TV.autoT=setTimeout(()=>{ if(TV.autoKey!==key || !tvAutoDue()) return; TV.autoKey=null; tvContinue(); render(); }, TV_AUTO_MS);
+}
 // After every redraw on the TV: send the controllers the current game (only when it changed)
 function tvPublish(view){
   if(!isTV() || !TV.room) return;
+  tvAuto();
   const o={views:[0,1].map(q=>tvSeatView(q,view)), seats:S.tv.seats, next:tvNextLabel(), choices:tvChoices(view), story: view==='story' ? tvStoryList() : null, tvView:view, wait:tvWaiting(), tvCfg: view==='tvhome' ? tvCfgNow() : null};
   TV_FIELDS.forEach(k=>{ if(S[k]!==undefined) o[k]=S[k]; });
   // the crow's owner sees the other side's moves (never the owner's own, so the other phone learns nothing new)
@@ -360,7 +371,7 @@ function vTvBoard(b){
   const big = beat && !over && b.lines.some(bigHit), kos = beat && !over && b.lines.some(l=>l.fx==='ko'||l.ko);
   const wait=tvWaiting(), goal=S.mode==='story'&&STAGES[S.stage]?twistText(STAGES[S.stage]):'';
   const roundOver = !playing && S.phase==='result';
-  const band = roundOver ? `<div class="await"><b>${S.final?'The battle is over':`Round ${S.round} is over`}</b><small>The full round is on your phone</small></div>`
+  const band = roundOver ? `<div class="await"><b>${S.final?'The battle is over':`Round ${S.round} is over`}</b><small>${tvAutoDue()?(S.final?'The winner in a moment':'Next round in a moment'):'The full round is on your phone'}</small></div>`
     : !playing ? `<div class="await"><span class="adots" aria-hidden="true"><i></i><i></i><i></i></span><b>${wait||'Choose your moves'}</b>${goal?`<small>${esc(goal)}</small>`:''}</div>`
     : over ? '' : `<div class="aline ${cur.c||''}">${first.helper?stage(first):''}<span>${b.flurry?flurrySummary(b.lines):b.group?groupSummary(b.lines):fmtLog(cur.t)}</span></div>`;
   // the laptop can still pick: for player 1 against the computer, or for a player whose phone has dropped out
@@ -376,7 +387,16 @@ function vTvBoard(b){
       <div class="arow bot${calmRow(rowU[1])}">${rowU[1].map(card).join('')}${calmRow(rowU[1])?waterRing():''}</div>
       ${over?`<div class="aover" aria-live="polite">${over}</div>`:''}
     </div>${beat&&!over?beatFx(b.lines,b.from)+momentFx(momentOf(b.lines,b.to,b.cur)):''}
-    ${playing ? actionbar('<button class="btn ghost" data-a="skip">Skip</button>') : roundOver ? actionbar(S.final?'<button class="btn" data-a="finish">See who won</button>':'<button class="btn" data-a="next">Next round</button>') : mouse ? actionbar(mouse) : ''}`;
+    ${playing ? actionbar('<button class="btn ghost" data-a="skip">Skip</button>') : roundOver ? actionbar(S.final?`<button class="btn${tvAutoDue()?' tvautob':''}" data-a="finish" style="--auto:${TV_AUTO_MS}ms;--autod:${TV.autoAt?TV.autoAt-Date.now():0}ms">See who won</button>`:`<button class="btn${tvAutoDue()?' tvautob':''}" data-a="next" style="--auto:${TV_AUTO_MS}ms;--autod:${TV.autoAt?TV.autoAt-Date.now():0}ms">Next round</button>`) : mouse ? actionbar(mouse) : ''}`;
+}
+// A QR code that opens the game on a phone and joins this TV (the ?join= link; a 4-letter TV code makes the phone
+// its controller). Made once per code; the QR maker loads on first use, then the lobby redraws with it.
+const TVQR={};
+function tvQR(code){
+  if(TVQR[code]) return TVQR[code];
+  if(typeof loadQR!=='function') return '';
+  if(!TVQR['~'+code]){ TVQR['~'+code]=1; loadQR().then(()=>{ TVQR[code]=qrSvg(`${NEW_SITE}?join=${code}&from=tv`).replace('QR code with your progress','QR code to join this TV'); if(S.phase==='tvhome') render(); }).catch(()=>{}); }
+  return '<div class="qrsvg tvqrwait"></div>';
 }
 // The TV's lobby (TV mode opens here, and Main menu comes back here): the code, who has joined, what to play
 function vTvHome(){
@@ -385,7 +405,7 @@ function vTvHome(){
   const ch=tvChoices('tvhome');
   return `<div class="tvhome">
     <div class="hero"><span class="kanji" aria-hidden="true">滅</span><div class="eyebrow">TV mode</div><h1>Slayer Squad</h1></div>
-    <div class="tvjoin"><p>On your phones, open Slayer Squad, tap <b>📺 Join a TV</b> and type</p><div class="tvcode">${esc(t.code)}</div></div>
+    <div class="tvjoin"><div class="tvqrbox">${tvQR(t.code)}<span>Scan with your phone’s camera</span></div><div class="tvjoinor"><p>or open Slayer Squad, tap <b>📺 Join a TV</b> and type</p><div class="tvcode">${esc(t.code)}</div></div></div>
     <div class="tvslots">${seat(0)}${seat(1)}</div>
     ${tvCfgRows(tvCfgNow())}
     <div class="tvmodes">${ch.map(([k,l],i)=>`<button class="btn${i?' ghost':''}" data-a="tvchoose" data-v="${k}">${esc(l)}</button>`).join('')}</div>
@@ -470,35 +490,49 @@ function ctlViewName(){
 }
 // Send something to the TV, signed with this phone's id so the TV knows which player it is
 function ctlSend(m){ if(TV.room) TV.room.child('tv/acts').push(JSON.parse(JSON.stringify(Object.assign({}, m, {from:PHONE_ID})))); }
-// The story map on the phone: pick a battle (or a draft replay of one you've won); the TV opens it
+// The story map on the phone (redesigned Nov 10, 2026, CK: the controller felt awkward): the next battle as a big card with its place,
+// then every battle grouped by chapter. Tapping Play or Draft sends it to the TV.
 function ctlStoryList(list){
-  return `<div class="ctlstory"><div class="tlabel">Pick a battle</div>${list.map(b=>`<div class="ctlrow${b.open?'':' locked'}${b.won?' won':''}">
-    <span class="ctln">${b.i+1}</span><span class="ctlt"><b>${esc(b.title)}</b><small>${esc(b.arc)}${b.won?' · '+'★'.repeat(b.stars||1):''}</small></span>
-    ${b.open?`<button class="btn small" data-a="ctlstage" data-v="${b.i}">${b.won?'Play again':'Play'}</button>`:'<span class="muted">🔒</span>'}
-    ${b.won?`<button class="btn ghost small" data-a="ctlstage" data-v="${b.i}" data-d="1">Draft</button>`:''}</div>`).join('')}</div>`;
+  const next=list.find(b=>b.open&&!b.won)||list.filter(b=>b.open).slice(-1)[0];
+  const place=b=>{ const st=STAGES[b.i]; return st && (PLACE_ART[st.id]||PLACE_ART[st.arc]); };
+  const hero=next?`<div class="ctlhero"${place(next)?` style="--pl:url('${place(next)}')"`:''}><span class="eyebrow">${next.won?'Play again':'Next battle'} · ${next.i+1} of ${list.length}</span>
+    <b>${esc(next.title)}</b><small>${esc(next.arc)}</small><div class="ctlherobtns"><button class="btn" data-a="ctlstage" data-v="${next.i}">${next.won?'Play again':'Play'}</button>${next.won?`<button class="btn ghost" data-a="ctlstage" data-v="${next.i}" data-d="1">Draft</button>`:''}</div></div>`:'';
+  let arc='', rows='';
+  list.forEach(b=>{ if(b.arc!==arc){ arc=b.arc; rows+=`<div class="ctlchap">${esc(arc)}</div>`; }
+    rows+=`<div class="ctlrow${b.open?'':' locked'}${b.won?' won':''}${b===next?' cur':''}"><span class="ctln">${b.won?'✓':b.i+1}</span><span class="ctlt"><b>${esc(b.title)}</b>${b.won&&starsOn()?`<small class="ctlstars">${'★'.repeat(b.stars||0)}<i>${'★'.repeat(3-(b.stars||0))}</i></small>`:''}</span>
+      ${b.open?`<button class="btn small${b===next?'':' ghost'}" data-a="ctlstage" data-v="${b.i}">${b.won?'Again':'Play'}</button>`:'<span class="ctllock" aria-label="Locked">🔒</span>'}
+      ${b.won?`<button class="btn ghost small" data-a="ctlstage" data-v="${b.i}" data-d="1">Draft</button>`:''}</div>`; });
+  return `${hero}<div class="ctlstory"><div class="tlabel">Every battle</div>${rows}</div>`;
 }
 // The numbers live on the phone so the TV can stay clean: the round's log, then the match summary when it ends
 function ctlSummary(){
-  if(S.tvView==='over' && S.teams) return `${mvpPanel()}<div class="overteams">${players().map(q=>teamBlock(q)).join('')}</div>${matchLogPanel()}`;
+  if(S.tvView==='over' && S.teams) return `${mvpPanel()}${matchLogPanel()}`;   // the winner card above already shows both teams
   if(S.tvView==='result' && S.teams && S.next && S.next!=='Skip' && S.log) return `<div class="panel ctlround"><div class="tlabel">Round ${S.round}</div>${logHTML()}</div>`;
   return '';
 }
+// The phone controller (redesigned Nov 10, 2026, CK: "always felt and looked awkward"): a slim header with the TV link, a live status card
+// (round, both teams' health, who we're waiting for), the winner when a match ends, and the buttons in a bar at the bottom where a thumb reaches.
+const ctlPill = () => `<span class="ctlpill${S.tvGone?' off':''}"><i class="dot"></i>TV · ${esc(S.ctl?S.ctl.code:'')}</span>`;
+function ctlTeams(){
+  return `<div class="ctlteams">${players().map(q=>`<div class="ctlteam${q===S.ctlSeat?' mine':''}" style="--tc:${pc(q)}"><span class="ctltn">${(q===S.ctlSeat&&!S.tvDuo?'You':nm(q))}</span>
+    <div class="ctlfs">${S.teams[q].filter(u=>!u.spawn||u.alive).map(u=>`<span class="ctlf${u.alive?'':' down'}">${seal(u,'sm')}<i style="width:${u.alive?pct(u):0}%"${u.alive&&pct(u)<=LOW?' class="lo"':''}></i></span>`).join('')}</div></div>`).join('')}</div>`;
+}
 function vCtlWatch(){
-  const live=!!S.teams && !['setup','story','modeset','credits'].includes(S.phase) && !S.story;
-  const seat=S.ctlSeat, who = seat>=0 && S.tvDuo ? `<p class="ctlwho" style="color:${pc(seat)}">You’re ${esc(S.names[seat]||'Player '+(seat+1))}</p>` : seat<0 && (S.seats||[]).length>=2 ? '<p class="ctlwho muted">Watching: two phones are already playing</p>' : '';
-  const locked = (S.ctlLocked===S.round || S.ctlScouted===S.round) && ['plan','scout'].includes(S.phase);
-  return `<div class="ctlwatch"><span class="ctlk" aria-hidden="true">📺</span>
-    <h1>${S.story?'Story mode':'Watch the TV'}</h1>${who}
-    ${S.tvGone?'<p class="ctlgone">The TV has disconnected. This phone picks up again when the laptop is back.</p>':''}
-    <p class="muted">${S.story?'Pick a battle here, or on the TV.':!live?'Connected. Your moves will show up here when a battle starts.':locked?`Round ${S.round}: moves locked in.`:['plan','result','scout'].includes(S.phase)?`Round ${S.round||1}`:'Look at the TV.'}</p>
-    ${S.wait&&live?`<p class="ctlwaitline">${S.wait}</p>`:''}
-    ${S.next?`<button class="btn big" data-a="ctlnext">${esc(S.next)}</button>`:''}
-    ${(S.choices||[]).length?`<div class="ctlchoices">${S.choices.map(([k,l],i)=>`<button class="btn${i?' ghost':''}" data-a="ctlpick" data-v="${esc(k)}">${esc(l)}</button>`).join('')}</div>`:''}
-    ${S.tvCfg?tvCfgRows(S.tvCfg):''}
-    ${S.story?ctlStoryList(S.story):''}
-    ${ctlSummary()}
-    <p class="hint">Code ${esc(S.ctl.code)}</p>
-    <button class="btn ghost" data-a="ctlexit">Leave controller mode</button></div>`;
+  const live=!!S.teams && !['setup','story','modeset','credits','tvhome'].includes(S.phase) && !S.story;
+  const over=live && (S.tvView==='over' || S.phase==='over');
+  const seat=S.ctlSeat, locked=(S.ctlLocked===S.round || S.ctlScouted===S.round) && ['plan','scout'].includes(S.phase);
+  const who = seat>=0 && S.tvDuo ? `<span class="ctlwho" style="color:${pc(seat)}">You’re ${esc(S.names[seat]||'Player '+(seat+1))}</span>` : seat<0 && (S.seats||[]).length>=2 ? '<span class="ctlwho muted">Watching: two phones are already playing</span>' : '';
+  let card;
+  if(S.tvGone) card=`<div class="ctlcard warn"><b>The TV has disconnected</b><span class="muted">This phone picks up again when the laptop is back.</span></div>`;
+  else if(S.story) card=ctlStoryList(S.story);
+  else if(over){ const w=S.winner, mine=seat>=0 && w>=0 && sameSide(w,seat);
+    card=`<div class="ctlcard win${mine?' mine':''}"><span class="eyebrow">${w<0?'Draw':'Match over'}</span><b class="ctlwinner">${w<0?'Nobody wins':mine&&!S.tvDuo?'You win!':nm(w)+' wins!'}</b>${ctlTeams()}</div>${ctlSummary()}`; }
+  else if(live) card=`<div class="ctlcard"><div class="ctlstat"><span class="eyebrow">Round ${S.round||1}</span><b>${locked?'Moves locked in ✓':S.phase==='result'?(S.next==='Next round'?'Next round coming up':S.next==='See who won'?'The winner is coming up':'Watch the TV'):'Get ready'}</b>
+      ${S.wait?`<span class="ctlwaitline">${S.wait}</span>`:''}</div>${ctlTeams()}</div>${ctlSummary()}`;
+  else card=`<div class="ctlcard"><span class="eyebrow">Connected</span><b>Pick a mode on the TV</b><span class="muted">Your moves show up here when a battle starts.</span>${S.tvCfg?tvCfgRows(S.tvCfg):''}</div>`;
+  const btns=[S.next?`<button class="btn big" data-a="ctlnext">${esc(S.next)}</button>`:'', ...(S.choices||[]).map(([k,l],i)=>`<button class="btn${i||S.next?' ghost':''}" data-a="ctlpick" data-v="${esc(k)}">${esc(l)}</button>`)].filter(Boolean);
+  return `<div class="ctlwatch"><header class="ctlhead">${ctlPill()}${who}<button class="btn ghost small" data-a="ctlexit">Leave</button></header>
+    ${card}</div>${btns.length?actionbar(`<div class="ctlbtns">${btns.join('')}</div>`):''}`;
 }
 // Is this 4-letter code a TV (rather than a live online room)?
 async function tvRoom(code){ try{ const db=await firebaseReady(); return !!(await db.ref('rooms/'+code+'/tv/on').get()).val(); }catch(e){ return false; } }
