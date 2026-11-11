@@ -71,6 +71,13 @@ function synergyIntro(){
    (or Fight) and watch. CK, Nov 3, 2026. */
 const dodge=(id,by,extra)=>({you:['tanjiro'], foe:[id,'hand'], keep:true, setup:()=>{ const t=S.teams[1][0]; Object.assign(t,{hp:t.max,pow:0}, by); S.teams[0][0].spd=99; S.teams[1].forEach(u=>{u.pow=0;u.spd=1;u.cd=9;}); if(extra) extra(); }, note:'Attack '+BYID[id].short+' and Fight.'});
 const KO_TESTS = {
+  // animation round 3 (Nov 11, 2026)
+  an3_seventh: {you:['zenitsu'], foe:['akaza'], keep:true, setup:()=>{ S.teams[1].forEach(u=>{ u.pow=0; u.cd=9; u.hp=u.max=200; }); const z=S.teams[0][0]; z.sig=BYID.zenitsu.sig2; z.cd=0; }, note:'Seventh Form is ready: pick it and Fight.'},
+  an3_sun:     {you:['tanjiro_mark'], foe:['akaza'], keep:true, setup:()=>{ S.teams[1].forEach(u=>{ u.pow=0; u.cd=9; u.hp=u.max=200; }); const t=S.teams[0][0]; t.sig=BYID.tanjiro_mark.sig; t.unblock=true; t.cd=0; }, note:'His unblockable Hinokami Kagura is ready (as if he just left the Selfless State): pick it and Fight.'},
+  an3_tengen:  {you:['tengen'], foe:['akaza','doma','hand'], keep:true, setup:()=>{ S.teams[1].forEach(u=>{ u.pow=0; u.cd=9; u.hp=u.max=200; }); S.teams[0][0].cd=0; }, note:'Pick Tengen\'s special and Fight.'},
+  an3_kanae:   {you:['kanae','tanjiro'], foe:['doma'], keep:true, setup:()=>{ S.teams[1].forEach(u=>{ u.pow=0; u.cd=9; u.hp=u.max=200; }); S.teams[0][0].cd=0; const t=S.teams[0][1]; t.hp=Math.round(t.max*.5); }, note:'Pick Kanae\'s special and Fight.'},
+  an3_defeat:  {you:['hand'], foe:['akaza'], keep:true, setup:()=>{ S.teams[0].forEach(u=>{ u.hp=1; }); S.teams[1][0].spd=99; }, note:'You\'re about to lose: Defend or Attack and Fight to see the defeat screen.'},
+  an3_foil:    {custom:()=>{ Object.assign(S,{phase:'codex', askName:null, unlockAll:true, codexSel:'yoriichi'}); }, note:'Prime Yoriichi\'s card shines like foil. Open a Mark or another rare card to compare with a normal one.'},
   // animation round (Nov 10, 2026): Genya, Zenitsu asleep, Kokushibo's blade, your special-ready pulse
   an_inosuke: {you:['inosuke'], foe:['akaza','doma','hand'], keep:true, setup:()=>{ S.teams[1].forEach(u=>{ u.pow=0; u.cd=9; u.hp=u.max=200; }); S.teams[0][0].cd=0; }, note:'Pick Inosuke\'s special and Fight: both swords spin across and back.'},
   an_shinobu: {you:['shinobu'], foe:['akaza'], keep:true, setup:()=>{ S.teams[1].forEach(u=>{ u.pow=0; u.cd=9; u.hp=u.max=200; }); S.teams[0][0].cd=0; }, note:'Pick Shinobu\'s special and Fight.'},

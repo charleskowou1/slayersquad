@@ -740,7 +740,7 @@ function vSettings(){
   </div></div>`;
 }
 // Wide picture across the top of a detail card (only when the character has a picture)
-const banner = c => ART[c.id] ? `<div class="mbanner" aria-hidden="true"><img decoding="sync" src="${ART[c.id]}" alt=""></div>` : '';
+const banner = c => ART[c.id] ? `<div class="mbanner${c.legend||c.mark||RARE_PULLS.includes(c.id)?' foil':''}" aria-hidden="true"><img decoding="sync" src="${ART[c.id]}" alt="">${c.legend||c.mark||RARE_PULLS.includes(c.id)?'<i class="foilsheen"></i>':''}</div>` : '';   // rare cards shine like foil (Nov 11, 2026, testing)
 // Main menu: a slowly scrolling strip of character art (only once pictures have loaded)
 // Card detail, centred on screen, when a card is tapped during the draft (or a fighter's info card in battle)
 function vSheet(){
@@ -976,7 +976,7 @@ function fxName(lines, from){
   const l=lines.find(x=>x.by && x.move==='special' && (SPECIAL_HITS.includes(x.fx) || (x.fx==='stun' && !x.on) || (x.fx==='poison' && (findU(x.by)||{}).sk==='shinobu'))), by=l&&findU(l.by); let name=by&&SPECIAL_FX[by.sk];
   if(!name) return null;
   if(name==='annihil' && sigFor(l)!=='annihilation') return null;
-  if(name!=='drum') for(let i=from-1;i>=0;i--){ const m=S.log[i]; if(m.by!==l.by) continue; if(m.fx==='special'){ if(m.sig==='ninth') name='ninth'; break; } if(m.move==='special' && SPECIAL_HITS.includes(m.fx)) return null; }
+  if(name!=='drum' && name!=='mscore') for(let i=from-1;i>=0;i--){ const m=S.log[i]; if(m.by!==l.by) continue; if(m.fx==='special'){ const SIGFX={ninth:'ninth', seventh:'thunderdragon', unblock:'sundragon'}; if(SIGFX[m.sig]) name=SIGFX[m.sig]; break; } if(m.move==='special' && SPECIAL_HITS.includes(m.fx)) return null; }
   return name;
 }
 const beatFx = (lines, from) => { const name=fxName(lines,from); if(!name) return ''; const l=lines.find(x=>x.by), by=l&&findU(l.by), right=by && by.p!==leftSide();   // which side the attacker is on (Yoriichi's glow comes from there)
@@ -1347,7 +1347,10 @@ function vScene(){
 // The winner: who won and how, without the numbers (the TV shows only this; the phone has the rest)
 function winHero(){
   const w=S.winner;
-  return `<div class="win${w<0?'':' victory'}" style="--wc:${w<0?'var(--muted)':pc(w)}"><span class="burst" aria-hidden="true"></span>
+  // The defeat screen (Nov 11, 2026): when you lose (one viewer), ash falls and your fighters lie down
+  const me=typeof myP==='function'?myP():0, lost=w>=0 && soloView() && !sameSide(w,me);
+  const defeat = lost ? `<span class="ashfall" aria-hidden="true">${Array.from({length:22},(_,i)=>`<i style="--x:${(i*43)%100}%;--d:${(i*.29)%4}s;--s:${.6+(i%3)*.25}"></i>`).join('')}</span><div class="fallenrow" aria-hidden="true">${S.teams[me].filter(u=>!u.spawn).map((u,i)=>`<span style="--i:${i}">${seal(u,'lg')}</span>`).join('')}</div>` : '';
+  return `<div class="win${w<0?'':' victory'}${lost?' defeat':''}" style="--wc:${w<0?'var(--muted)':pc(w)}">${defeat}<span class="burst" aria-hidden="true"></span>
     ${w<0?'':`<div class="winseals" aria-hidden="true">${(()=>{ const best=S.teams[w].slice().sort((a,b)=>mvpScore(S.stats[b.uid]||{dmg:0,kos:0,heal:0})-mvpScore(S.stats[a.uid]||{dmg:0,kos:0,heal:0}))[0]; return S.teams[w].map((u,i)=>`<span class="${u===best?'star':''}" style="--i:${i}">${u===best?`<b class="mvpsig">${esc((BYID[u.id].sig||{}).name||'')}</b>`:''}${seal(u,'lg')}</span>`).join(''); })()}</div>`}
     <div class="eyebrow">After ${plural(S.round,'round')}</div>
     <div class="big" style="color:${w<0?'var(--fg)':pc(w)}">${w<0?(nPlayers()>2?'Nobody survives':'Both squads fall'):S.duo||(S.coop&&!coopFoe(w))?players().filter(q=>sameSide(q,w)).map(nm).join(' & ')+' win':nm(w)+' wins'}</div>
