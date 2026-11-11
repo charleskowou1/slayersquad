@@ -2,6 +2,7 @@
 // (CACHE 'squad-draft-vNN'), which goes up with every push. tools/make-guide.js prints this at the top of the guide.
 // Add a line here with every push (CK, Oct 28, 2026), then rebuild the guide: node tools/make-guide.js
 module.exports = [
+  [128, '2026-11-11', 'Final Muzan no longer gets back up after sunrise; if Seven Hearts is still unused when the sun rises, he burns it to heal 35% at once instead.'],
   [127, '2026-11-10', 'Hantengu reworked (the first hit splits him, four emotions, Zohakuten with Drums of Hatred, and the real Hantengu hides: hunt him or knock Zohakuten down, then cut him down); Muzan and Final Muzan buffed; Mark Muichiro, Nezuko and Chachamaru stronger, Old Yoriichi a bit weaker; new animations (Genya, Zenitsu asleep, Kokushibo, Inosuke, Shinobu, Final Muzan, Rengoku, MVP); Upper Moon lining in the draft.'],
   [126, '2026-11-10', 'TV mode: the phone controller is redesigned (TV pill, a status card with both teams’ health, a story picker grouped by chapter, buzz on your turn); scan a QR on the TV to join; rounds move on by themselves once a phone is connected.'],
   [125, '2026-11-08', 'Steadier loading: if part of the game fails to load or a screen fails to draw, players get a Reload card instead of a blank screen (one player’s home screen went blank on Nov 8); crash reports show the right version.'],

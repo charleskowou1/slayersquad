@@ -569,7 +569,8 @@ const fx = (type, by, on) => ({fx:type, by:by?by.uid:null, on:on?on.uid:null, mo
 function L(t,c='',extra){ const hp={}; allUnits().forEach(u=>{ hp[u.uid]=u.hp; }); S.log.push(Object.assign({t,c,hp},extra)); }
 function target(u,tid){ let t=findU(tid); if(!t||!t.alive||sameSide(t.p,u.p)){ const a=foes(u.p); t=a.length?rnd(a):null; } return t; }
 function fall(t,a){ if(t.hp>0) return;
-  if(t.id==='zohakuten' && htDown(t,a)) return; if(t.grit){ t.grit=false; t.hp=1; L(`${t.name} somehow survives on ${pct(t)}% health!`,'h',{...fx('heal',null,t), grit:true}); return; } if(t.revive){ t.hp=Math.ceil(t.max*t.revive); t.revive=0; L(`${t.name} falls… and rises again! Seven Hearts ${gained(t,t.hp)}.`,'x',{...fx('revive',null,t), knit:true}); return; }
+  if(t.id==='zohakuten' && htDown(t,a)) return; if(t.grit){ t.grit=false; t.hp=1; L(`${t.name} somehow survives on ${pct(t)}% health!`,'h',{...fx('heal',null,t), grit:true}); return; } if(t.revive && t.demon && sunUp() && !sunSafe(t)){ t.revive=0; L(`The sun is up. Seven Hearts can't save ${t.name} now.`,'k',fx('burn',null,t)); }   // the sun finishes Muzan: no getting back up after sunrise (CK, Nov 10, 2026)
+  if(t.revive){ t.hp=Math.ceil(t.max*t.revive); t.revive=0; L(`${t.name} falls… and rises again! Seven Hearts ${gained(t,t.hp)}.`,'x',{...fx('revive',null,t), knit:true}); return; }
   if(t.anchor && S.teams[t.p].some(u=>u.alive && u.id===t.anchor)){ t.hp=1; L(`${t.name} won't fall! The real ${BYID[t.anchor].short} is still alive.`,'x',{...fx('block',null,t), held:true});
     return; }
   // how it fell, for playback: burned away by the sun, or killed by Shinobu's blade or wisteria
@@ -929,6 +930,8 @@ function resolve(){
   htRise();
   Object.values(S.htHide||{}).forEach(h=>{ if(h) h.spot=Math.floor(Math.random()*HT_SPOTS); });   // the real Hantengu moves every round
   if(sun && S.round===sunRise()) L('The sun rises! From now on demons burn every round, hotter each time, and stop regenerating.','h',{...fx('burn',null,null), sunrise:true});
+  // Seven Hearts at dawn (CK, Nov 11, 2026): a demon who still has a second life spends it to endure the sunrise (heals that much at once). He never gets back up after it.
+  if(sun && S.round===sunRise()) players().forEach(p=>alive(p).filter(u=>u.revive && u.demon && !sunSafe(u)).forEach(u=>{ const h=Math.min(Math.ceil(u.max*u.revive),u.max-u.hp); u.hp+=h; u.revive=0; L(`${u.name} burns his remaining hearts to endure the dawn ${gained(u,h)}.`,'h',fx('heal',null,u)); }));
   if(sun && S.round===sunRise() && finalFight()){ alive(foeSeat()).forEach(u=>{ u.pow=Math.round(u.pow*(1+FINAL_FRENZY)); u.noDefend=true; }); L('Out of time, the demons throw everything they have left. They hit far harder and can no longer Defend.','k',{...fx('burn',null,null), frenzy:true}); }
   players().forEach(p=>S.teams[p].forEach(u=>{
     if(u.alive && u.poison){ u.hp=Math.max(0,u.hp-u.poison.dmg); L(`Poison hits ${u.name} ${lost(u,u.poison.dmg)}.`,'k',fx('poison',null,u)); fall(u); u.poison.turns--; if(u.poison.turns<=0) u.poison=null; }

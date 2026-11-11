@@ -169,7 +169,7 @@ for (const c of fighters) {
 
 hr('6. VERSIONS (only one per match)');
 out(`- Yoriichi (prime, 18 pts) or Yoriichi Age 85 (17). Prime is the strongest card in the game and rare.
-- Muzan (16) or Muzan Final Form (18, revives once). Final Form is rare.
+- Muzan (16) or Muzan Final Form (18, revives once; if unused at sunrise he heals 35% instead, and never revives after sunrise). Final Form is rare.
 - Tengen (6, Hashira) or Retired Tengen (4, not a Hashira, shields an ally).
 - Mark ✦ versions of Giyu, Gyomei, Sanemi, Muichiro, Mitsuri, Obanai and Tanjiro: +8 HP, +4 PWR, +2 SPD, +1 DEF,
   faster special, higher cost. They also count for "Marks spread" with another Mark.`);

@@ -27,7 +27,7 @@ add({id:'muzan',name:'Muzan Kibutsuji',short:'Muzan',g:'鬼',type:'Demon King',d
 // Final-Form Muzan: the other version of Muzan (one or the other is dealt)
 add({id:'muzan_final',fam:'muzan',sk:'muzan_final',name:'Muzan Kibutsuji (Final Form)',short:'Final Muzan',g:'終',type:'Demon King · Final Form',demon:true,cost:18,hp:64,pow:17,spd:11,def:8,regen:5,
   revive:.35,
-  passive:'Seven Hearts: the first time he falls, he gets back up with 35% health.',
+  passive:'Seven Hearts: the first time he falls, he gets back up with 35% health. If he hasn’t used it by sunrise, he burns his hearts to heal 35% at once instead; after sunrise he never gets back up.',
   sig:{name:'Thorned Flesh Whips',desc:'Every enemy takes PWR−6, ignores DEF, and he heals 3 for each enemy hit.',cd:3,kind:'all'}});
 add({id:'kokushibo',name:'Kokushibo',short:'Kokushibo',g:'月',type:'Upper Moon 1',demon:true,upper:true,cost:15,hp:50,pow:17,spd:11,def:8,regen:3,
   sig:{name:'Moon Breathing',desc:'Every enemy takes PWR−4, ignores DEF.',cd:3,kind:'all'}});

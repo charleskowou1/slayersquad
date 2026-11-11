@@ -285,7 +285,7 @@ cards: {
          'Tamayo cuts his regeneration by 2; Shinobu\'s wisteria ruins him if he knocks her out.',
          'He\'s 16 pts: kill his cheap partner and he\'s alone.'] },
  muzan_final: {
-  win: ['Seven Hearts: the first time he falls he gets back up with 35%. Thorned Flesh Whips: every enemy PWR−6, ignoring DEF, heals 3 per enemy hit.',
+  win: ['Seven Hearts: the first time he falls he gets back up with 35%; if it’s unused at sunrise he heals 35% instead, and he never gets back up after sunrise. Thorned Flesh Whips: every enemy PWR−6, ignoring DEF, heals 3 per enemy hit.',
         'Better at 30 pts than at 20.'],
   beat: ['Plan to kill him twice: save a big special for after he gets back up.',
          'Yoriichi and Mark Tanjiro beat him almost every time; the sun stops his healing from round 10.'] },
