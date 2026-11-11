@@ -18,7 +18,7 @@ const newRoomCode = () => Array.from({length:4}, ()=>ROOM_LETTERS[Math.floor(Mat
 
 // Game fields shared through the room. Everything else (menus, playback, selections, settings) stays on each phone.
 const SHARED = ['phase','hostSeat','hostNote','n','duo','names','budget','poolType','maxTeam','banning','bans','first','lastPicker','history','picks','locked','k','pool','spin',
-  'teams','sib','twins','syn','place','round','plans','helpers','helperPlan','log','matchLog','stats','winner','final','movesLocked','readyNext',
+  'teams','sib','twins','htHide','htMore','syn','place','round','plans','helpers','helperPlan','log','matchLog','stats','winner','final','movesLocked','readyNext',
   'scoutQueue','scoutP','roundId','lobby','outOrder','gm','coop','series'];
 // What the host sends to player q. While everyone is choosing, the other players' moves and helpers are left out
 // (unless q's crow is scouting: then q sees everyone's moves).

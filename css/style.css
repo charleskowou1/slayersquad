@@ -2746,14 +2746,241 @@ body.ctlmode .wrap{gap:12px}
 /* the move screen on a controller: no battle picture behind it, no tips */
 body.ctlmode .topbtns .ctlpill{margin-left:auto}
 
-/* TV lobby: scan to join, and the round-end countdown (Nov 10, 2026) */
-.tvjoin:has(.tvqrbox){display:flex;align-items:center;justify-content:center;gap:34px;text-align:left}
-.tvqrbox{display:flex;flex-direction:column;align-items:center;gap:8px;flex:none}
-.tvqrbox .qrsvg{width:168px;height:168px;padding:10px;background:#f4ecdc;border-radius:14px;box-shadow:0 0 0 3px rgba(214,165,77,.45),0 10px 30px rgba(0,0,0,.4);display:block}
-.tvqrbox .tvqrwait{background:rgba(244,236,220,.12);box-shadow:0 0 0 3px rgba(214,165,77,.2)}
-.tvqrbox span{font-size:.95rem;color:var(--ink-2)}
-.tvjoinor p{margin:0 0 8px}
+/* TV: the round-end countdown (Nov 10, 2026) */
 .btn.tvautob{position:relative;overflow:hidden}
 .btn.tvautob::after{content:"";position:absolute;left:0;bottom:0;height:5px;width:100%;background:var(--accent,#c8452c);transform-origin:left;animation:tvautofill var(--auto,4s) linear var(--autod,0ms) forwards}
 @keyframes tvautofill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 @media (prefers-reduced-motion:reduce){ .btn.tvautob::after{animation:none;opacity:0} }
+
+/* Hantengu H (Nov 10, 2026): hunt choices on the move screen, the hiding note, and his stage moments */
+.hthide{display:flex;gap:10px;align-items:center;margin:8px 0 2px;padding:9px 12px;border:1px dashed rgba(214,165,77,.55);border-radius:12px;background:rgba(214,165,77,.08);font-size:.86rem;color:var(--ink-2)}
+.hthide>b{font-size:1.4rem;color:var(--gold)}
+.htspots{margin-top:10px}
+.htrow{display:grid;grid-template-columns:repeat(var(--n,6),1fr);gap:8px;margin-top:6px;max-width:300px}
+.htspot{aspect-ratio:3/4;border-radius:9px;border:1px solid rgba(214,165,77,.45);background:linear-gradient(160deg,#3a2a1c,#1f1712);color:var(--gold);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;transition:transform .15s}
+.htspot b{font-size:1.3rem;font-family:var(--display)} .htspot small{font-size:.7rem;color:var(--ink-2)}
+.htspot.on{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold),0 0 18px rgba(214,165,77,.45);transform:translateY(-3px)}
+.stage.htx{height:150px;gap:0;overflow:visible}
+.htx .gl.stg{width:64px;height:78px}
+.htx-kj{position:absolute;right:6px;top:2px;font-family:var(--display);font-size:1.6rem;color:var(--accent);opacity:0;animation:htxkj .5s 1s both;text-shadow:0 0 12px rgba(224,87,59,.6)}
+@keyframes htxkj{from{opacity:0;transform:scale(1.8)}to{opacity:1;transform:scale(1)}}
+/* the head cut: attacker lunges, a slash crosses his neck, the head flies off, Sekido and Karaku burst out of the body */
+.htx-by{position:absolute;left:4%;animation:htxlunge 1.2s ease-in-out both}
+@keyframes htxlunge{0%{transform:translateX(-30px);opacity:0}45%{transform:translateX(60px);opacity:1}70%{transform:translateX(60px);opacity:1}100%{transform:translateX(-10px);opacity:0}}
+.htx-old{position:relative;display:inline-block}
+.htx-cut .htx-body{display:block;clip-path:polygon(0 38%,100% 30%,100% 100%,0 100%);animation:htxbody 1.8s .5s both}
+.htx-cut .htx-head{position:absolute;inset:0;display:block;clip-path:polygon(0 0,100% 0,100% 30%,0 38%);animation:htxhead 1.3s .5s cubic-bezier(.3,.1,.7,1) forwards}
+@keyframes htxhead{0%{transform:none}25%{transform:translate(6px,-4px) rotate(8deg)}100%{transform:translate(70px,-90px) rotate(260deg);opacity:0}}
+@keyframes htxbody{0%,30%{filter:none;transform:none}55%{filter:brightness(2) saturate(0);transform:scale(1.05)}75%{transform:scale(.6);opacity:.6}100%{transform:scale(.2);opacity:0}}
+.htx-slash{position:absolute;left:-30%;right:-30%;top:33%;height:4px;background:#fff;box-shadow:0 0 16px 4px rgba(255,80,60,.9);transform:rotate(-5deg) scaleX(0);animation:htxslash .35s .45s ease-out both}
+@keyframes htxslash{0%{transform:rotate(-5deg) scaleX(0);opacity:1}70%{transform:rotate(-5deg) scaleX(1);opacity:1}100%{transform:rotate(-5deg) scaleX(1);opacity:0}}
+.htx-spray{position:absolute;left:50%;top:30%;width:8px;height:8px;border-radius:50%;background:#b3121e;box-shadow:12px -14px 0 #c8202c,-10px -18px 0 #9c0f19,22px -4px 0 #c8202c,-20px -6px 0 #8f0d16,4px -26px 0 #b3121e;opacity:0;animation:htxspray .9s .6s ease-out both}
+@keyframes htxspray{0%{opacity:0;transform:scale(.2)}20%{opacity:1}100%{opacity:0;transform:scale(2.4) translateY(-10px)}}
+.htx-kid{position:absolute;left:50%;top:50%;display:flex;flex-direction:column;align-items:center;gap:3px;transform:translate(-50%,-50%) scale(.2);opacity:0;animation:htxkid0 .8s 1.25s cubic-bezier(.2,1.4,.4,1) forwards}
+.htx-kid b{font-size:.75rem;color:var(--ink)}
+.htx-kid.k1{animation-name:htxkid1}
+@keyframes htxkid0{to{transform:translate(calc(-50% - 96px),-50%) scale(1);opacity:1}}
+@keyframes htxkid1{to{transform:translate(calc(-50% + 96px),-50%) scale(1);opacity:1}}
+.htx-cut .htx-kid .gl,.htx-more .htx-kid .gl{box-shadow:0 0 0 2px rgba(224,87,59,.7),0 0 24px rgba(224,87,59,.5)}
+/* more emotions: the fallen one tears in two, and Aizetsu and Urogi come out of the halves */
+.htx-more .htx-l,.htx-more .htx-r{display:block}
+.htx-more .htx-l{clip-path:inset(0 50% 0 0);animation:htxtearl 1s .3s ease-in forwards}
+.htx-more .htx-r{position:absolute;inset:0;clip-path:inset(0 0 0 50%);animation:htxtearr 1s .3s ease-in forwards}
+.htx-more .htx-slash{top:auto;left:50%;right:auto;width:4px;height:130%;top:-15%;transform:scaleY(0);animation:htxslashv .3s .2s both}
+@keyframes htxslashv{0%{transform:scaleY(0);opacity:1}70%{transform:scaleY(1);opacity:1}100%{transform:scaleY(1);opacity:0}}
+@keyframes htxtearl{to{transform:translateX(-30px) rotate(-14deg);opacity:0}}
+@keyframes htxtearr{to{transform:translateX(30px) rotate(14deg);opacity:0}}
+.htx-more .htx-kid{animation-delay:.8s}
+/* the hunt: six face-down cards, the chosen one flips */
+.htx-hunt{justify-content:flex-end;padding-right:4%}
+.htx-hunt .htx-by{left:3%;animation:none}
+.htx-cards{display:grid;grid-template-columns:repeat(var(--n,6),1fr);gap:8px;width:min(60%,220px)}
+.htx-card{position:relative;aspect-ratio:3/4}
+.htx-back,.htx-face{position:absolute;inset:0;border-radius:7px;display:flex;align-items:center;justify-content:center}
+.htx-back{background:linear-gradient(160deg,#3a2a1c,#1f1712);border:1px solid rgba(214,165,77,.45);color:var(--gold);font-family:var(--display);font-size:1.2rem}
+.htx-face{background:#15110d;border:1px solid rgba(255,255,255,.2);transform:scaleX(0);overflow:hidden}
+.htx-face .gl.stg{width:100%;height:100%;box-shadow:none}
+.htx-face b{color:var(--ink-2);font-family:var(--display);font-size:1.3rem}
+.htx-card.pick .htx-back{animation:htxflipb .25s .7s ease-in both}
+.htx-card.pick .htx-face{animation:htxflipf .3s .95s ease-out both}
+.htx-card.pick{animation:htxpick .4s .2s both}
+@keyframes htxpick{to{transform:translateY(-8px) scale(1.15)}}
+@keyframes htxflipb{to{transform:scaleX(0)}}
+@keyframes htxflipf{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.htx-hunt.found .htx-card.pick .htx-face{border-color:var(--gold);box-shadow:0 0 22px rgba(214,165,77,.8)}
+.htx-hunt.miss .htx-by .gl{animation:htxopen .6s 1.2s both}
+@keyframes htxopen{0%,100%{box-shadow:0 6px 16px rgba(0,0,0,.45)}50%{box-shadow:0 0 0 3px #e0573b,0 0 26px rgba(224,87,59,.8)}}
+/* laid bare: Zohakuten is gone and the tiny real one trembles in the open */
+.htx-tiny{animation:htxtiny 1.4s both}
+.htx-tiny .gl.stg{width:44px;height:54px}
+@keyframes htxtiny{0%{transform:scale(2.2);opacity:0;filter:brightness(2)}40%{transform:scale(1);opacity:1;filter:none}55%,65%,75%,85%{transform:translateX(-3px)}60%,70%,80%{transform:translateX(3px)}100%{transform:none}}
+.htx-ring{position:absolute;left:50%;top:50%;width:70px;height:70px;margin:-35px 0 0 -35px;border-radius:50%;border:2px solid var(--gold);animation:htxring 1s .3s ease-out both}
+@keyframes htxring{from{transform:scale(.3);opacity:1}to{transform:scale(2.6);opacity:0}}
+@media (prefers-reduced-motion:reduce){.htx *{animation:none!important}.htx-kid{opacity:1;transform:translate(-50%,-50%)}.htx-kid.k0{transform:translate(calc(-50% - 96px),-50%)}.htx-kid.k1{transform:translate(calc(-50% + 96px),-50%)}.htx-cut .htx-head,.htx-more .htx-l,.htx-more .htx-r{opacity:0}.htx-card.pick .htx-back{transform:scaleX(0)}.htx-card.pick .htx-face{transform:none}}
+/* the merge: the four emotions rush in from the corners, a flash, and Zohakuten stands there */
+.htx-emo{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);animation:htxemo 1.1s .35s ease-in both}
+.htx-emo .gl.stg{width:48px;height:58px}
+.htx-emo.e0{--fx:-120px;--fy:-40px}.htx-emo.e1{--fx:120px;--fy:-40px;animation-delay:.43s}.htx-emo.e2{--fx:-120px;--fy:40px;animation-delay:.51s}.htx-emo.e3{--fx:120px;--fy:40px;animation-delay:.59s}
+@keyframes htxemo{0%{transform:translate(calc(-50% + var(--fx)),calc(-50% + var(--fy)));opacity:0}15%{opacity:1}55%{transform:translate(calc(-50% + var(--fx)*.6),calc(-50% + var(--fy)*.6));opacity:1}90%{transform:translate(-50%,-50%) scale(.5);opacity:1}100%{transform:translate(-50%,-50%) scale(.2);opacity:0}}
+.htx-flash{position:absolute;left:50%;top:50%;width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:50%;background:radial-gradient(circle,#fff,rgba(224,87,59,.8) 45%,transparent 70%);opacity:0;animation:htxflash .7s 1.55s ease-out both}
+@keyframes htxflash{0%{opacity:0;transform:scale(.3)}30%{opacity:1}100%{opacity:0;transform:scale(5)}}
+.htx-zoh{display:flex;flex-direction:column;align-items:center;gap:3px;opacity:0;animation:htxzoh .6s 1.7s cubic-bezier(.2,1.5,.4,1) both}
+.htx-zoh .gl.stg{width:78px;height:94px;box-shadow:0 0 0 2px rgba(224,87,59,.8),0 0 30px rgba(224,87,59,.6)}
+.htx-zoh b{font-size:.8rem}
+@keyframes htxzoh{from{opacity:0;transform:scale(.3)}to{opacity:1;transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.htx-emo{opacity:0}.htx-zoh{opacity:1}}
+/* Zohakuten knocked flat: dazed, stars circling his head, and the real Hantengu out in the open */
+.htx-down{gap:46px}
+.htx-dazed{position:relative;animation:htxdaze 1.6s ease-out both}
+@keyframes htxdaze{0%{transform:translateX(10px) rotate(0)}25%{transform:translateX(-6px) rotate(-26deg)}45%{transform:rotate(-14deg)}65%{transform:rotate(-20deg)}100%{transform:rotate(-17deg)}}
+.htx-dazed .gl{filter:saturate(.6) brightness(.85)}
+.htx-stars{position:absolute;left:50%;top:-14px;width:70px;height:22px;margin-left:-35px;animation:htxorbit 1.1s linear infinite}
+.htx-stars i{position:absolute;top:0;font-style:normal;color:#ffd75e;font-size:1rem;text-shadow:0 0 8px rgba(255,215,94,.9);animation:htxtwinkle .55s ease-in-out infinite alternate}
+.htx-stars i:nth-child(1){left:0}.htx-stars i:nth-child(2){left:28px;top:-6px;animation-delay:.18s}.htx-stars i:nth-child(3){left:56px;animation-delay:.36s}
+@keyframes htxorbit{0%{transform:rotateZ(0) scaleX(1)}50%{transform:rotateZ(8deg) scaleX(-1)}100%{transform:rotateZ(0) scaleX(1)}}
+@keyframes htxtwinkle{from{opacity:.4;transform:scale(.8)}to{opacity:1;transform:scale(1.2)}}
+.htx-out{display:flex;flex-direction:column;align-items:center;gap:3px;opacity:0;animation:htxpop .5s .7s cubic-bezier(.2,1.6,.4,1) both}
+.htx-out .gl.stg{width:48px;height:58px;box-shadow:0 0 0 2px var(--gold),0 0 22px rgba(214,165,77,.7)}
+.htx-out b{font-size:.72rem;color:var(--gold)}
+@keyframes htxpop{0%{opacity:0;transform:scale(.2) translateY(20px)}100%{opacity:1;transform:none}}
+.htx-down .htx-ring{left:auto;right:calc(50% - 82px);animation-delay:.8s}
+/* he gets back up: Zohakuten rises with a red flare, the real one shrinks away into hiding */
+.htx-up{animation:htxup 1.1s .2s cubic-bezier(.3,1.4,.5,1) both}
+@keyframes htxup{0%{transform:rotate(-17deg) translateY(10px);filter:saturate(.6) brightness(.8)}60%{transform:rotate(3deg) translateY(-6px) scale(1.08);filter:brightness(1.4)}100%{transform:none;filter:none}}
+.htx-up .gl.stg{width:76px;height:92px;animation:htxflare 1s .5s both}
+@keyframes htxflare{0%,100%{box-shadow:0 6px 16px rgba(0,0,0,.45)}50%{box-shadow:0 0 0 3px rgba(224,87,59,.9),0 0 34px rgba(224,87,59,.8)}}
+.htx-away{position:absolute;left:calc(50% + 60px);animation:htxaway 1.1s .4s ease-in both}
+.htx-away .gl.stg{width:40px;height:48px}
+@keyframes htxaway{0%{transform:none;opacity:1}100%{transform:translate(70px,30px) scale(.2);opacity:0}}
+@media (prefers-reduced-motion:reduce){.htx-out{opacity:1}.htx-away{opacity:0}.htx-dazed{transform:rotate(-17deg)}}
+/* a wrong hunt (Nov 10, 2026): a carved wooden decoy, a wooden dragon's jaw that snaps at the hunter, and the real one's shadow darting off his actual hiding place */
+.htx-face .htx-doll{width:74%;height:auto}
+.htx-hunt.miss .htx-card.pick .htx-face{background:radial-gradient(circle at 50% 40%,#3a2614,#15110d)}
+.htx-jaw{position:absolute;right:12%;top:50%;width:160px;margin-top:-48px;opacity:0;pointer-events:none;animation:htxjaw .9s 1.35s cubic-bezier(.5,0,.3,1) both;filter:drop-shadow(0 4px 8px rgba(0,0,0,.6))}
+.htx-jaw svg{display:block;width:100%;height:auto;overflow:visible}
+.htx-jaw .jt{transform-origin:110px 30px;animation:htxjt .45s 1.5s both}
+.htx-jaw .jb{transform-origin:110px 40px;animation:htxjb .45s 1.5s both}
+@keyframes htxjaw{0%{opacity:0;transform:translateX(10px) scale(.4)}20%{opacity:1}50%{opacity:1;transform:translateX(-140px) scale(1)}85%{opacity:1;transform:translateX(-140px) scale(1)}100%{opacity:0;transform:translateX(-146px) scale(1)}}
+@keyframes htxjt{0%,40%{transform:rotate(-14deg)}75%,100%{transform:rotate(0)}}
+@keyframes htxjb{0%,40%{transform:rotate(14deg)}75%,100%{transform:rotate(0)}}
+.htx-hunt.miss .htx-by .gl{animation:htxopen .6s 1.75s both}
+.htx-hunt.miss .htx-by{animation:htxbit .4s 1.75s both}
+@keyframes htxbit{0%,100%{transform:none}30%{transform:translateX(-8px) rotate(-4deg)}60%{transform:translateX(4px)}}
+.htx-shadow{position:absolute;left:50%;top:50%;width:30px;margin:-18px 0 0 -15px;opacity:0;animation:htxshadow 1s 1.1s ease-in both}
+.htx-shadow svg{display:block;width:100%;height:auto;filter:drop-shadow(0 0 4px rgba(224,87,59,.85))}
+@keyframes htxshadow{0%{opacity:0;transform:scale(.6)}20%{opacity:.95;transform:scale(1)}100%{opacity:0;transform:translate(46px,-46px) scale(.5)}}
+.htx-card.real .htx-back{animation:htxrustle .5s 1s both}
+@keyframes htxrustle{0%,100%{transform:none}25%{transform:rotate(-6deg)}50%{transform:rotate(5deg)}75%{transform:rotate(-3deg)}}
+@media (prefers-reduced-motion:reduce){.htx-jaw,.htx-shadow{display:none}}
+
+/* Animation round (Nov 10, 2026, CK picked these to test) */
+/* Zenitsu asleep: Z's drift off his picture while his special is ready */
+.zzz{position:absolute;left:30px;top:-14px;width:44px;height:40px;pointer-events:none;z-index:3}
+.zzz i{position:absolute;left:0;bottom:0;font-style:normal;font-family:var(--display);font-weight:800;color:#ffe27a;text-shadow:0 0 6px rgba(255,214,90,.8),0 1px 0 #000;opacity:0;animation:zzzup 2.4s ease-out infinite}
+.zzz i:nth-child(1){font-size:1rem}.zzz i:nth-child(2){font-size:1.25rem;animation-delay:.8s}.zzz i:nth-child(3){font-size:1.55rem;animation-delay:1.6s}
+@keyframes zzzup{0%{opacity:0;transform:translate(0,0) rotate(-10deg)}15%{opacity:1}100%{opacity:0;transform:translate(22px,-26px) rotate(12deg)}}
+.tile .zzz{left:24px;top:-12px}
+/* your own fighters: a special that's ready pulses softly, and a collapsed row shows a small 技 */
+.fighter.spready{box-shadow:inset 3px 0 0 var(--gold)}
+.fighter.spready .moves button[data-v="special"]:not(:disabled):not(.on){border-color:rgba(214,165,77,.7)}
+.spmark{position:absolute;left:34px;top:32px;width:18px;height:18px;border-radius:50%;background:var(--gold);color:#1d1915;font-size:.68rem;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 0 8px rgba(214,165,77,.6);z-index:2;pointer-events:none}
+/* Genya eats demon flesh: veins crawl, a bite snaps, his card turns into his demon form */
+.stage.gyx{height:130px}
+.gyx-card{position:relative;width:76px;height:92px}
+.gyx-card .gl.stg{position:absolute;inset:0;width:76px;height:92px}
+.gyx-a{animation:gyxa 2.2s both}
+.gyx-b{opacity:0;animation:gyxb 2.2s both}
+@keyframes gyxa{0%,55%{opacity:1;filter:none}35%{filter:brightness(.7) saturate(1.4) hue-rotate(-20deg)}70%,100%{opacity:0}}
+@keyframes gyxb{0%,55%{opacity:0;transform:scale(1)}65%{opacity:1;transform:scale(1.1);filter:brightness(1.6)}100%{opacity:1;transform:scale(1);filter:none}}
+.gyx-veins{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.gyx-veins path{fill:none;stroke:#b0122a;stroke-width:3;stroke-linecap:round;filter:drop-shadow(0 0 2px rgba(200,20,40,.9));stroke-dasharray:90;stroke-dashoffset:90;animation:gyxvein 1s var(--d,0s) ease-out both, gyxveinout .4s 1.9s both}
+@keyframes gyxvein{to{stroke-dashoffset:0}}
+@keyframes gyxveinout{to{opacity:0}}
+.gyx-bite{position:absolute;left:-18px;right:-18px;top:30%;height:40px;pointer-events:none}
+.gyx-bite i{position:absolute;left:0;right:0;height:16px;background:repeating-linear-gradient(90deg,transparent 0 4px,#f2ebe0 4px 10px,transparent 10px 14px);clip-path:polygon(0 0,100% 0,100% 30%,0 30%);opacity:0}
+.gyx-bite i.t{top:0;clip-path:polygon(0 0,100% 0,96% 40%,90% 100%,84% 40%,78% 100%,72% 40%,66% 100%,60% 40%,54% 100%,48% 40%,42% 100%,36% 40%,30% 100%,24% 40%,18% 100%,12% 40%,6% 100%,0 40%);background:#f2ebe0;animation:gyxbt .5s 1.05s both}
+.gyx-bite i.b{bottom:0;clip-path:polygon(0 100%,100% 100%,96% 60%,90% 0,84% 60%,78% 0,72% 60%,66% 0,60% 60%,54% 0,48% 60%,42% 0,36% 60%,30% 0,24% 60%,18% 0,12% 60%,6% 0,0 60%);background:#f2ebe0;animation:gyxbb .5s 1.05s both}
+@keyframes gyxbt{0%{opacity:0;transform:translateY(-22px)}40%{opacity:1}70%{transform:translateY(8px)}100%{opacity:0;transform:translateY(8px)}}
+@keyframes gyxbb{0%{opacity:0;transform:translateY(22px)}40%{opacity:1}70%{transform:translateY(-8px)}100%{opacity:0;transform:translateY(-8px)}}
+.gyx-kj{position:absolute;right:8px;top:4px;font-family:var(--display);font-size:1.7rem;color:#c8202c;text-shadow:0 0 12px rgba(200,32,44,.6);animation:htxkj .5s 1.2s both}
+.gyx .pop{animation-delay:1.4s}
+/* Kokushibo: the blade lengthens and sprouts edges and eyes before Moon Breathing */
+.kokublade{position:absolute;left:62%;top:22%;width:170px;height:62px;pointer-events:none;overflow:visible;transform-origin:0 50%;animation:kbgrow .8s ease-out both;z-index:2}
+.stage.rev .kokublade,.stage.group.rev .kokublade{left:auto;right:60%;transform-origin:100% 50%;transform:scaleX(-1)}
+.kb-main{fill:#e4dcf0;stroke:#4a2f6b;stroke-width:1.6;filter:drop-shadow(0 0 6px rgba(170,110,240,1)) drop-shadow(0 0 2px #000)}
+.kb-br{fill:#b9b0c9;stroke:#6b4f8a;stroke-width:.8;opacity:0;transform-box:fill-box;transform-origin:0 100%;animation:kbbr .35s var(--d) ease-out both}
+.kb-eye{fill:#ff3b3b;stroke:#1a0a0a;stroke-width:.8;opacity:0;animation:kbeye .3s var(--d) both}
+@keyframes kbgrow{0%{transform:scaleX(.15);opacity:0}30%{opacity:1}100%{transform:scaleX(1)}}
+.stage.rev .kokublade{animation-name:kbgrowr}
+@keyframes kbgrowr{0%{transform:scaleX(-.15);opacity:0}30%{opacity:1}100%{transform:scaleX(-1)}}
+@keyframes kbbr{from{opacity:0;transform:scale(0)}to{opacity:1;transform:scale(1)}}
+@keyframes kbeye{from{opacity:0;transform:scale(0)}to{opacity:1;transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.zzz{animation:none!important}.zzz i{opacity:.8}.gyx *,.kokublade,.kokublade *{animation:none!important}.gyx-a{opacity:0}.gyx-b{opacity:1}.gyx-veins{display:none}}
+.st-by:has(.kokublade){z-index:4}
+
+/* Animation round 2 (Nov 10, 2026, CK) */
+/* Upper Moons in the draft get their own lining, like Marks get red */
+.card.um{border-color:rgba(146,112,224,.8);box-shadow:0 0 0 1px rgba(146,112,224,.4) inset,0 0 14px rgba(120,80,210,.25),var(--shadow)}
+/* Inosuke: both jagged swords spin across the stage and come back */
+.sfx-twinblades .tblade{position:absolute;left:0;top:40%;width:170px;animation:tblade 1.4s cubic-bezier(.4,0,.6,1) both}
+.sfx-twinblades .tblade.b{top:52%;animation-delay:.12s}
+.sfx-twinblades .tblade svg{display:block;width:100%;height:auto;animation:tbspin .35s linear infinite;filter:drop-shadow(0 0 6px rgba(200,220,255,.7))}
+@keyframes tblade{0%{transform:translateX(-120px);opacity:0}10%{opacity:1}50%{transform:translateX(calc(100vw - 40px))}90%{opacity:1}100%{transform:translateX(-120px);opacity:0}}
+@keyframes tbspin{to{transform:rotate(360deg)}}
+.sfx-twinblades.fromright .tblade{left:auto;right:0}
+.sfx-twinblades.fromright .tblade{animation-name:tbladel}
+@keyframes tbladel{0%{transform:translateX(120px);opacity:0}10%{opacity:1}50%{transform:translateX(calc(-100vw + 40px))}90%{opacity:1}100%{transform:translateX(120px);opacity:0}}
+/* Shinobu: a needle thrust, a butterfly, purple poison veins */
+.sfx-stinger .stg-needle{position:absolute;left:10%;top:42%;width:0;height:4px;background:linear-gradient(90deg,transparent,#e8dcff 40%,#fff);box-shadow:0 0 10px 2px rgba(180,138,230,.8);animation:stgneedle .35s ease-in both}
+@keyframes stgneedle{0%{width:0;opacity:1}80%{width:62%;opacity:1}100%{width:62%;opacity:0}}
+.sfx-stinger.fromright .stg-needle{left:auto;right:10%;transform:scaleX(-1);transform-origin:100% 50%}
+.sfx-stinger .stg-fly{position:absolute;left:50%;top:32%;width:110px;margin-left:-55px;animation:stgfly 1.4s .1s ease-in-out both}
+@keyframes stgfly{0%{opacity:0;transform:translateY(20px) scaleX(.3)}20%{opacity:1;transform:translateY(0) scaleX(1)}35%{transform:scaleX(.4)}50%{transform:scaleX(1)}65%{transform:translateY(-14px) scaleX(.4)}100%{opacity:0;transform:translateY(-30px) scaleX(1)}}
+.sfx-stinger .stg-veins{position:absolute;left:50%;top:42%;width:200px;height:200px;margin:-100px 0 0 -100px}
+.sfx-stinger .stg-veins path{fill:none;stroke:#9b4fe0;stroke-width:2.4;stroke-linecap:round;filter:drop-shadow(0 0 3px rgba(155,79,224,.9));stroke-dasharray:60;stroke-dashoffset:60;animation:stgvein .5s var(--d) ease-out both}
+@keyframes stgvein{to{stroke-dashoffset:0}}
+/* Final Form Muzan: whips crack out in a fan from his side, lashing one after another */
+.sfx-whipfan2 svg{position:absolute;inset:0;width:100%;height:100%}
+.sfx-whipfan2 path{fill:none;stroke:#3a0710;stroke-width:3.2;stroke-linecap:round;filter:drop-shadow(0 0 4px rgba(220,30,50,.9));stroke-dasharray:160;stroke-dashoffset:160;animation:whipf .4s var(--d) cubic-bezier(.3,.8,.4,1) both,whipout .3s calc(var(--d) + .9s) both}
+.sfx-whipfan2 path{stroke:#5a0e1e}
+@keyframes whipf{to{stroke-dashoffset:0}}
+@keyframes whipout{to{opacity:0}}
+.sfx-whipfan2 .crack{fill:#fff;opacity:0;animation:whipcrack .25s var(--d) both}
+@keyframes whipcrack{0%{opacity:0;transform:scale(.2)}50%{opacity:1}100%{opacity:0;transform:scale(2.4)}}
+.sfx-whipfan2.fromright svg{transform:scaleX(-1)}
+.sfx-whipfan2 .crack{transform-box:fill-box;transform-origin:center}
+/* Rengoku's Ninth Form: a roaring flame beast charges across the stage, jaws snapping, embers streaming behind */
+.sfx-ninth .flamebeast{position:absolute;z-index:3;left:0;top:34%;width:min(96vw,640px);margin-top:-80px;animation:flamebeast 2.1s .4s cubic-bezier(.45,0,.35,1) both;filter:drop-shadow(0 0 3px #3a0a00) drop-shadow(0 0 22px rgba(255,170,60,.95))}
+.sfx-ninth .flamebeast svg{display:block;width:100%;height:auto;overflow:visible;animation:fbbob .3s ease-in-out infinite alternate}
+.sfx-ninth .fb-body{fill:url(#nbfire);stroke:#7a1600;stroke-width:2.5;paint-order:stroke;animation:fbflick .14s steps(2) infinite}
+.sfx-ninth .fb-trail path{fill:none;stroke:#ffcf5a;stroke-width:6;stroke-linecap:round;opacity:.85;filter:blur(.6px);stroke-dasharray:40 26;animation:fbtrail .35s var(--d) linear infinite}
+.sfx-ninth .fb-mane path{fill:#ff9a20;stroke:#ffe27a;stroke-width:1.5;paint-order:stroke;transform-box:fill-box;transform-origin:100% 100%;animation:fbmane .22s var(--d) ease-in-out infinite alternate}
+.sfx-ninth .fb-skull{fill:url(#nbhead);stroke:#4a0c00;stroke-width:3.5;paint-order:stroke}
+.sfx-ninth .fb-stripe{fill:#3a0800;opacity:.85}
+.sfx-ninth .fb-brow{fill:#2a0600}
+.sfx-ninth .fb-pupil{fill:#3a0800}
+.sfx-ninth .fb-eye{filter:drop-shadow(0 0 6px #fff36a)}
+.sfx-ninth .fb-fangs{fill:#fff;stroke:#7a1600;stroke-width:1.5;paint-order:stroke}
+.sfx-ninth .fb-jawp{fill:#e8540c;stroke:#4a0c00;stroke-width:3;paint-order:stroke}
+.sfx-ninth .fb-jaw{transform-box:fill-box;transform-origin:0% 20%;animation:fbjaw .42s .5s ease-in-out infinite alternate}
+.sfx-ninth .fb-embers circle{fill:#ffe27a;filter:drop-shadow(0 0 3px #ff6a00);animation:fbember .7s var(--d) ease-out infinite}
+.sfx-ninth .fb-roar{position:absolute;right:4%;top:40%;width:60px;height:60px;margin-top:-30px;border-radius:50%;border:3px solid rgba(255,236,170,.9);box-shadow:0 0 18px rgba(255,140,40,.9);opacity:0;animation:fbroar .6s 1.3s ease-out both}
+@keyframes flamebeast{0%{transform:translateX(-105%) scale(.85);opacity:0}12%{opacity:1}40%{transform:translateX(calc(50vw - 55%)) scale(1.05)}62%{transform:translateX(calc(50vw - 45%)) scale(1.12)}90%{opacity:1}100%{transform:translateX(105vw) scale(1);opacity:0}}
+@keyframes fbbob{from{transform:translateY(-3px) rotate(-1.5deg)}to{transform:translateY(3px) rotate(1.5deg)}}
+@keyframes fbflick{50%{filter:brightness(1.25)}}
+@keyframes fbtrail{to{stroke-dashoffset:-66}}
+@keyframes fbmane{from{transform:scaleY(.85) rotate(-4deg)}to{transform:scaleY(1.12) rotate(4deg)}}
+@keyframes fbjaw{from{transform:rotate(0)}to{transform:rotate(16deg)}}
+@keyframes fbember{0%{opacity:1;transform:translate(0,0)}100%{opacity:0;transform:translate(var(--dx),var(--dy))}}
+@keyframes fbroar{0%{opacity:1;transform:scale(.4)}100%{opacity:0;transform:scale(4)}}
+.sfx-ninth.fromright .flamebeast{left:auto;right:0;animation-name:flamebeastl}
+.sfx-ninth.fromright .flamebeast svg{transform:scaleX(-1);animation:none}
+.sfx-ninth.fromright .fb-roar{right:auto;left:4%}
+@keyframes flamebeastl{0%{transform:translateX(105%) scale(.85);opacity:0}12%{opacity:1}40%{transform:translateX(calc(-50vw + 55%)) scale(1.05)}62%{transform:translateX(calc(-50vw + 45%)) scale(1.12)}90%{opacity:1}100%{transform:translateX(-105vw) scale(1);opacity:0}}
+/* Win screen: the MVP's card flips, their special's name behind them in brush letters */
+.winseals .star{position:relative}
+.winseals .star .gl img{animation:mvpflip .7s .9s ease-in-out both}
+@keyframes mvpflip{0%{transform:scaleX(1)}50%{transform:scaleX(0)}100%{transform:scaleX(1)}}
+.mvpsig{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-8deg);font-family:var(--display);font-weight:800;font-size:clamp(1.6rem,7vw,2.6rem);line-height:1;white-space:nowrap;color:rgba(214,165,77,.32);text-shadow:0 0 30px rgba(214,165,77,.4);pointer-events:none;z-index:-1;opacity:0;animation:mvpsig 1s 1.2s ease-out both}
+@keyframes mvpsig{from{opacity:0;letter-spacing:.5em}to{opacity:1;letter-spacing:.02em}}
+@media (prefers-reduced-motion:reduce){.tblade,.stg-needle,.stg-fly,.stg-veins path,.flamebeast,.flamebeast *,.mvpsig,.winseals .star .gl img{animation:none!important}.mvpsig{opacity:1}}

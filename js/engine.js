@@ -310,7 +310,7 @@ let UID=0;
 const finalUp = (v,p) => finalFight() && p===foeSeat() ? Math.round(v*(1+FINAL_POW)) : v;
 function mkUnit(id,p){ const c=BYID[id]; return {uid:'u'+(UID++),id,fam:c.fam,sk:c.sk,p,name:c.short,g:c.g,hp:c.hp,max:c.hp,pow:finalUp(c.pow,p),spd:c.spd,def:c.def,
   regen:c.regen||0,revive:c.revive||0,demon:!!c.demon,mark:!!c.mark,legend:!!c.legend,strikes:c.strikes||1,cap:c.cap||0,taken:0,grit:c.id==='murata',
-  sunproof:!!c.sunproof,noPoison:!!c.noPoison,vowed:false,noDefend:!!c.noDefend,basic:c.basic||null,anchor:c.anchor||null,
+  sunproof:!!c.sunproof,noPoison:!!c.noPoison,vowed:false,noDefend:!!c.noDefend,basic:c.basic||null,anchor:c.anchor||null,emo:!!c.emo,kin:c.kin||null,drums:!!c.drums,splitOnHit:c.splitOnHit||null,
   sig:c.sig,cd:0,alive:true,spawn:!!c.spawn,splits:c.splits||null,merge:c.merge||null,poison:null,stun:false,stunNext:false,defending:false,evade:false,sunburn:false}; }
 // Applies team bonuses to the units and returns their labels ('!' prefix = a penalty)
 function synergies(p){
@@ -357,7 +357,7 @@ function startBattle(){
   S.place = S.mode==='story' ? null : pickPlace();   // the background for this match (story battles use their own)
   if(S.mode!=='story'){ S.twist=null; S.startState=null; S.boosts=null; S.phases=null; S.beats=null; S.awaken=null; }   // story twists never leak into other games
   S.waveQ=null; S.said={}; S.failed=false; S.awoke={}; S.midScene=null; S.pendingAwake=[]; S.chainDone=false; S.chainPending=null;
-  S.survived=false;
+  S.survived=false; S.htMore={}; S.htHide={};
   S.sib=players().map(()=>false); S.twins=players().map(()=>false); S.syn=players().map(p=>synergies(p)); S.outOrder=[];
   S.synShown=false; S.upSeen={};
   S.round=1; S.plans=players().map(()=>({})); S.lastPlans=players().map(()=>null); S.log=[]; S.matchLog=[]; S.planFor=S.me||0; S.focus=null; S.stats={};
@@ -372,7 +372,7 @@ function startBattle(){
   S.phase = gameMode() ? 'reveal' : S.mode==='local' && !S.tvDuo ? 'pass' : 'plan';   // TV 2-player: each phone picks in secret, no passing
 }
 const alive = p => S.teams[p].filter(u=>u.alive);
-const findU = uid => allUnits().find(u=>u.uid===uid);
+const findU = uid => allUnits().find(u=>u.uid===uid) || Object.values(S.htHide||{}).map(h=>h&&h.u).find(u=>u&&u.uid===uid);   // a hiding real Hantengu is off the board but still known
 // Every enemy fighter still standing, from all the other teams
 const foes = p => enemiesOf(p).flatMap(q=>alive(q));
 // Your fighters and (2v2) your partner's: who ally moves (heals, hides, shields, training) can target
@@ -394,7 +394,9 @@ const isAllyMove = (u,pl) => (pl.type==='special' && u.sig.kind==='ally') || pl.
 const aimsTeam = u => u.sig.kind==='all' && nPlayers()>2 && !S.coop;
 const needsTarget = (u,pl) => (pl.type==='attack' && !(u.basic && u.basic.kind==='self')) || pl.type==='save' || (pl.type==='special' && (u.sig.kind==='single'||u.sig.kind==='ally'||aimsTeam(u)));
 const targetOptions = (u,pl) => !needsTarget(u,pl) ? [] : isAllyMove(u,pl) ? friends(u.p).filter(f=>pl.type!=='save'||f!==u) : foes(u.p);
-function unitReady(u){ if(u.stun) return true; const pl=S.plans[u.p][u.uid]; if(!pl||!pl.type) return false; return !needsTarget(u,pl) || !!pl.t; }
+function unitReady(u){ if(u.stun) return true; const pl=S.plans[u.p][u.uid]; if(!pl||!pl.type) return false; if(pl.type==='hunt') return pl.spot!=null; return !needsTarget(u,pl) || !!pl.t; }
+// Hantengu H: the team hiding its real Hantengu from player p (or undefined)
+const huntTeam = p => (S.htHide ? enemiesOf(p).find(q=>S.htHide[q]) : undefined);
 const planReady = p => alive(p).every(unitReady);
 function setMove(u,type){
   const pl=S.plans[u.p][u.uid]||{};
@@ -447,12 +449,12 @@ const SIG_EST = {
   muzan: u=>({all:true, base:u.pow-7, o:{ignoreDef:true}}),
   muzan_final: u=>({all:true, base:u.pow-6, o:{ignoreDef:true}}),
   gyokko: u=>({base:u.pow-2, o:{ignoreDef:true}, stun:true}),
-  sekido: ()=>({all:true, base:4, o:{ignoreDef:true}}),
-  karaku: u=>({base:u.pow+3}),
-  aizetsu: u=>({base:u.pow+4}),
+  sekido: ()=>({all:true, base:5, o:{ignoreDef:true}}),
+  karaku: u=>({all:true, base:Math.max(1,u.pow-6)}),
+  aizetsu: u=>({base:u.pow+4, o:{pierce:true}}),
   urogi: u=>({base:u.pow+2}),
   daki: u=>({all:true, base:u.pow-3}),
-  zohakuten: u=>({all:true, base:u.pow-4, o:{pierce:true}}),
+  zohakuten: u=>({all:true, base:u.pow, o:{pierce:true}}),
   susamaru: u=>({base:u.pow-1, bonus:1.6}),          // also hits a second enemy
   kanae: u=>({base:u.pow+3, bonus:1.15}),             // plus a small heal
   tanjiro_demon: u=>({all:true, base:u.pow-4, o:{ignoreDef:true}}),
@@ -500,7 +502,7 @@ function cpuPlan(p, level='hard'){
   const power = q => alive(q).reduce((a,x)=>a+x.hp*x.pow,0), top=Math.max(1,...enemiesOf(p).map(power));
   const lead = t => nPlayers()>2 ? FFA_FOCUS*power(t.p)/top : 0;
   const held = t => t.anchor && foesNow.some(f=>f.id===t.anchor), root = t => foesNow.some(f=>f.anchor===t.id);   // Zohakuten can't fall while the real Hantengu lives
-  const score = (t,d) => { const l=left(t); if(l<=0) return 0; d=Math.min(d,l); if(held(t)) return d/t.max*15; return d/t.max*100 + (d>=l ? 40+threat(t) : 0) + (d>0?lead(t):0) + (root(t)?30:0); };
+  const score = (t,d) => { const l=left(t); if(l<=0) return 0; d=Math.min(d,l); if(held(t)) return d/t.max*15; return d/t.max*100 + (d>=l ? 40+threat(t) : 0) + (d>0?lead(t):0) + (root(t)?30:0) + (t.id==='hantengu_true'?45:0); };
   const best = (base,o) => foesNow.reduce((b,t)=>{ const s=score(t,estHit(t,base,o))+threat(t)*(fin?2:.5)+Math.random()*(fin?12:noise); return s>b.s?{t,s}:b; },{t:foesNow[0],s:-1}).t;
   const pctHurt = m => m.hp/m.max;
   mine.forEach(u=>{
@@ -509,7 +511,6 @@ function cpuPlan(p, level='hard'){
     let plan={type:'attack', t:at.uid, v:score(at,atD), hits:[[at,atD]]};
     // Nakime's Biwa Strum: slow down the most dangerous enemy. Kagaya's Words of Resolve: heal the team.
     if(u.basic && u.basic.cower) plan={type:'attack', v:12};
-    else if(u.basic && u.basic.feed) plan={type:'attack', v:30};
     else if(u.basic && u.basic.kind==='self') plan={type:'attack', v: mine.reduce((a,m)=>a+Math.min(2,m.max-m.hp)/m.max*100,0)};
     else if(u.basic){ const t=calm && Math.random()<.6 ? calm : foesNow.slice().sort((a,b)=>threat(b)-threat(a))[0]; plan={type:'attack', t:t.uid, v:8, hits:[]}; }   // Biwa Strum on Giyu: his Dead Calm comes too late
     // Selfless State: Save a teammate who's in danger, otherwise attack (he can't be hit anyway)
@@ -551,9 +552,13 @@ function cpuPlan(p, level='hard'){
       const [worth,odds]=level==='hard'?[45,.6]:[30,.4];
       if(plan.v<worth && (danger>=u.hp || (!fin && u.hp<=u.max*.25)) && !(fin&&u.spawn) && Math.random()<odds){ plan={type:'defend'}; guards++; }
     }
+    if(u.drums && plan.type==='attack' && plan.v<(level==='hard'?30:20) && Math.random()<.6) plan={type:'drums'};   // Zohakuten: build up when there's nothing worth hitting
     (plan.hits||[]).forEach(([t,d])=>{ planned[t.uid]=(planned[t.uid]||0)+d; });
     S.plans[p][u.uid]={type:plan.type, t:plan.t};
   });
+  // Hantengu H: while the real one hides, one fighter a round may gamble on a hiding place (more often while Zohakuten is healthy)
+  const q=huntTeam(p); if(q!==undefined){ const z=alive(q).find(u=>u.id==='zohakuten'), mine=alive(p).filter(u=>!u.stun), odds=(level==='hard'?HUNT_ODDS:HUNT_ODDS*.8)*(z&&z.hp>z.max*.5?1:.2);
+    if(mine.length && Math.random()<odds){ const u=mine.slice().sort((a,b)=>a.pow*a.strikes-b.pow*b.strikes)[0]; S.plans[p][u.uid]={type:'hunt', spot:Math.floor(Math.random()*HT_SPOTS)}; } }
 }
 
 /* ---------- resolving a round ---------- */
@@ -563,8 +568,10 @@ function cpuPlan(p, level='hard'){
 const fx = (type, by, on) => ({fx:type, by:by?by.uid:null, on:on?on.uid:null, move:S.curMove||null});
 function L(t,c='',extra){ const hp={}; allUnits().forEach(u=>{ hp[u.uid]=u.hp; }); S.log.push(Object.assign({t,c,hp},extra)); }
 function target(u,tid){ let t=findU(tid); if(!t||!t.alive||sameSide(t.p,u.p)){ const a=foes(u.p); t=a.length?rnd(a):null; } return t; }
-function fall(t,a){ if(t.hp>0) return; if(t.grit){ t.grit=false; t.hp=1; L(`${t.name} somehow survives on ${pct(t)}% health!`,'h',{...fx('heal',null,t), grit:true}); return; } if(t.revive){ t.hp=Math.ceil(t.max*t.revive); t.revive=0; L(`${t.name} falls… and rises again! Seven Hearts ${gained(t,t.hp)}.`,'x',{...fx('revive',null,t), knit:true}); return; }
-  if(t.anchor && S.teams[t.p].some(u=>u.alive && u.id===t.anchor)){ t.hp=1; L(`${t.name} won't fall! The real ${BYID[t.anchor].short} is still alive.`,'x',{...fx('block',null,t), held:true}); return; }
+function fall(t,a){ if(t.hp>0) return;
+  if(t.id==='zohakuten' && htDown(t,a)) return; if(t.grit){ t.grit=false; t.hp=1; L(`${t.name} somehow survives on ${pct(t)}% health!`,'h',{...fx('heal',null,t), grit:true}); return; } if(t.revive){ t.hp=Math.ceil(t.max*t.revive); t.revive=0; L(`${t.name} falls… and rises again! Seven Hearts ${gained(t,t.hp)}.`,'x',{...fx('revive',null,t), knit:true}); return; }
+  if(t.anchor && S.teams[t.p].some(u=>u.alive && u.id===t.anchor)){ t.hp=1; L(`${t.name} won't fall! The real ${BYID[t.anchor].short} is still alive.`,'x',{...fx('block',null,t), held:true});
+    return; }
   // how it fell, for playback: burned away by the sun, or killed by Shinobu's blade or wisteria
   const ash=t.demon && !a && sunUp() && !sunSafe(t), wist=t.demon && ((a&&a.fam==='shinobu') || (!a && t.poison && t.poison.src==='shinobu'));
   t.alive=false; L(`${t.name} falls!`,'k',{ko:t.uid, ash, wist, ...fx('ko',a,t)});
@@ -576,6 +583,13 @@ function fall(t,a){ if(t.hp>0) return; if(t.grit){ t.grit=false; t.hp=1; L(`${t.
   if(t.splits) split(t);
   if(t.merge) merge(t);
   S.teams[t.p].filter(u=>u.alive && u.anchor===t.id).forEach(u=>{ u.hp=0; L(`With the real ${t.name} gone, ${u.name} crumbles.`,'k',fx('hit',a,u)); fall(u,a); });
+  S.teams[t.p].filter(u=>(u.alive||u.down) && u.kin===t.id).forEach(u=>{ u.hp=0; u.alive=false; u.down=null; L(`With the real Hantengu gone, ${u.name} crumbles away.`,'k',{ko:u.uid, ash:true, ...fx('ko',null,u)}); });
+  if(t.emo){   // Hantengu's emotions
+    if(!S.htMore[t.p]){ S.htMore[t.p]=true; const k=['aizetsu','urogi'].map(id=>mkUnit(id,t.p)); S.teams[t.p].push(...k);
+      L(`Cutting ${t.name} only makes more! Aizetsu and Urogi burst out.`,'x',{spawn:k.map(x=>x.uid), htmore:{from:t.uid}, ...fx('spawn',null,t)}); }
+    else if(!S.teams[t.p].some(u=>u.alive && u.emo)){ const z=mkUnit('zohakuten',t.p); S.teams[t.p].push(z); S.htHide[t.p]={spot:Math.floor(Math.random()*HT_SPOTS), u:null};
+      L(`The emotions merge into one body. Zohakuten appears! The real Hantengu scurries off to hide.`,'x',{spawn:[z.uid], merged:true, htmerge:true, ...fx('spawn',null,t)}); }
+  }
   // story: allies who arrive the moment this fighter falls (Petals of Futility: Kanao and Inosuke when Shinobu falls)
   ((S.twist||{}).reinforce||[]).forEach(r=>{ if(r.after===t.id && !r.came && t.p===0) arrive(r); }); }
 // Hantengu's forms: a fallen form is replaced by the forms it splits into. They join the team at full health and act from next round.
@@ -604,12 +618,14 @@ function hit(a,t,base,o={}){
     if(a.astray){ L(`Yahaba's arrows bend ${a.name}'s blow away from ${t.name}.`,'x',fx('miss',a,t)); return 0; }
   } else if(S.shield[t.p]||t.evade||t.away||t.saved||t.defending||a.astray) L(`Nothing can stop it. ${a.name} cuts straight through to ${t.name}.`,'h',fx('special',a,t));
   let d = o.ignoreDef ? base : Math.max(1, base - t.def, Math.ceil(base/2));
-  const guarded = t.defending && !o.pierce && !a.pierceAll && !ub;
+  const guarded = t.defending && !t.exposed && !o.pierce && !a.pierceAll && !ub;
   if(guarded) d = Math.ceil(d/2);
   let note = guarded?' (guarded)':'';
   const guardLine = guarded && t.guardBy ? {guard:t.guardBy} : null;   // Retired Tengen standing over an ally
   if(t.cap){ const room=t.cap-t.taken; if(room<=0){ L(`${t.name} sees it coming in the Transparent World. No damage.`,'x',fx('block',a,t)); return 0; } if(d>room){ d=room; note+=' (capped)'; } t.taken+=d; }
+  if(t.exposed){ d=Math.ceil(d*1.5); note+=' (wide open)'; }
   d=Math.max(0,d); const before=t.hp; t.hp = Math.max(0, t.hp - d);
+  if(d>0 && t.splitOnHit){ htSplit(t,a); return d; }
   L(`${a.name} hits ${t.name} ${lost(t,Math.min(d,before))}${note}.`,'',{...fx('hit',a,t), ...(guardLine||{})});
   if(o.sun && t.demon && t.regen && !t.sunproof){ t.regen=0; t.sunburn=true; L(`${t.name} is burned by the sun. No more regeneration.`,'h',fx('burn',a,t)); }
   fall(t,a);
@@ -626,6 +642,41 @@ function hit(a,t,base,o={}){
 const HER_FAMS = ['daki','nakime','susamaru','mitsuri','shinobu','kanae','nezuko','kanao','tamayo'];
 const hisHer = u => u.fam==='typezero' ? 'its' : HER_FAMS.includes(u.fam) ? 'her' : 'his';
 function stunT(t, kind){ if(t&&t.alive&&!S.shield[t.p]&&!t.evade&&!hidden(t)&&!t.saved){ t.stunNext=true; if(kind) t.bound=kind; L(`${t.name} will lose ${hisHer(t)} turn next round.`,'k',{...fx('stun',null,t), kind}); } }
+// Hantengu: the first hit that lands cuts his head off and he splits (he doesn't fall: he becomes them)
+// Hantengu H: a fighter guesses where the real one is hiding. Right: he's dragged out and takes the hit. Wrong: left wide open this round.
+// Hantengu H: the real one comes out of hiding (the same fighter if he's hidden before, with his wounds)
+function htOut(q){ const h=S.htHide[q], r=(h&&h.u)||mkUnit('hantengu_true',q); S.htHide[q]=null; r.alive=true; S.teams[q].push(r); return r; }
+// Zohakuten at 0 HP while the real one lives: knocked down, not killed. The real one is exposed; if he's still alive at
+// the end of the next round, Zohakuten gets back up with half his health and the real one hides again.
+function htDown(z,a){
+  const q=z.p, real=S.teams[q].find(u=>u.alive && u.id==='hantengu_true');
+  if(!real && !S.htHide[q]) return false;   // the real one is already dead
+  z.hp=0; z.alive=false; z.down=S.round+1;
+  const r=real||htOut(q);
+  L(`${a?a.name+' knocks':'Something knocks'} Zohakuten flat! He's seeing stars. The real Hantengu is out in the open: cut him down before Zohakuten gets back up!`,'h',{...fx('stun',a,z), htdown:true, spawn:real?[]:[r.uid], real:r.uid});
+  return true;
+}
+// End of round: a knocked-down Zohakuten gets back up if the real one survived his round in the open
+function htRise(){
+  players().forEach(p=>S.teams[p].filter(z=>z.down!=null && z.down<=S.round).forEach(z=>{
+    const real=S.teams[p].find(u=>u.alive && u.id==='hantengu_true'); z.down=null; if(!real) return;
+    z.alive=true; z.hp=Math.ceil(z.max*HT_RISE); z.stun=false; z.cd=Math.min(z.cd,1);
+    S.teams[p].splice(S.teams[p].indexOf(real),1); S.htHide[p]={spot:Math.floor(Math.random()*HT_SPOTS), u:real};
+    L(`Zohakuten gets back up, furious! The real Hantengu scurries back into hiding.`,'x',{...fx('spawn',null,z), htrise:true, real:real.uid}); }));
+}
+const HUNT_ODDS = .3;   // how often the computer gambles on a hiding place (Hard; Normal a bit less, Easy never)
+function hunt(u,spot){
+  const q=huntTeam(u.p); if(q===undefined){ L(`${u.name} looks around, but there's no one left to find.`,'',fx('stun',null,u)); return; }
+  const h=S.htHide[q], found=h.spot===spot;
+  if(!found){ u.exposed=true; L(`${u.name} searches hiding place ${spot+1}… nothing! ${u.name} is left wide open this round.`,'x',{...fx('miss',u,null), hunt:{spot, at:h.spot, found:false}}); return; }
+  const r=htOut(q);
+  L(`${u.name} searches hiding place ${spot+1}… FOUND HIM! The real Hantengu is dragged out.`,'h',{spawn:[r.uid], hunt:{spot, at:spot, found:true}, ...fx('spawn',u,r)});
+  hit(u,r,u.pow);
+}
+function htSplit(t,a){
+  t.alive=false; t.hp=0; const kids=t.splitOnHit.map(id=>mkUnit(id,t.p)); S.teams[t.p].push(...kids);
+  L(`${a?a.name+' cuts':'Something cuts'} Hantengu's head off… and he splits! Sekido and Karaku appear.`,'x',{spawn:kids.map(k=>k.uid), htcut:{by:a?a.uid:null}, ...fx('spawn',null,t)});
+}
 function special(u,pl){
   const s=u.sig, en=()=>aimsTeam(u) ? aimedTeam(u,pl) : foes(u.p);
   L(`${u.name}: ${s.name}!`,'x',{...fx('special',u,null), sig:s.id||(u.unblock?'unblock':null), flare:!!u.mark && !u.flared});   // a Mark flares the first time it's used
@@ -641,7 +692,7 @@ function special(u,pl){
     case 'yoriichi': en().forEach(e=>hit(u,e,u.pow,{ignoreDef:true,sun:true,counter:false})); break;
     case 'yoriichi_old': hit(u,target(u,pl.t),u.pow+10,{ignoreDef:true}); break;
     case 'tanjiro': { const ub=!!u.unblock; u.unblock=false; u.hinokami=true; hit(u,target(u,pl.t),u.pow+5,{ignoreDef:true, unblockable:ub}); break; }
-    case 'nezuko': en().forEach(e=>hit(u,e,5,{ignoreDef:true,counter:false})); break;
+    case 'nezuko': en().forEach(e=>{ if(hit(u,e,5,{ignoreDef:true,counter:false})>0 && e.demon && e.regen) e.blood=S.round; }); break;   // her blood burns demons: no regeneration this round
     case 'zenitsu': hit(u,target(u,pl.t),u.pow*2); break;
     case 'inosuke': for(let i=0;i<2;i++){ const e=en(); if(e.length) hit(u,rnd(e),u.pow-1); } break;
     case 'kanao': hit(u,target(u,pl.t),u.pow+4); break;
@@ -678,7 +729,7 @@ function special(u,pl){
     case 'akaza': hit(u,target(u,pl.t),u.pow+6); break;
     case 'daki': en().forEach(e=>hit(u,e,u.pow-3,{counter:false})); break;
     case 'nakime': { const t=target(u,pl.t); if(hidden(t)){ L(`The castle shifts, but ${t.name}'s presence can't be found.`,'x',fx('miss',u,t)); break; } if(t&&t.alive){ t.away=true; L(`Nakime strums. ${t.name} is sent to another room of the castle this round.`,'k',{...fx('stun',u,t), gone:true}); } break; }
-    case 'zohakuten': en().forEach(e=>hit(u,e,u.pow-4,{pierce:true,counter:false})); break;
+    case 'zohakuten': en().forEach(e=>hit(u,e,u.pow,{pierce:true,counter:false})); break;
     case 'susamaru': { const t=target(u,pl.t); hit(u,t,u.pow-1); const o=en().filter(e=>e!==t); if(o.length) hit(u,rnd(o),u.pow-1); break; }
     case 'yahaba': { const t=target(u,pl.t); if(hidden(t)){ L(`Yahaba's arrows can't lock onto ${t.name}.`,'x',fx('miss',u,t)); break; } if(t&&t.alive){ t.astray=true; L(`Yahaba's arrows lock onto ${t.name}. Every hit they throw this round will miss.`,'k',fx('stun',u,t)); } break; }
     case 'kanae': { hit(u,target(u,pl.t),u.pow+3); const m=alive(u.p).sort((a,b)=>a.hp/a.max-b.hp/b.max)[0]; if(m){ const h=Math.min(4,m.max-m.hp); if(h){ m.hp+=h; L(`Kanae's petals heal ${m===u?'her':m.name} ${gained(m,h)}.`,'h',fx('heal',u,m)); } } break; }
@@ -687,11 +738,12 @@ function special(u,pl){
     case 'typezero': { let t=findU(pl.t); if(!t||!t.alive||!sameSide(t.p,u.p)) t=u; t.spd+=2; L(`Type Zero drills ${t===u?'itself':t.name}: +2 SPD for the rest of the match.`,'h',fx('buff',u,t)); break; }
     case 'doma': en().forEach(e=>hit(u,e,u.pow-4,{ignoreDef:true,counter:false})); break;
     case 'kokushibo': en().forEach(e=>hit(u,e,u.pow-4,{ignoreDef:true,counter:false})); break;
-    case 'sekido': en().forEach(e=>hit(u,e,4,{ignoreDef:true,counter:false})); break;
-    case 'karaku': hit(u,target(u,pl.t),u.pow+3); break;
-    case 'aizetsu': hit(u,target(u,pl.t),u.pow+4); break;
+    case 'sekido': en().forEach(e=>hit(u,e,5,{ignoreDef:true,counter:false})); break;
+    case 'flee': u.evade=true; u.evadeBy='hantengu'; L(`The real Hantengu scurries away and hides.`,'h',{...fx('guard',null,u), shrink:true}); break;
+    case 'karaku': en().forEach(e=>hit(u,e,Math.max(1,u.pow-6),{counter:false})); break;
+    case 'aizetsu': hit(u,target(u,pl.t),u.pow+4,{pierce:true}); break;
     case 'urogi': hit(u,target(u,pl.t),u.pow+2); break;
-    case 'hantengu': case 'hantengu_true': { u.evade=true; u.evadeBy='hantengu'; const h=Math.min(6,u.max-u.hp); u.hp+=h; L(`Hantengu shrinks into hiding and heals ${gained(u,h)}.`,'h',{...fx('heal',null,u), shrink:true}); break; }
+    case 'hantengu': { u.evade=true; u.evadeBy='hantengu'; const h=Math.min(6,u.max-u.hp); u.hp+=h; L(`Hantengu shrinks into hiding and heals ${gained(u,h)}.`,'h',{...fx('heal',null,u), shrink:true}); break; }
     case 'kaigaku': { const t=target(u,pl.t); hit(u,t,u.pow+3); const o=en().filter(e=>e!==t); if(o.length) hit(u,rnd(o),4,{ignoreDef:true}); break; }
     case 'enmu': en().forEach(e=>{ if(S.shield[e.p]||e.evade||hidden(e)) return; e.cd+=2; }); L('The enemy team falls into a deep sleep. Their specials are 2 rounds further away.','k',fx('stun',u,null)); break;
     case 'urokodaki': hit(u,target(u,pl.t),u.pow+3); break;
@@ -728,9 +780,9 @@ function aimedTeam(u,pl){ const t=findU(pl.t), q=t && !sameSide(t.p,u.p) && aliv
 function useHelper(p, id){
   S.helpers[p]=S.helpers[p].filter(h=>h!==id);
   const team=alive(p), tag={fx:id==='chachamaru'||id==='aoi'?'heal':id==='mice'||id==='chuntaro'||id==='tecchin'?'buff':'special', by:null, on:null, helper:id, hp:p};   // hp: whose helper (for its clip)
-  if(id==='chachamaru'){   // the most hurt fighter (lowest health %) heals half of their current HP
+  if(id==='chachamaru'){   // the most hurt fighter (lowest health %) heals half of what they've lost
     const u=team.slice().sort((a,b)=>a.hp/a.max-b.hp/b.max)[0];
-    if(u){ const h=Math.min(Math.ceil(u.hp/2), u.max-u.hp); u.hp+=h; L(`Chachamaru delivers Tamayo's medicine to ${u.name} ${gained(u,h)}.`,'h',{...tag, on:u.uid}); }
+    if(u){ const h=Math.ceil((u.max-u.hp)/2); u.hp+=h; L(`Chachamaru delivers Tamayo's medicine to ${u.name} ${gained(u,h)}.`,'h',{...tag, on:u.uid}); }
   }
   if(id==='aoi'){ team.forEach(u=>{ u.poison=null; }); const u=team.slice().sort((a,b)=>a.hp/a.max-b.hp/b.max)[0]; if(u){ const h=Math.min(4,u.max-u.hp); u.hp+=h; L(`Aoi treats your team. Poison is cured, and ${u.name} recovers ${gained(u,h)}.`,'h',{...tag, on:u.uid}); } }
   if(id==='chuntaro'){ const u=team.filter(x=>x.stun).sort((a,b)=>b.pow-a.pow)[0]; if(u){ u.stun=false; const t=foes(p)[0]; S.plans[p][u.uid]={type:'attack', t:t&&t.uid}; } team.forEach(x=>{ x.spd+=2; x.chuBoost=(x.chuBoost||0)+2; }); L(`Chuntaro sounds the alarm!${u?` ${u.name} wakes up!`:''} ${S.names[p]}'s team gets +2 SPD this round.`,'h',tag); }
@@ -856,13 +908,13 @@ function resolve(){
     if(x.pl.type==='stunned'){ L(`${u.name} can't move.`,'',fx('stun',null,u)); continue; }
     if(u.away){ L(u.carried ? `${u.name} is being carried to safety.` : `${u.name} is lost in the Infinity Castle and can't act.`,'',fx('stun',null,u)); continue; }
     if(x.pl.type==='attack' && u.basic && u.basic.cower){ L(`${u.name} cowers.`,'',fx('guard',null,u)); continue; }   // Hantengu never attacks
-    if(x.pl.type==='attack' && u.basic && u.basic.feed){   // the real Hantengu feeds Zohakuten: it adds up, so reach him fast
-      S.teams[u.p].filter(z=>z.alive && z.anchor===u.id).forEach(z=>{ z.pow+=2; L(`${u.name} feeds ${z.name}'s hatred. PWR rises to ${z.pow}.`,'h',fx('special',u,z)); }); continue; }
     if(x.pl.type==='attack' && u.basic && u.basic.kind==='self'){   // Kagaya's Words of Resolve
       const healed=alive(u.p).map(m=>{ const h=Math.min(2,m.max-m.hp); m.hp+=h; return h?`${m.name} ${gained(m,h)}`:''; }).filter(Boolean);
       L(`Kagaya steadies the Corps.${healed.length?' '+healed.join(', ')+'.':''}`,'h',fx('heal',u,null)); continue; }
     if(x.pl.type==='attack' && u.basic) continue;   // Nakime's strum already happened
     if(x.pl.type==='defend'){ L(`${u.name} braces.`,'',fx('guard',null,u)); continue; }
+    if(x.pl.type==='hunt'){ hunt(u,x.pl.spot); continue; }
+    if(x.pl.type==='drums'){ u.pow+=2; L(`${u.name} pounds the drums of hatred. PWR +2 for good (now ${u.pow}).`,'h',fx('buff',null,u)); continue; }
     if(x.pl.type==='save'){ const t=findU(x.pl.t); if(t && t.saved===u.name) L(`${u.name} stands guard over ${t.name}. Nothing will touch them this round.`,'h',fx('guard',u,t)); continue; }
     if(x.pl.type==='special' && (u.sk==='muichiro'||u.sk==='swamp'||u.sk==='makomo'||u.sk==='suma')){ u.evade=true; u.evadeBy=u.sk; }   // evadeBy: whose dodge to draw
     if(x.pl.type==='attack' && u.reveal) L(`${u.name} strikes from the Selfless State, and for a moment he can be seen.`,'x',{...fx('buff',null,u), transparent:true});
@@ -874,6 +926,8 @@ function resolve(){
   S.curMove=null;
   // end of round: poison, Shinobu's devour damage, sunrise, regeneration, cooldowns
   const sun=sunUp();
+  htRise();
+  Object.values(S.htHide||{}).forEach(h=>{ if(h) h.spot=Math.floor(Math.random()*HT_SPOTS); });   // the real Hantengu moves every round
   if(sun && S.round===sunRise()) L('The sun rises! From now on demons burn every round, hotter each time, and stop regenerating.','h',{...fx('burn',null,null), sunrise:true});
   if(sun && S.round===sunRise() && finalFight()){ alive(foeSeat()).forEach(u=>{ u.pow=Math.round(u.pow*(1+FINAL_FRENZY)); u.noDefend=true; }); L('Out of time, the demons throw everything they have left. They hit far harder and can no longer Defend.','k',{...fx('burn',null,null), frenzy:true}); }
   players().forEach(p=>S.teams[p].forEach(u=>{
@@ -881,11 +935,12 @@ function resolve(){
     if(u.alive && u.devoured){ u.hp=Math.max(0,u.hp-u.devoured); L(`Shinobu's poison eats away at ${u.name} ${lost(u,u.devoured)}.`,'k',fx('poison',null,u)); fall(u); }
     if(sun && u.alive && u.demon && !sunSafe(u)){ const d=Math.ceil(u.max*sunBurn()); u.hp=Math.max(0,u.hp-d); L(`The sun burns ${u.name} ${lost(u,d)}.`,'k',fx('burn',null,u)); fall(u);
       if(u.alive && u.fam==='nezuko') L(`${u.name} endures the sunlight. She has conquered the sun.`,'h',fx('buff',null,u)); }
-    if(u.alive && u.regen && u.hp<u.max && !(sun && u.demon && !sunSafe(u))){ const h=Math.min(u.regen,u.max-u.hp); u.hp+=h; L(`${u.name} regenerates ${gained(u,h)}.`,'',Object.assign(fx('heal',null,u),{act:'regen'})); }
+    if(u.alive && u.regen && u.hp<u.max && u.blood===S.round && !(sun && u.demon && !sunSafe(u))){ L(`Nezuko's blood burns in ${u.name}'s wounds. No regeneration this round.`,'h',fx('burn',null,u)); }
+    else if(u.alive && u.regen && u.hp<u.max && !(sun && u.demon && !sunSafe(u))){ const h=Math.min(u.regen,u.max-u.hp); u.hp+=h; L(`${u.name} regenerates ${gained(u,h)}.`,'',Object.assign(fx('heal',null,u),{act:'regen'})); }
     if(u.sk==='hakuji' && u.alive && !u.vowed && S.teams[p].some(m=>!m.alive)){ u.vowed=true; u.pow+=3; L(`${u.name} remembers his vow: +3 PWR.`,'h',fx('buff',null,u)); }
     if(u.cd>0) u.cd--;
     if(u.selfless && u.alive && u.cd===0){ u.selfless=false; u.unblock=true; L(`${u.name} leaves the Selfless State. Hinokami Kagura is ready, and nothing can stop it.`,'h',fx('buff',null,u)); }
-    u.stun=u.stunNext; u.stunNext=false; if(!u.stun) u.bound=null; u.defending=false; u.evade=false; u.evadeBy=null; u.guardBy=null; u.savedBy=null; u.away=false; u.carried=false; u.tech=false; u.astray=false; u.late=false; u.ambush=null; u.saved=null; u.reveal=false;
+    u.stun=u.stunNext; u.stunNext=false; if(!u.stun) u.bound=null; u.defending=false; u.exposed=false; u.evade=false; u.evadeBy=null; u.guardBy=null; u.savedBy=null; u.away=false; u.carried=false; u.tech=false; u.astray=false; u.late=false; u.ambush=null; u.saved=null; u.reveal=false;
     if(u.chuBoost){ u.spd-=u.chuBoost; u.chuBoost=0; }
     if(u.miceBoost){ u.pow-=u.miceBoost; u.miceBoost=0; }   // Muscle Mice last one round
   }));
@@ -908,7 +963,7 @@ function resolve(){
 function moveText(u,pl){
   const t=pl.t && findU(pl.t), on=t && needsTarget(u,pl) ? ' → '+t.name : '';
   const what = pl.type==='stunned' ? "can't move" : pl.type==='defend' ? 'Defend' : pl.type==='save' ? 'Save'
-    : pl.type==='special' ? u.sig.name : u.basic ? u.basic.name : 'Attack';
+    : pl.type==='special' ? u.sig.name : pl.type==='drums' ? 'Drums of Hatred' : pl.type==='hunt' ? `Hunt (hiding place ${(pl.spot??0)+1})` : u.basic ? u.basic.name : 'Attack';
   return `${u.name}: ${what}${on}`;
 }
 function recordRound(moves){

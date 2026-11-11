@@ -389,15 +389,6 @@ function vTvBoard(b){
     </div>${beat&&!over?beatFx(b.lines,b.from)+momentFx(momentOf(b.lines,b.to,b.cur)):''}
     ${playing ? actionbar('<button class="btn ghost" data-a="skip">Skip</button>') : roundOver ? actionbar(S.final?`<button class="btn${tvAutoDue()?' tvautob':''}" data-a="finish" style="--auto:${TV_AUTO_MS}ms;--autod:${TV.autoAt?TV.autoAt-Date.now():0}ms">See who won</button>`:`<button class="btn${tvAutoDue()?' tvautob':''}" data-a="next" style="--auto:${TV_AUTO_MS}ms;--autod:${TV.autoAt?TV.autoAt-Date.now():0}ms">Next round</button>`) : mouse ? actionbar(mouse) : ''}`;
 }
-// A QR code that opens the game on a phone and joins this TV (the ?join= link; a 4-letter TV code makes the phone
-// its controller). Made once per code; the QR maker loads on first use, then the lobby redraws with it.
-const TVQR={};
-function tvQR(code){
-  if(TVQR[code]) return TVQR[code];
-  if(typeof loadQR!=='function') return '';
-  if(!TVQR['~'+code]){ TVQR['~'+code]=1; loadQR().then(()=>{ TVQR[code]=qrSvg(`${NEW_SITE}?join=${code}&from=tv`).replace('QR code with your progress','QR code to join this TV'); if(S.phase==='tvhome') render(); }).catch(()=>{}); }
-  return '<div class="qrsvg tvqrwait"></div>';
-}
 // The TV's lobby (TV mode opens here, and Main menu comes back here): the code, who has joined, what to play
 function vTvHome(){
   const t=S.tv, seat=q=>{ const on=tvSeatOn(q), name=tvSeatName(q);
@@ -405,7 +396,7 @@ function vTvHome(){
   const ch=tvChoices('tvhome');
   return `<div class="tvhome">
     <div class="hero"><span class="kanji" aria-hidden="true">滅</span><div class="eyebrow">TV mode</div><h1>Slayer Squad</h1></div>
-    <div class="tvjoin"><div class="tvqrbox">${tvQR(t.code)}<span>Scan with your phone’s camera</span></div><div class="tvjoinor"><p>or open Slayer Squad, tap <b>📺 Join a TV</b> and type</p><div class="tvcode">${esc(t.code)}</div></div></div>
+    <div class="tvjoin"><p>On your phones, open Slayer Squad, tap <b>📺 Join a TV</b> and type</p><div class="tvcode">${esc(t.code)}</div></div>
     <div class="tvslots">${seat(0)}${seat(1)}</div>
     ${tvCfgRows(tvCfgNow())}
     <div class="tvmodes">${ch.map(([k,l],i)=>`<button class="btn${i?' ghost':''}" data-a="tvchoose" data-v="${k}">${esc(l)}</button>`).join('')}</div>

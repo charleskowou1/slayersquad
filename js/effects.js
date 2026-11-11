@@ -57,13 +57,20 @@ const FX_ART = {
 // Big moments for a few specials (CK): drawn over the whole screen on the special's first hit, keyed by character (sk).
 // Akaza's and Doma's are drawn on their targets instead, so the eye stays on the damage. Tengen's plays on every hit, like
 // a drum. Rengoku has one for each special (tiger, then ninth for Ninth Form).
-const SPECIAL_FX = {zenitsu:'bolt', muichiro:'mist', tengen:'drum', inosuke:'claws', tanjiro:'firering', rengoku:'tiger', zohakuten:'dragons', kaigaku:'darkbolt', sanemi:'tornado', gyutaro:'sickles', susamaru:'temari', sekido:'redbolt', suma:'kunai', akaza:'annihil', yoriichi:'sunform', yoriichi_old:'sunform',
-  muzan:'whips', muzan_final:'whips2', gyomei:'flail', mitsuri:'ribbon', obanai:'snake', enmu:'sleep',
+const SPECIAL_FX = {zenitsu:'bolt', muichiro:'mist', tengen:'drum', inosuke:'twinblades', shinobu:'stinger', tanjiro:'firering', rengoku:'tiger', zohakuten:'dragons', kaigaku:'darkbolt', sanemi:'tornado', gyutaro:'sickles', susamaru:'temari', sekido:'redbolt', suma:'kunai', akaza:'annihil', yoriichi:'sunform', yoriichi_old:'sunform',
+  muzan:'whips', muzan_final:'whipfan2', gyomei:'flail', mitsuri:'ribbon', obanai:'snake', enmu:'sleep',
   urokodaki:'waterwheel', makio:'burst', hand:'hands', tanjuro:'kagura', sabito:'boulder',
   kanao:'bloom', tanjiro_demon:'tendrils', murata:'fizzle', gyokko:'goldfish'};   // Awakened Nezuko: her targets catch pink fire (TARGET_ART)   // Sabito: the boulder on Mount Sagiri, cut clean in two   // CK, Nov 3, 2026: the last specials without their own moment
 const UPPER_RANK = ['','壱','弐','参','肆','伍','陸'];
 const whipArt = n => `<svg viewBox="0 0 100 100" preserveAspectRatio="none">${rep(n, i=>`<path style="--d:${i*.06}s" d="M${i%2?104:-4} ${16+i*(70/n)} C30 ${(i*37)%100} 70 ${100-(i*53)%100} ${i%2?-4:104} ${30+(i*29)%50}"/>`)}</svg>`;
+// Animation round 2 (Nov 10, 2026, CK kept these): Inosuke's twin blades, Shinobu's stinger, Final Form Muzan's whip fan,
+// Rengoku's Ninth Form flame beast. Big pieces cross the middle of the screen (CK: keep effects near the middle).
+const JAG = `<svg viewBox="0 0 120 30"><path d="M2 15 L18 6 L24 12 L34 4 L40 11 L52 3 L58 10 L70 3 L76 10 L88 4 L94 11 L118 15 L94 19 L88 26 L76 20 L70 27 L58 20 L52 27 L40 19 L34 26 L24 18 L18 24 Z" fill="#b8c2cc" stroke="#3a4450" stroke-width="2"/><rect x="0" y="12" width="8" height="6" fill="#4a3424"/></svg>`;
+const whipFan = n => `<svg viewBox="0 0 100 100" preserveAspectRatio="none">${rep(n, i=>{ const y=50+(i-(n-1)/2)*(80/n), c=50+(i%2?-18:18); return `<path style="--d:${i*.07}s" d="M0 50 C30 ${c} 60 ${y-10} 100 ${y}"/><circle class="crack" style="--d:${.32+i*.07}s" cx="96" cy="${y}" r="3"/>`; })}</svg>`;
 const SFX_ART = {
+  twinblades: () => `<span class="tblade a">${JAG}</span><span class="tblade b">${JAG}</span>`,
+  stinger: () => `<span class="stg-needle"></span><svg class="stg-fly" viewBox="0 0 60 40"><path d="M30 20 C18 2 2 4 6 18 C2 30 18 36 30 22 C42 36 58 30 54 18 C58 4 42 2 30 20 Z" fill="#b48ae6" stroke="#5b2f8a" stroke-width="1.5"/><path d="M30 12 V30" stroke="#2a1640" stroke-width="2"/></svg><svg class="stg-veins" viewBox="0 0 100 100">${rep(7, i=>`<path style="--d:${.45+i*.06}s" d="M50 50 L${50+40*Math.cos(i*0.9)} ${50+40*Math.sin(i*0.9)}"/>`)}</svg>`,
+  whipfan2: () => whipFan(9),
   // Nov 3, 2026: Urokodaki's water wheel, Makio's blast, the Hand Demon's arms, Tanjuro's Hinokami dance in the snow, Sabito's fox mask
   waterwheel: () => `<svg viewBox="0 0 100 100"><g class="ww">${rep(8,i=>`<path d="M50 50 L50 14 A36 36 0 0 1 ${50+36*Math.sin((i+1)*Math.PI/4)} ${50-36*Math.cos((i+1)*Math.PI/4)}" transform="rotate(${i*45} 50 50)"/>`)}</g></svg>`,
   burst: () => `<span class="bflash"></span>${rep(12,i=>`<i style="--a:${i*30}deg;--d:${(i%3)*.05}s"></i>`)}`,
@@ -89,7 +96,15 @@ const SFX_ART = {
   drum: () => rep(3, i=>`<i style="--d:${i*.16}s"></i>`),
   claws: () => `<svg viewBox="0 0 100 100" preserveAspectRatio="none">${rep(3, i=>`<line class="c1" style="--d:${i*.05}s" x1="${8+i*24}" y1="-4" x2="${38+i*24}" y2="104"/>`)}${rep(3, i=>`<line class="c2" style="--d:${.26+i*.05}s" x1="${92-i*24}" y1="-4" x2="${62-i*24}" y2="104"/>`)}</svg>`,
   tiger: () => `<span class="tband"><b>炎虎</b></span>`,
-  ninth: () => `<span class="nburst"></span><span class="nspin"></span><b class="nk">煉獄</b>`,
+  ninth: () => `<span class="nburst"></span><span class="flamebeast"><svg viewBox="0 0 320 150"><defs><linearGradient id="nbfire" x1="0" x2="1"><stop offset="0" stop-color="#ff2a00" stop-opacity="0"/><stop offset=".35" stop-color="#ff5a10"/><stop offset=".75" stop-color="#ffb030"/><stop offset="1" stop-color="#fff2b0"/></linearGradient><linearGradient id="nbhead" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd24a"/><stop offset=".55" stop-color="#ff7a14"/><stop offset="1" stop-color="#d42a00"/></linearGradient><radialGradient id="nbeye"><stop offset="0" stop-color="#fff"/><stop offset=".5" stop-color="#ffe95c"/><stop offset="1" stop-color="#ff5a00" stop-opacity="0"/></radialGradient></defs>
+    <g class="fb-trail">${rep(6,i=>`<path style="--d:${i*.05}s" d="M${10+i*18} ${78+(i%2?-1:1)*(10+i*3)} C${60+i*20} ${50-i*4} ${110+i*12} ${110+i*3} ${190} ${72+(i%3-1)*8}" />`)}</g>
+    <path class="fb-body" d="M30 76 C70 40 110 104 150 62 C170 42 188 50 200 58 L206 92 C188 100 168 92 150 104 C112 128 70 96 30 76 Z"/>
+    <g class="fb-mane">${rep(9,i=>`<path style="--d:${i*.04}s" d="M${214-i*10} ${50+i*3} C${200-i*12} ${30+i*4} ${196-i*14} ${8+i*6} ${186-i*14} ${-4+i*7} C${206-i*12} ${14+i*6} ${214-i*10} ${30+i*3} ${222-i*9} ${46+i*2} Z"/>`)}</g>
+    <g class="fb-head"><path class="fb-skull" d="M196 52 C220 30 262 30 290 46 L312 56 L298 64 L276 62 C262 62 252 70 246 80 L214 92 C204 86 198 70 196 52 Z"/>
+      <path class="fb-stripe" d="M214 50 L230 44 L226 54 Z M226 62 L244 54 L240 66 Z M244 38 L252 34 L250 44 Z M276 46 L290 48 L282 54 Z"/><path class="fb-brow" d="M230 38 L272 42 L250 50 Z"/><ellipse class="fb-eye" cx="258" cy="50" rx="9" ry="4.2" fill="url(#nbeye)"/><path class="fb-pupil" d="M258 46.5 L260 50 L258 53.5 L256 50 Z"/>
+      <path class="fb-fangs" d="M262 64 L266 76 L270 63 L276 74 L280 62 L286 70 L290 61 Z"/>
+      <g class="fb-jaw"><path class="fb-jawp" d="M214 92 L246 82 C262 80 282 84 300 82 L290 96 C268 104 236 106 214 92 Z"/><path class="fb-fangs" d="M256 84 L260 74 L264 85 L270 74 L274 85 L280 76 L284 84 Z"/></g></g>
+    <g class="fb-embers">${rep(12,i=>`<circle style="--d:${(i*.07).toFixed(2)}s;--dx:${-40-(i*23)%90}px;--dy:${-30+(i*37)%60}px" cx="${120+(i*17)%80}" cy="${60+(i*29)%40}" r="${1.6+(i%3)}"/>`)}</g></svg><i class="fb-roar"></i></span><b class="nk">煉獄</b>`,
   sunform: () => `<span class="sunglow"></span>${rep(13, i=>`<i class="ys" style="--a:${[-34,28,-12,42,-52,16,-26,38,-44,8,-18,30,-38][i]}deg;--x:${[46,54,40,60,50,36,64,44,56,48,38,62,50][i]}%;--y:${[24,32,18,38,28,42,22,34,16,44,30,20,36][i]}%;--d:${i*.09}s"></i>`)}<i class="sflash"></i>`,
   whips: () => whipArt(5),
   whips2: () => whipArt(9),

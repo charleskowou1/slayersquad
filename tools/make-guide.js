@@ -147,10 +147,13 @@ Special rules on single cards:
   it doesn't count as Yoriichi, so Muzan isn't scared of it.
 - Second versions share a slot with the original (one or the other is dealt): Demon King Tanjiro (rare),
   Awakened Nezuko, Retired Tengen, Final-Form Muzan.
-- Hantengu never attacks. His Cower takes half damage. When he falls, all four emotions appear (Sekido, Karaku, Aizetsu,
-  Urogi; small). When the last emotion falls, Zohakuten (28 HP) and the real Hantengu (14 HP, 8 DEF) appear. Zohakuten stops
-  at 1 HP while the real Hantengu lives. The real Hantengu never attacks: each round his Hatred adds +2 PWR to Zohakuten for good,
-  or he hides and heals 6. When he falls, Zohakuten falls with him. Reach him fast.`);
+- Hantengu never attacks (Cower: half damage). The first hit that lands cuts his head off and Sekido and Karaku burst out.
+  The first of them to fall brings Aizetsu and Urogi. When the last emotion falls they merge into Zohakuten (no Defend: Drums
+  of Hatred +2 PWR for good; Wood Dragons hit every enemy for full PWR through Defend) and the real Hantengu hides in one of 3
+  hiding places, a new one every round. Hunt (pick a place): right, he's dragged out and hit; wrong, that fighter is wide open
+  for the round (x1.5 damage, no Defend). Or knock Zohakuten down (0 HP): the real one is exposed for the next round; if he
+  survives it, Zohakuten gets back up with a third of his health and the real one hides again (his wounds stay). Cut down the
+  real Hantengu to win: Zohakuten crumbles with him.`);
 
 hr('5. EVERY CHARACTER');
 out(`Order: most expensive first. Line 2 = cost | HP | PWR | SPD | DEF | regen per round. Hantengu's split forms are listed last; they can't be drafted.`);
@@ -174,7 +177,7 @@ out(`- Yoriichi (prime, 18 pts) or Yoriichi Age 85 (17). Prime is the strongest 
 hr('7. BACK-POCKET HELPERS (1 pt, max one per player, no fighter slot, never on the battlefield)');
 out(`Each draft offers 3 of the 5 helpers, chosen at random. Drafted from a separate row at the bottom of the draft. In battle, tap the helper chip next to "Lock in moves" on the
 round you want; it acts first that round and is then gone.
-- Chachamaru (Tamayo's cat): your most hurt fighter (lowest health %) heals half of their CURRENT HP (50% → 75%).
+- Chachamaru (Tamayo's cat): your most hurt fighter (lowest health %) heals half of the health they've lost (20% → 60%, 50% → 75%).
 - Kasugai Crow: after both sides lock in, you see the enemy's planned moves (and helper) and may change yours.
   Vs computer, the computer's crow switches any of its fighters you're about to knock out to Defend.
 - Muscle Mice (Tengen's mice): every fighter on your team gets +${MICE_PWR} PWR for that round only.

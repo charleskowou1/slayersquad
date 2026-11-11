@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Made by tools/make-pages.js. The home page's date is also set on every deploy by .github/workflows/slayersquad-site.yml. -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://slayersquad.app/</loc><lastmod>2026-11-10</lastmod><priority>1.0</priority></url>
+  <url><loc>https://slayersquad.app/</loc><lastmod>2026-11-11</lastmod><priority>1.0</priority></url>
   <url><loc>https://slayersquad.app/how-to-play/</loc><lastmod>2026-11-05</lastmod><priority>0.8</priority></url>
   <url><loc>https://slayersquad.app/characters/</loc><lastmod>2026-11-05</lastmod><priority>0.8</priority></url>
   <url><loc>https://slayersquad.app/characters/tanjiro/</loc><lastmod>2026-11-05</lastmod><priority>0.6</priority></url>
   <url><loc>https://slayersquad.app/characters/tanjiro_mark/</loc><lastmod>2026-11-05</lastmod><priority>0.6</priority></url>
   <url><loc>https://slayersquad.app/characters/tanjiro_demon/</loc><lastmod>2026-11-05</lastmod><priority>0.6</priority></url>
-  <url><loc>https://slayersquad.app/characters/nezuko/</loc><lastmod>2026-11-05</lastmod><priority>0.6</priority></url>
+  <url><loc>https://slayersquad.app/characters/nezuko/</loc><lastmod>2026-11-11</lastmod><priority>0.6</priority></url>
   <url><loc>https://slayersquad.app/characters/nezuko_awakened/</loc><lastmod>2026-11-05</lastmod><priority>0.6</priority></url>
   <url><loc>https://slayersquad.app/characters/zenitsu/</loc><lastmod>2026-11-05</lastmod><priority>0.6</priority></url>
   <url><loc>https://slayersquad.app/characters/inosuke/</loc><lastmod>2026-11-05</lastmod><priority>0.6</priority></url>
@@ -23,7 +23,7 @@
   <url><loc>https://slayersquad.app/characters/mitsuri/</loc><lastmod>2026-11-05</lastmod><priority>0.6</priority></url>
   <url><loc>https://slayersquad.app/characters/mitsuri_mark/</loc><lastmod>2026-11-05</lastmod><priority>0.6</priority></url>
   <url><loc>https://slayersquad.app/characters/muichiro/</loc><lastmod>2026-11-05</lastmod><priority>0.6</priority></url>
-  <url><loc>https://slayersquad.app/characters/muichiro_mark/</loc><lastmod>2026-11-05</lastmod><priority>0.6</priority></url>
+  <url><loc>https://slayersquad.app/characters/muichiro_mark/</loc><lastmod>2026-11-11</lastmod><priority>0.6</priority></url>
   <url><loc>https://slayersquad.app/characters/obanai/</loc><lastmod>2026-11-05</lastmod><priority>0.6</priority></url>
   <url><loc>https://slayersquad.app/characters/obanai_mark/</loc><lastmod>2026-11-05</lastmod><priority>0.6</priority></url>
   <url><loc>https://slayersquad.app/characters/sanemi/</loc><lastmod>2026-11-05</lastmod><priority>0.6</priority></url>
@@ -31,7 +31,7 @@
   <url><loc>https://slayersquad.app/characters/gyomei/</loc><lastmod>2026-11-05</lastmod><priority>0.6</priority></url>
   <url><loc>https://slayersquad.app/characters/gyomei_mark/</loc><lastmod>2026-11-05</lastmod><priority>0.6</priority></url>
   <url><loc>https://slayersquad.app/characters/yoriichi/</loc><lastmod>2026-11-05</lastmod><priority>0.6</priority></url>
-  <url><loc>https://slayersquad.app/characters/yoriichi_old/</loc><lastmod>2026-11-05</lastmod><priority>0.6</priority></url>
+  <url><loc>https://slayersquad.app/characters/yoriichi_old/</loc><lastmod>2026-11-11</lastmod><priority>0.6</priority></url>
   <url><loc>https://slayersquad.app/characters/urokodaki/</loc><lastmod>2026-11-05</lastmod><priority>0.6</priority></url>
   <url><loc>https://slayersquad.app/characters/sabito/</loc><lastmod>2026-11-05</lastmod><priority>0.6</priority></url>
   <url><loc>https://slayersquad.app/characters/murata/</loc><lastmod>2026-11-05</lastmod><priority>0.6</priority></url>
@@ -50,14 +50,14 @@
   <url><loc>https://slayersquad.app/characters/daki/</loc><lastmod>2026-11-05</lastmod><priority>0.6</priority></url>
   <url><loc>https://slayersquad.app/characters/gyutaro/</loc><lastmod>2026-11-05</lastmod><priority>0.6</priority></url>
   <url><loc>https://slayersquad.app/characters/gyokko/</loc><lastmod>2026-11-05</lastmod><priority>0.6</priority></url>
-  <url><loc>https://slayersquad.app/characters/hantengu/</loc><lastmod>2026-11-05</lastmod><priority>0.6</priority></url>
+  <url><loc>https://slayersquad.app/characters/hantengu/</loc><lastmod>2026-11-11</lastmod><priority>0.6</priority></url>
   <url><loc>https://slayersquad.app/characters/nakime/</loc><lastmod>2026-11-05</lastmod><priority>0.6</priority></url>
   <url><loc>https://slayersquad.app/characters/akaza/</loc><lastmod>2026-11-05</lastmod><priority>0.6</priority></url>
   <url><loc>https://slayersquad.app/characters/doma/</loc><lastmod>2026-11-05</lastmod><priority>0.6</priority></url>
   <url><loc>https://slayersquad.app/characters/kokushibo/</loc><lastmod>2026-11-05</lastmod><priority>0.6</priority></url>
-  <url><loc>https://slayersquad.app/characters/muzan/</loc><lastmod>2026-11-05</lastmod><priority>0.6</priority></url>
-  <url><loc>https://slayersquad.app/characters/muzan_final/</loc><lastmod>2026-11-05</lastmod><priority>0.6</priority></url>
-  <url><loc>https://slayersquad.app/characters/chachamaru/</loc><lastmod>2026-11-05</lastmod><priority>0.6</priority></url>
+  <url><loc>https://slayersquad.app/characters/muzan/</loc><lastmod>2026-11-11</lastmod><priority>0.6</priority></url>
+  <url><loc>https://slayersquad.app/characters/muzan_final/</loc><lastmod>2026-11-11</lastmod><priority>0.6</priority></url>
+  <url><loc>https://slayersquad.app/characters/chachamaru/</loc><lastmod>2026-11-11</lastmod><priority>0.6</priority></url>
   <url><loc>https://slayersquad.app/characters/crow/</loc><lastmod>2026-11-05</lastmod><priority>0.6</priority></url>
   <url><loc>https://slayersquad.app/characters/mice/</loc><lastmod>2026-11-05</lastmod><priority>0.6</priority></url>
   <url><loc>https://slayersquad.app/characters/hotaru/</loc><lastmod>2026-11-05</lastmod><priority>0.6</priority></url>

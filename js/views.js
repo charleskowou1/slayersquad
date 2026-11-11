@@ -92,6 +92,19 @@ const synChips = p => S.syn[p].length ? `<div class="chips">${S.syn[p].map(s=>s[
 // o.simple = just the picture, name and health (the opponent's team while you choose moves).
 // o.tgtFor = uid of your fighter picking a target: the tile becomes a button that targets this enemy.
 // o.picked = it's that fighter's current target; o.aimed = your fighters already aiming here.
+// Zenitsu fights asleep: while his special is ready on the move screen, little Z's drift off his picture
+const zzz = u => u && u.sk==='zenitsu' && u.alive && u.cd===0 && !u.stun && S.phase==='plan' ? '<span class="zzz" aria-hidden="true"><i>z</i><i>z</i><i>Z</i></span>' : '';
+// Genya eats demon flesh: veins crawl over his card, a bite flashes, and he turns into his demon form
+function genyaStage(line){
+  const u=findU(line.on); if(!u) return '';
+  const base=ART[u.id]?`<img decoding="sync" src="${ART[u.id]}" alt="">`:u.g, demon=ART.genya_demon?`<img decoding="sync" src="${ART.genya_demon}" alt="">`:base;
+  const pop=(line.t.match(/\[\+(\d+%)\]/)||[])[1];
+  return `<div class="stage gyx" aria-hidden="true"><div class="gyx-card"><span class="gl stg gyx-a">${base}</span><span class="gl stg gyx-b">${demon}</span>
+    <svg class="gyx-veins" viewBox="0 0 60 72" preserveAspectRatio="none">${['M30 72 C28 58 34 50 26 40 C20 32 30 24 24 12','M10 72 C14 60 8 52 14 44 C18 38 12 30 16 22','M50 72 C46 62 54 54 46 46 C40 40 48 32 42 24','M30 72 C34 64 40 60 44 52','M30 72 C24 66 18 64 14 56'].map((d,i)=>`<path d="${d}" style="--d:${i*.08}s"/>`).join('')}</svg>
+    <span class="gyx-bite"><i class="t"></i><i class="b"></i></span></div>${pop?`<span class="pop gain">+${pop}</span>`:''}<b class="gyx-kj">喰</b></div>`;
+}
+// Kokushibo's blade grows longer, sprouting extra edges, before the moons fire
+const kokuBlade = () => `<svg class="kokublade" viewBox="0 0 200 60" aria-hidden="true"><path class="kb-main" d="M4 34 Q100 18 196 26 Q100 30 4 38 Z"/>${[40,80,120,160].map((x,i)=>`<path class="kb-br" style="--d:${.25+i*.08}s" d="M${x} ${28-i} q14 -14 30 -16 q-14 6 -26 20 Z"/><path class="kb-br" style="--d:${.3+i*.08}s" d="M${x+10} ${32-i} q14 12 28 12 q-14 -2 -24 -10 Z"/>`).join('')}${[30,70,110,150,185].map((x,i)=>`<circle class="kb-eye" style="--d:${.4+i*.07}s" cx="${x}" cy="${31-i*1.4}" r="2.6"/>`).join('')}</svg>`;
 function tile(u, o={}){
   if(o.hidden) return '';
   const playing=o.hp!==undefined, up=playing?o.hp>0:u.alive, tap=o.tgtFor && up;
@@ -103,7 +116,7 @@ function tile(u, o={}){
   // the picture opens the info card; when targeting, the rest of the tile is the target button
   const main = tap ? `<button class="tilebtn" data-a="tgt" data-u="${o.tgtFor}" data-v="${u.uid}" aria-pressed="${!!o.picked}" aria-label="Target ${esc(u.name)}">${body}</button>` : body;
   const art=ART[u.id]?`;--art:url('${ART[u.id]}')`:'';
-  return `<div class="${cls}${art?' hasart':''}" style="--tc:${pc(u.p)};--i:${o.i||0}${art}">${sealBtn(u)}${main}</div>`;
+  return `<div class="${cls}${art?' hasart':''}" style="--tc:${pc(u.p)};--i:${o.i||0}${art}">${sealBtn(u)}${o.simple&&!playing?zzz(u):''}${main}</div>`;
 }
 // One bar split between every team's remaining health (all fighters' HP ÷ all max HP), so you can see who's ahead.
 // hpOf(u) = HP to count (playback passes the HP at that moment; undefined = not on the field yet). Your team comes first.
@@ -229,7 +242,7 @@ function codexSheet(){
     ${c.regen?`<div class="pas">Regenerates ${c.regen} HP every round.</div>`:''}
     ${pas.map(x=>`<div class="pas">${esc(x)}</div>`).join('')}
     ${c.helper?'<div class="pas">Back-pocket helper: doesn\'t fight or take a fighter slot. Use it once, on the round you choose.</div>':''}
-    ${c.splits?splitTree(c):''}
+    ${c.splitOnHit?splitTree(c):''}
     ${notes.length?`<div class="mnotes"><div class="tlabel">Synergies and matchups</div>${notes.map(n=>`<div class="note"><div class="nh"><span class="nk ${n.kind}">${n.kind==='team'?'Same team':'Opponents'}</span></div><div class="nt">${esc(n.title)}</div><div class="nx">${esc(n.text)}</div></div>`).join('')}</div>`:''}
     <div class="row"><button class="btn ghost" data-a="unsel">Close</button></div>
   </div></div>`;
@@ -429,7 +442,7 @@ function cardHTML(c,p){
   const ok = S.banning ? canBan(p,c.id) : canPick(p,c.id);
   const badge = c.legend?'Legend':c.mark?'✦ Mark':'';
   // picture-first card: art on top (kanji if no picture), name and type over its lower edge, stats below
-  return `<button class="card ${glyphCls(c)}${ok?'':' off'}${S.sel===c.id?' sel':''}${owner>=0?' taken':''}${rareFresh(c)?' rarepull':''}" data-a="sel" data-v="${c.id}" ${ok?'':'aria-disabled="true"'}>${rareFresh(c)?'<span class="rshine" aria-hidden="true"></span>':''}
+  return `<button class="card ${glyphCls(c)}${c.upper&&!c.mark&&!c.legend?' um':''}${ok?'':' off'}${S.sel===c.id?' sel':''}${owner>=0?' taken':''}${rareFresh(c)?' rarepull':''}" data-a="sel" data-v="${c.id}" ${ok?'':'aria-disabled="true"'}>${rareFresh(c)?'<span class="rshine" aria-hidden="true"></span>':''}
     <span class="cart">${ART[c.id]?`<img decoding="sync" src="${ART[c.id]}" alt="">`:`<span class="ck">${c.g}</span>`}</span>
     <span class="cost${c.cost>=12?' big':''}">${c.cost}<small>pts</small></span>
     ${badge?`<span class="badge">${badge}</span>`:''}
@@ -606,12 +619,12 @@ const updatesNew = () => { try{ return !!latestUpdate() && +localStorage.getItem
 const updatesPanel = () => !latestUpdate() ? '' : `<details class="panel" id="updates"><summary>Latest Updates${updatesNew()?'<i class="newdot">New</i>':''}</summary>
     <div class="updhead"><b>Version ${LATEST_UPDATE.version}</b><span class="muted">${esc(LATEST_UPDATE.date)}</span></div>
     <ul class="updlist">${LATEST_UPDATE.notes.map(([t,d])=>`<li><b>${esc(t)}</b>${esc(d)}</li>`).join('')}</ul></details>`;
-function splitTree(c){
-  const form=id=>{ const f=BYID[id]; return `<div class="sform">${seal(f,'sm')}<div><b>${esc(f.short)}</b> <span class="muted">${f.hp} HP · PWR ${f.pow} · SPD ${f.spd}</span><br><span class="sx">${esc(f.sig.name)}: ${esc(f.sig.desc)}</span>${f.splits?`<div class="sthen">falls → ${f.splits.map(k=>esc(BYID[k].short)).join(', ')}</div>`:''}</div></div>`; };
-  const all=[]; const walk=id=>{ (BYID[id].splits||[]).forEach(k=>{ all.push(k); }); (BYID[id].splits||[]).forEach(walk); }; walk(c.id);
-  const merged=[...new Set(all.map(id=>BYID[id].merge).filter(Boolean))];
-  return `<div class="splits"><div class="tlabel">Splits into</div>${all.map(form).join('')}
-    ${merged.map(id=>`<div class="tlabel">When the last one falls, they merge into</div>${form(id)}${BYID[id].anchor?`<div class="tlabel">And the real one comes back</div>${form(BYID[id].anchor)}`:''}`).join('')}</div>`;
+function splitTree(c){   // Hantengu's chain, shown on his card
+  const form=id=>{ const f=BYID[id]; return `<div class="sform">${seal(f,'sm')}<div><b>${esc(f.short)}</b> <span class="muted">${f.hp} HP · PWR ${f.pow} · SPD ${f.spd}</span><br><span class="sx">${esc(f.sig.name)}: ${esc(f.sig.desc)}</span></div></div>`; };
+  return `<div class="splits"><div class="tlabel">The first hit splits him into</div>${['sekido','karaku'].map(form).join('')}
+    <div class="tlabel">The first of them to fall brings</div>${['aizetsu','urogi'].map(form).join('')}
+    <div class="tlabel">When the last emotion falls, they merge into</div>${form('zohakuten')}
+    <div class="tlabel">And the real one hides (hunt him, or knock Zohakuten down)</div>${form('hantengu_true')}</div>`;
 }
 // Fighter info card in battle: tap any picture (yours or the opponent's). Shows current stats, which include
 // team bonuses and anything gained in the match, plus the special's cooldown, passives and status effects.
@@ -757,7 +770,7 @@ function vSheet(){
     ${c.sig2?`<div class="pas"><b>Then: ${esc(c.sig2.name)}</b>: ${esc(c.sig2.desc)} <span class="muted">After it, back to ${esc(c.sig.name)}: the two take turns.${sig2Open(c)?'':` 🔒 Unlocks when you win ${esc((STAGES.find(s=>s.id===c.sig2.lock)||{}).title||'its story battle')}.`}</span></div>`:''}
     ${c.regen?`<div class="pas">Regenerates ${c.regen} HP every round.</div>`:''}
     ${pas.map(x=>`<div class="pas">${esc(x)}</div>`).join('')}
-    ${c.splits?splitTree(c):''}
+    ${c.splitOnHit?splitTree(c):''}
     ${notes.length?`<div class="mnotes"><div class="tlabel">Notes for ${esc(c.short)} in this deal</div>${notes.map(n=>noteHTML(n,c.id)).join('')}</div>`:''}
     <div class="row"><button class="btn ghost" data-a="unsel">Close</button>${ok?`<button class="btn team${S.banning?' banbtn':''}" data-a="confirmPick" style="--bc:${pc(p)}">${verbBtn} ${esc(c.short)}</button>`:''}</div>
   </div></div>`;
@@ -775,24 +788,26 @@ function moveSummary(u){
   if(u.stun) return 'Stunned · skips this round';
   const pl=S.plans[u.p][u.uid];
   if(!pl||!pl.type) return 'Choose a move';
-  const name = pl.type==='attack'?(u.basic?esc(u.basic.name):'Attack'):pl.type==='defend'?'Defend':pl.type==='save'?'Save':esc(u.sig.name);
+  const name = pl.type==='attack'?(u.basic?esc(u.basic.name):'Attack'):pl.type==='defend'?'Defend':pl.type==='save'?'Save':pl.type==='drums'?'Drums of Hatred':pl.type==='hunt'?(pl.spot!=null?`Hunt → hiding place ${pl.spot+1}`:'Hunt · pick a hiding place'):esc(u.sig.name);
   if(!needsTarget(u,pl)) return name;
   const t=pl.t&&findU(pl.t);
   return t ? `${name} → ${esc(t.name)}` : `${name} · pick a target`;
 }
 function fighter(u, open){
   const ready=unitReady(u), pl=S.plans[u.p][u.uid]||{};
-  const head=`<div class="fhead">${sealBtn(u)}<button class="fmain" data-a="focus" data-v="${u.uid}" aria-expanded="${open}" ${u.stun?'disabled':''}>
+  const spr=u.cd===0 && !u.stun && !(u.sig&&u.sig.id==='selfless'&&u.selfless);   // special ready: a soft pulse (CK, Nov 10, 2026)
+  const head=`<div class="fhead">${sealBtn(u)}${zzz(u)}${spr&&!open?'<span class="spmark" title="Special ready" aria-label="Special ready">技</span>':''}<button class="fmain" data-a="focus" data-v="${u.uid}" aria-expanded="${open}" ${u.stun?'disabled':''}>
     <span class="tb">${health(u)}<span class="sum${ready?' ok':''}">${ready&&!u.stun?'✓ ':''}${moveSummary(u)}</span></span></button></div>`;
-  if(!open) return `<div class="fighter" style="--tc:${pc(u.p)}">${head}</div>`;
+  if(!open) return `<div class="fighter${spr?' spready':''}" style="--tc:${pc(u.p)}">${head}</div>`;
   // kept short on purpose: stats and the full special text are one tap away on the fighter's picture
   const mv=(v,k,label,sub,dis)=>`<button data-a="act" data-u="${u.uid}" data-v="${v}" class="${pl.type===v?'on':''}" ${dis?'disabled':''}><span class="mk" aria-hidden="true">${k}</span>${label}${sub?`<small>${sub}</small>`:''}</button>`;
   const opts=targetOptions(u,pl);
   const tgt=x=>`<button class="tg${x.p===u.p?' ally':''}${pl.t===x.uid?' on':''}" data-a="tgt" data-u="${u.uid}" data-v="${x.uid}">
     ${seal(x,'sm')}${esc(x.name)}<span class="${pct(x)<=LOW?'lo':''}">${pct(x)}%</span></button>`;
-  return `<div class="fighter open" style="--tc:${pc(u.p)}">${head}<div class="fbody">
+  return `<div class="fighter open${spr?' spready':''}" style="--tc:${pc(u.p)}">${head}<div class="fbody">
     ${statusChips(u,false)}
-    <div class="moves">${u.basic?mv('attack',u.basic.k,esc(u.basic.name),esc(u.basic.tag)):mv('attack','攻','Attack',u.selfless?'ignores DEF · reveals you':u.strikes>1?'×'+u.strikes:'')}${u.selfless?mv('save','護','Save',u.saveUsed?'used':'ally takes no damage · once',u.saveUsed||!friends(u.p).some(f=>f!==u)):mv('defend','守','Defend',u.noDefend?'berserk':'',u.noDefend)}${mv('special','技',`<span class="spn">${esc(u.sig.name.split(':')[0])}</span>`,u.cd>0?`<span class="cdn">ready in ${u.cd}</span>`:esc(u.sig.tag),u.cd>0)}</div>
+    <div class="moves">${u.basic?mv('attack',u.basic.k,esc(u.basic.name),esc(u.basic.tag)):mv('attack','攻','Attack',u.selfless?'ignores DEF · reveals you':u.strikes>1?'×'+u.strikes:'')}${u.selfless?mv('save','護','Save',u.saveUsed?'used':'ally takes no damage · once',u.saveUsed||!friends(u.p).some(f=>f!==u)):u.drums?mv('drums','鼓','Drums of Hatred','+2 PWR for good'):mv('defend','守','Defend',u.noDefend?'berserk':'',u.noDefend)}${typeof huntTeam==='function' && huntTeam(u.p)!==undefined?mv('hunt','探','Hunt','find the real Hantengu'):''}${mv('special','技',`<span class="spn">${esc(u.sig.name.split(':')[0])}</span>`,u.cd>0?`<span class="cdn">ready in ${u.cd}</span>`:esc(u.sig.tag),u.cd>0)}</div>
+    ${pl.type==='hunt'?`<div class="htspots"><span class="tlabel">Where is he hiding? Wrong guess: ${esc(u.name)} is left wide open</span><div class="htrow" style="--n:${HT_SPOTS}">${Array.from({length:HT_SPOTS},(_,k)=>`<button class="htspot${pl.spot===k?' on':''}" data-a="spot" data-u="${u.uid}" data-v="${k}"><b>?</b><small>${k+1}</small></button>`).join('')}</div></div>`:''}
     ${opts.length?`<div class="targets"><span class="tlabel">${isAllyMove(u,pl)?'Ally':'Target'}</span>${opts.map(tgt).join('')}</div>`:''}
   </div></div>`;
 }
@@ -822,7 +837,7 @@ function vPlan(){
     ${tips}${awayBanner()}
     ${goal?`<div class="goal">${esc(goal)}${S.twist&&S.twist.survive?` · ${plural(Math.max(0,S.twist.survive-S.round+1),'round')} to go`:''}</div>`:''}
     ${strengthBar(p)}${tauntBar()}
-    <div class="planwide"><div class="opps${nPlayers()>2?' many':''}">${enemiesOf(p).filter(q=>alive(q).length).map(q=>teamBlock(q,nPlayers()>2?null:'Opponent',enemyMoment,true,picking?`Tap to target with ${esc(ou.name)}`:'')).join('')}
+    <div class="planwide"><div class="opps${nPlayers()>2?' many':''}">${enemiesOf(p).filter(q=>alive(q).length).map(q=>teamBlock(q,nPlayers()>2?null:'Opponent',enemyMoment,true,picking?`Tap to target with ${esc(ou.name)}`:'')).join('')}${S.htHide&&enemiesOf(p).some(q=>S.htHide[q])?'<div class="hthide"><b>探</b><span>The real Hantengu is hiding. <b>Hunt</b> to guess where he is, or beat Zohakuten to drive him out. Cut him down to win.</span></div>':''}
       ${partnersOf(p).filter(q=>alive(q).length).map(q=>teamBlock(q,`${nm(q)} · your partner`,e=>!e.alive?{hidden:true}:{},true)).join('')}</div>
     ${picking&&aimsTeam(ou)&&opl.type==='special'?`<p class="hint aimhint">${esc(ou.sig.name.split(':')[0])} hits every fighter on the team you aim at.</p>`:''}
     <section class="side"><div class="sidehead"><span class="tname" style="color:${pc(p)}">Your team</span>${S.lastPlans&&S.lastPlans[p]?'<button class="btn ghost small" data-a="repeat">↻ Repeat</button>':''}</div>
@@ -867,6 +882,8 @@ function stage(line){
   const dart=(line.dodge||line.guard) && by && on ? dodgeArt(line,on) : '';
   if(dart){ const rev=by.p!==leftSide(), att=`<div class="st-by">${seal(by,'stg')}<span class="st-nm" style="color:${pc(by.p)}">${esc(by.name)}</span></div>`, tgt=`<div class="st-on">${dart}<span class="st-nm" style="color:${pc(on.p)}">${esc(on.name)}</span></div>`;
       return `<div class="stage duo dodgestage fx-${type}${rev?' rev':''}" aria-hidden="true">${rev?tgt+att:att+tgt}</div>`; }
+  if(line.htcut||line.htmore||line.hunt||line.htbare||line.htmerge||line.htdown||line.htrise) return htStage(line);
+  if(line.ate) return genyaStage(line);
   if(line.sunrise) return `<div class="stage sunstage" aria-hidden="true"><span class="sunrays"></span><span class="sundisc"></span><span class="sunland"></span><b class="sunkj">日の出</b></div>`;   // nobody acts at sunrise, so it gets its own picture
   if(line.frenzy){ const foe=players().find(p=>alive(p).some(u=>u.demon)); return `<div class="stage frenzystage" aria-hidden="true"><div class="calmteam">${(foe===undefined?[]:alive(foe)).slice(0,6).map(u=>seal(u,'stg')).join('')}</div><b class="sunkj">狂</b></div>`; }
   return `<div class="stage fx-${type||'none'}${cut||dust||muz||fell?' sliced':''}${muz?' muzko':''}${dust==='resolve'?' kresstage':''}${impact?' impactframe':''}${guarded?' clash':''}${fast?' fastlunge':''}${line.gone?' goneaway':''}${line.shrink?' shrinking':''}${line.cover?' covering':''}${act} ${duo?'duo':'solo'}${rev?' rev':''}${style?' sty sty-'+style:''}" aria-hidden="true">
@@ -892,6 +909,41 @@ const kagayaPic = html => {
 };
 const crumblePic = (kind, html) => kind==='resolve' ? kagayaPic(html) : `<span class="crumble ${kind}"><span class="cr-pic">${html}</span>${rep(10, i=>`<i style="--x:${(i*37)%100}%;--dx:${((i*53)%60)-30}px;--d:${(i%5)*.09}s"></i>`)}</span>`;
 // The cut: the head half flies off and spins, a red spray at the cut (CK, Nov 3, 2026). An Upper Moon's rank kanji shatters first.
+// A wrong hunt: the card hides a carved wooden decoy, and a wooden dragon's jaw snaps out at the hunter
+const HT_DECOY = `<svg class="htx-doll" viewBox="0 0 40 56"><defs><linearGradient id="htwood" x1="0" x2="1"><stop offset="0" stop-color="#7a5230"/><stop offset=".5" stop-color="#a8774a"/><stop offset="1" stop-color="#6b4526"/></linearGradient></defs>
+  <path d="M10 8 L13 2 L16 9 M30 8 L27 2 L24 9" stroke="#5a3a1e" stroke-width="2.4" fill="none" stroke-linecap="round"/><ellipse cx="20" cy="15" rx="10" ry="10" fill="url(#htwood)"/>
+  <path d="M8 54 Q6 30 20 26 Q34 30 32 54 Z" fill="url(#htwood)"/><path d="M14 13 l3 2 M26 13 l-3 2 M15 20 q5 3 10 0" stroke="#3b2412" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+  <path d="M12 36 q8 -3 16 0 M11 44 q9 -3 18 0" stroke="#5a3a1e" stroke-width="1" fill="none" opacity=".7"/></svg>`;
+const HT_JAW = `<span class="htx-jaw"><svg viewBox="0 0 120 70"><g fill="#8a5a32" stroke="#4a2c14" stroke-width="2"><path class="jt" d="M118 30 Q70 2 4 22 L20 30 L28 22 L36 31 L44 22 L52 31 L60 22 L68 31 L76 23 L84 32 Q100 34 118 30 Z"/>
+  <path class="jb" d="M118 40 Q70 68 6 48 L20 40 L28 48 L36 39 L44 48 L52 39 L60 48 L68 39 L76 47 L84 38 Q100 36 118 40 Z"/></g><circle cx="98" cy="22" r="3.4" fill="#e0573b"/></svg></span>`;
+// the real one's shadow scurrying off: a tiny horned figure mid-run
+const HT_RUN = `<svg viewBox="0 0 40 40"><g fill="#0b0806"><path d="M14 6 L16 1 L18 7 M24 7 L26 1 L28 6" stroke="#0b0806" stroke-width="2" stroke-linecap="round"/><circle cx="21" cy="11" r="7"/>
+  <path d="M15 17 Q21 15 26 18 L29 27 L24 26 L27 37 L23 37 L20 28 L15 37 L11 36 L15 26 L9 24 Z"/></g><circle cx="23.5" cy="10" r="1.3" fill="#e0573b"/></svg>`;
+// Hantengu H (Nov 10, 2026): the head cut and split, more emotions bursting out, the hunt, and the real one laid bare
+function htStage(line){
+  const kids=(line.spawn||[]).map(findU).filter(Boolean), pic=u=>u?seal(u,'stg'):'', kid=(k,i)=>`<div class="htx-kid k${i}">${pic(k)}<b>${esc(k.name)}</b></div>`;
+  if(line.htcut){ const old=findU(line.on), by=line.htcut.by&&findU(line.htcut.by);
+    return `<div class="stage htx htx-cut" aria-hidden="true">${by?`<div class="htx-by">${pic(by)}</div>`:''}
+      <div class="htx-old"><span class="htx-body">${pic(old)}</span><span class="htx-head">${pic(old)}</span><i class="htx-slash"></i><i class="htx-spray"></i></div>
+      ${kids.map(kid).join('')}<b class="htx-kj">分裂</b></div>`; }
+  if(line.htmore){ const f=findU(line.htmore.from);
+    return `<div class="stage htx htx-more" aria-hidden="true"><div class="htx-old"><span class="htx-l">${pic(f)}</span><span class="htx-r">${pic(f)}</span><i class="htx-slash"></i></div>${kids.map(kid).join('')}<b class="htx-kj">増殖</b></div>`; }
+  if(line.hunt){ const by=findU(line.by), h=line.hunt, real=kids[0];
+    return `<div class="stage htx htx-hunt ${h.found?'found':'miss'}" aria-hidden="true"><div class="htx-by">${pic(by)}</div>
+      <div class="htx-cards" style="--n:${HT_SPOTS}">${Array.from({length:HT_SPOTS},(_,k)=>`<span class="htx-card${k===h.spot?' pick':''}${!h.found&&k===h.at?' real':''}"><span class="htx-back">?</span><span class="htx-face">${k===h.spot&&h.found?pic(real):k===h.spot?HT_DECOY:''}</span>${!h.found&&k===h.at?`<span class="htx-shadow">${HT_RUN}</span>`:''}</span>`).join('')}</div>
+      ${h.found?'':HT_JAW}<b class="htx-kj">${h.found?'見つけた!':'罠'}</b></div>`; }
+  if(line.htmerge){ const z=kids[0];
+    return `<div class="stage htx htx-merge" aria-hidden="true">${['sekido','karaku','aizetsu','urogi'].map((id,i)=>`<span class="htx-emo e${i}">${seal(BYID[id],'stg')}</span>`).join('')}
+      <i class="htx-flash"></i><div class="htx-zoh">${pic(z)}<b>${esc(z.name)}</b></div><b class="htx-kj">憎</b></div>`; }
+  if(line.htdown){ const z=findU(line.on), r=findU(line.real);
+    return `<div class="stage htx htx-down" aria-hidden="true"><div class="htx-dazed">${pic(z)}<span class="htx-stars"><i>★</i><i>★</i><i>★</i></span></div>
+      <div class="htx-out">${pic(r)}<b>Real Hantengu</b></div><i class="htx-ring"></i><b class="htx-kj">今だ!</b></div>`; }
+  if(line.htrise){ const z=findU(line.on), r=findU(line.real);
+    return `<div class="stage htx htx-rise" aria-hidden="true"><div class="htx-up">${pic(z)}</div><div class="htx-away">${pic(r)}</div><b class="htx-kj">憎</b></div>`; }
+  if(line.htbare){ const r=kids[0];
+    return `<div class="stage htx htx-bare" aria-hidden="true"><div class="htx-tiny">${pic(r)}</div><i class="htx-ring"></i><b class="htx-kj">逃げ場なし</b></div>`; }
+  return '';
+}
 const slicePic = (u, html, style='slash') => `<span class="slice cut-${style}${BYID[u.id]&&BYID[u.id].upper?' upcut':''}">${BYID[u.id]&&BYID[u.id].upper?`<b class="upk" aria-hidden="true"><span>上弦</span><span>上弦</span></b>`:''}<span class="sl-b">${html}</span><span class="sl-t">${html}</span><i class="sl-line"></i>${rep(7,i=>`<i class="sl-red" style="--a:${-60+i*20}deg;--d:${i*.03}s"></i>`)}</span>`;
 // A special that knocks someone out ends on a big KO in the middle of the stage (CK, Nov 3, 2026; ink and hanko marks tried and dropped)
 const koSlam = () => '<b class="koslam" aria-hidden="true">KO</b>';
@@ -921,7 +973,7 @@ const SPECIAL_HITS = ['hit','ko','miss','block'];
 function sigFor(l){ for(let i=S.log.indexOf(l);i>=0;i--){ const m=S.log[i]; if(m.fx==='special' && m.by===l.by) return m.sig; } return null; }
 function fxName(lines, from){
   const sup=lines.find(x=>x.by && x.move==='special' && ['heal','buff'].includes(x.fx) && ['tanjuro','sabito'].includes((findU(x.by)||{}).sk)); if(sup) return SPECIAL_FX[findU(sup.by).sk];   // support specials that don't hit
-  const l=lines.find(x=>x.by && x.move==='special' && (SPECIAL_HITS.includes(x.fx) || (x.fx==='stun' && !x.on))), by=l&&findU(l.by); let name=by&&SPECIAL_FX[by.sk];
+  const l=lines.find(x=>x.by && x.move==='special' && (SPECIAL_HITS.includes(x.fx) || (x.fx==='stun' && !x.on) || (x.fx==='poison' && (findU(x.by)||{}).sk==='shinobu'))), by=l&&findU(l.by); let name=by&&SPECIAL_FX[by.sk];
   if(!name) return null;
   if(name==='annihil' && sigFor(l)!=='annihilation') return null;
   if(name!=='drum') for(let i=from-1;i>=0;i--){ const m=S.log[i]; if(m.by!==l.by) continue; if(m.fx==='special'){ if(m.sig==='ninth') name='ninth'; break; } if(m.move==='special' && SPECIAL_HITS.includes(m.fx)) return null; }
@@ -933,13 +985,13 @@ const beatFx = (lines, from) => { const name=fxName(lines,from); if(!name) retur
 function momentOf(lines, to, cur){
   if(lines.some(l=>l.grit)) return {k:'somehow'};
   const hlp=lines.find(l=>l.helper && SFX_ART['h_'+l.helper]); if(hlp) return {k:'h_'+hlp.helper, on:hlp.on};
-  if(lines.some(l=>l.merged)) return {k:'merge'};
+  if(lines.some(l=>l.merged && !l.htmerge)) return {k:'merge'};
   if(lines.some(l=>l.sunrise)) return {k:'sunsweep'};
   { const l=lines.find(x=>x.by && x.move==='special' && (BYID[(findU(x.by)||{}).id]||{}).upper), u=l&&findU(l.by), key=S.round+':'+(S.play?S.play.k:0);   // an Upper Moon's first special this match (CK: not every first move)
     if(u){ S.upSeen=S.upSeen||{}; if(!S.upSeen[u.uid] || S.upSeen[u.uid]===key){ S.upSeen[u.uid]=key; return {k:'upper', u}; } } }
   if(lines.some(l=>l.kind==='drum')) return {k:'tilt'};
   if(lines.some(l=>l.fx==='stun' && l.move==='attack' && l.by && (findU(l.by)||{}).sk==='nakime')) return {k:'biwa'};
-  if(lines.some(l=>l.fx==='spawn' && l.on && findU(l.on) && findU(l.on).sk==='hantengu')) return {k:'crack'};
+  if(lines.some(l=>l.fx==='spawn' && !l.htcut && !l.hunt && !l.htbare && l.on && findU(l.on) && findU(l.on).sk==='hantengu')) return {k:'crack'};   // the Hantengu test version has its own moments
   const ko=lines.filter(l=>l.fx==='ko'); if(!ko.length) return null;
   if(ko.some(l=>(findU(l.on)||{}).fam==='muzan')) return {k:'muzandeath'};   // Muzan's end gets the whole screen
   if(S.final && !S.log.slice(to+1).some(l=>l.fx==='ko')) return {k:'final', color:ko.some(l=>(findU(l.on)||{}).fam==='muzan')};   // Muzan's explosion stays in colour
@@ -1036,7 +1088,7 @@ function stageGroup(lines){
     const koL=lines.find(m=>m.fx==='ko'&&m.on===l.on), cut=ko && slicedBy(koL,t), dust=crumbleKind(koL), muz=ko && t.fam==='muzan', fell=ko && !cut && !dust && !muz && PETAL_FAMS.includes(t.fam);
     const dga=dodgeArt(l,t), pic=dga?dga:muz?muzanPic(seal(t,'stg')):dust?crumblePic(dust,seal(t,'stg')):cut?slicePic(t,seal(t,'stg'),cutStyle(koL)):fell?fallPic(t,seal(t,'stg')):seal(t,'stg');
     return `<div class="st-on${ko?(cut||dust||muz||fell?' sliced':' koed'):''}${l.fx!=='hit'?' missed':''}">${ko&&pic.startsWith('<span')?`<span class="kolater">${pic}</span>`:pic}${calmSides().has(t.p)?waterRing():''}${targetFx(l)}${l.fx==='hit'?fxArt(style):''}${ko?'':amt?`<span class="pop dmg">−${amt[2]}</span>`:l.fx!=='hit'?`<span class="pop">${l.fx==='miss'?'miss':'blocked'}</span>`:''}<span class="st-nm" style="color:${pc(t.p)}">${esc(t.name)}</span></div>`; };
-  const attacker=`<div class="st-by">${seal(by,'stg')}<span class="st-nm" style="color:${pc(by.p)}">${esc(by.name)}</span></div>`;
+  const attacker=`<div class="st-by">${seal(by,'stg')}${by.sk==='kokushibo'?kokuBlade():''}<span class="st-nm" style="color:${pc(by.p)}">${esc(by.name)}</span></div>`;
   const row=`<div class="st-targets">${hits.map(target).join('')}</div>`, mark=`<span class="st-mark">${STYLE_KANJI[style]}</span>`;
   const muzko=lines.some(m=>m.fx==='ko' && (findU(m.on)||{}).fam==='muzan');
   return `<div class="stage group duo fx-hit sty sty-${style}${rev?' rev':''}${hits.length===1?' one':''}${muzko?' muzko':''}${lines.some(m=>m.fx==='ko')?' hitstop':''}" aria-hidden="true">${rev?row+mark+attacker:attacker+mark+row}${lines.some(m=>m.fx==='ko')?koSlam():''}</div>`;
@@ -1296,7 +1348,7 @@ function vScene(){
 function winHero(){
   const w=S.winner;
   return `<div class="win${w<0?'':' victory'}" style="--wc:${w<0?'var(--muted)':pc(w)}"><span class="burst" aria-hidden="true"></span>
-    ${w<0?'':`<div class="winseals" aria-hidden="true">${(()=>{ const best=S.teams[w].slice().sort((a,b)=>mvpScore(S.stats[b.uid]||{dmg:0,kos:0,heal:0})-mvpScore(S.stats[a.uid]||{dmg:0,kos:0,heal:0}))[0]; return S.teams[w].map((u,i)=>`<span class="${u===best?'star':''}" style="--i:${i}">${seal(u,'lg')}</span>`).join(''); })()}</div>`}
+    ${w<0?'':`<div class="winseals" aria-hidden="true">${(()=>{ const best=S.teams[w].slice().sort((a,b)=>mvpScore(S.stats[b.uid]||{dmg:0,kos:0,heal:0})-mvpScore(S.stats[a.uid]||{dmg:0,kos:0,heal:0}))[0]; return S.teams[w].map((u,i)=>`<span class="${u===best?'star':''}" style="--i:${i}">${u===best?`<b class="mvpsig">${esc((BYID[u.id].sig||{}).name||'')}</b>`:''}${seal(u,'lg')}</span>`).join(''); })()}</div>`}
     <div class="eyebrow">After ${plural(S.round,'round')}</div>
     <div class="big" style="color:${w<0?'var(--fg)':pc(w)}">${w<0?(nPlayers()>2?'Nobody survives':'Both squads fall'):S.duo||(S.coop&&!coopFoe(w))?players().filter(q=>sameSide(q,w)).map(nm).join(' & ')+' win':nm(w)+' wins'}</div>
     ${nPlayers()>2&&!S.duo&&!S.coop?`<div class="places">${placings().map((g,i)=>g.map(q=>`<span class="place" style="--tc:${pc(q)}"><b>${['1st','2nd','3rd','4th'][w<0?i+1:i]}</b>${nm(q)}</span>`).join('')).join('')}</div>`:''}

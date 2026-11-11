@@ -118,14 +118,14 @@ const CLIP_REPEAT = ['attack','defend','regen','poison'], CLIP_GAP = 3;
 // Moments that play every time for a character instead of every CLIP_GAP rounds (CK: Doma's regen and poison)
 const CLIP_ALWAYS = {doma:['regen','poison']};
 
-const clipSet = (src, u) => u && (src[u.id] || (BYID[u.id] && src[BYID[u.id].fam])) || null;
+const clipSet = (src, u) => u && (src[u.id] || (BYID[u.id] && BYID[u.id].art && src[BYID[u.id].art]) || (BYID[u.id] && src[BYID[u.id].fam])) || null;   // art: a card that uses another card's picture and clips
 // The moment a log line shows and whose it is: {act, u}
 function clipMoment(line){
   // a back-pocket helper isn't on the battlefield: it gets a stand-in with its card id, name and owner
   if(line.helper) return {act:'use', u:{uid:`h-${line.hp}-${line.helper}`, id:line.helper, sk:line.helper, name:BYID[line.helper].short, p:line.hp, helper:true}};
   const by=line.by&&findU(line.by), on=line.on&&findU(line.on), has=(u,a)=>!!(clipSet(CLIPS,u)||{})[a];
   switch(line.fx){
-    case 'special': return {act:line.sig||'special', u:by};   // a second special (or the Selfless State) has its own clip, under its id
+    case 'special': return {act:line.sig||'special', u:by};   // a second special (or the Selfless State) has its own clip, under its id   // a second special (or the Selfless State) has its own clip, under its id
     case 'heal': return line.act==='regen' ? {act:'regen', u:on} : by ? {act:'heal', u:by} : null;
     case 'guard': case 'block': return {act:'defend', u:on||by};
     case 'ko': return has(by,'ko') ? {act:'ko', u:by} : {act:'fall', u:on};

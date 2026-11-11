@@ -71,6 +71,23 @@ function synergyIntro(){
    (or Fight) and watch. CK, Nov 3, 2026. */
 const dodge=(id,by,extra)=>({you:['tanjiro'], foe:[id,'hand'], keep:true, setup:()=>{ const t=S.teams[1][0]; Object.assign(t,{hp:t.max,pow:0}, by); S.teams[0][0].spd=99; S.teams[1].forEach(u=>{u.pow=0;u.spd=1;u.cd=9;}); if(extra) extra(); }, note:'Attack '+BYID[id].short+' and Fight.'});
 const KO_TESTS = {
+  // animation round (Nov 10, 2026): Genya, Zenitsu asleep, Kokushibo's blade, your special-ready pulse
+  an_inosuke: {you:['inosuke'], foe:['akaza','doma','hand'], keep:true, setup:()=>{ S.teams[1].forEach(u=>{ u.pow=0; u.cd=9; u.hp=u.max=200; }); S.teams[0][0].cd=0; }, note:'Pick Inosuke\'s special and Fight: both swords spin across and back.'},
+  an_shinobu: {you:['shinobu'], foe:['akaza'], keep:true, setup:()=>{ S.teams[1].forEach(u=>{ u.pow=0; u.cd=9; u.hp=u.max=200; }); S.teams[0][0].cd=0; }, note:'Pick Shinobu\'s special and Fight.'},
+  an_muzan:  {you:['muzan_final'], foe:['tanjiro','zenitsu','inosuke'], keep:true, setup:()=>{ S.teams[1].forEach(u=>{ u.pow=0; u.cd=9; u.hp=u.max=200; }); S.teams[0][0].cd=0; }, note:'Pick Thorned Flesh Whips and Fight. (Final Form only: regular Muzan keeps his old whips.)'},
+  an_rengoku:{you:['rengoku'], foe:['akaza'], keep:true, setup:()=>{ S.teams[1].forEach(u=>{ u.pow=0; u.cd=9; u.hp=u.max=200; }); const r=S.teams[0][0]; r.sig=BYID.rengoku.sig2; r.cd=0; }, note:'Ninth Form is ready: pick it and Fight.'},
+  an_draft:  {custom:()=>htDraftTest(['tanjiro'], 30), note:'Upper Moon cards have a purple lining in the draft.'},
+  an_win:    {you:['rengoku','tanjiro'], foe:['hand'], keep:true, setup:()=>{ const h=S.teams[1][0]; h.hp=1; h.pow=0; h.cd=9; }, note:'Attack to win: on the win screen the MVP\'s card flips with their special\'s name behind it.'},
+  an_genya: {you:['genya','tanjiro'], foe:['akaza','hand'], keep:true, setup:()=>{ S.teams[1].forEach(u=>{ u.pow=0; u.cd=9; u.hp=u.max=200; }); const g=S.teams[0][0]; g.cd=0; g.hp=Math.round(g.max*.6); }, note:'Pick Genya\'s special and Fight.'},
+  an_zzz:   {you:['zenitsu','inosuke'], foe:['zenitsu','hand'], keep:true, setup:()=>{ S.teams.flat().forEach(u=>{ u.cd=0; }); S.teams[1].forEach(u=>{ u.pow=0; u.hp=u.max=200; }); }, note:'Both Zenitsus have Thunderclap ready, so they\'re asleep. Use it and the Z\'s stop until it\'s ready again.'},
+  an_koku:  {you:['kokushibo'], foe:['tanjiro','zenitsu','inosuke'], keep:true, setup:()=>{ S.teams[1].forEach(u=>{ u.pow=0; u.cd=9; u.hp=u.max=200; }); S.teams[0][0].cd=0; }, note:'Pick Moon Breathing and Fight.'},
+  an_ready: {you:['tanjiro','giyu','mitsuri','inosuke'], foe:['akaza'], keep:true, setup:()=>{ const [t,g,m,i]=S.teams[0]; t.cd=0; g.cd=0; m.cd=2; i.cd=0; S.teams[1].forEach(u=>{ u.pow=0; u.hp=u.max=200; }); }, note:'Tanjiro, Giyu and Inosuke have their specials ready (Mitsuri doesn\'t): open them and look at the Special button.'},
+  // Hantengu (reworked Nov 10, 2026): fight him with a squad you draft at his points, play as him, or skip to the hunt
+  ht_vs:   {custom:()=>htDraftTest(['hantengu','gyokko']), note:'Draft your squad with the same points as Hantengu + Gyokko (15), then fight him. Hunt the real one, or knock Zohakuten down to expose him.'},
+  ht_solo: {custom:()=>htDraftTest(['hantengu']), note:'Draft your squad with the same points as Hantengu alone (9), then fight him.'},
+  ht_play: {you:['hantengu','gyokko'], foe:['tanjiro_mark','zenitsu','inosuke'], keep:true, setup:()=>{ S.level='normal'; }, note:'You are Hantengu (and Gyokko). Keep the real one hidden as long as you can.'},
+  ht_hunt: {you:['tanjiro_mark','genya','mitsuri'], foe:['hantengu'], keep:true, setup:()=>{ const z=mkUnit('zohakuten',1); S.teams[1]=[z]; S.htHide[1]={spot:Math.floor(Math.random()*HT_SPOTS), u:null}; S.htMore[1]=true; S.level='normal'; },
+            note:'Straight to Zohakuten, with the real Hantengu hiding. Hunt (pick a hiding place), or knock Zohakuten down.'},
   // dodges and guards (CK, Nov 3, 2026)
   d_muichiro: dodge('muichiro',{evade:true,evadeBy:'muichiro'}),
   d_swamp:    dodge('swamp',{evade:true,evadeBy:'swamp'}),
@@ -137,10 +154,18 @@ function koTest(){
   const name=(new URLSearchParams(location.search).get('test')||'').toLowerCase(), t=KO_TESTS[name]; if(!t || !/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) return;
   if(t.custom){ t.custom(); note(t.note); render(); return; }
   Object.assign(S,{mode:'cpu', n:2, duo:false, names:[playerName()||'You','Test'], askName:null, unlockAll:true, budget:UNLIMITED, maxTeam:6});
+  if(t.pre) t.pre();
   S.picks=[t.you.slice(), t.foe.slice()]; startBattle(); S.synShown=!t.syn;
   if(!t.keep){ S.teams[1].forEach((u,i)=>{ if(i===0) u.hp=1; u.pow=0; u.regen=0; u.revive=0; u.cd=9; u.spd=0; }); S.teams[0].forEach(u=>{ u.spd=99; }); }   // first enemy one hit from down, and harmless
   if(t.setup) t.setup();
   note(t.keep ? t.note : t.note+' Tap Attack on the enemy, then Fight.'); render();
+}
+// Test page: draft against a set enemy team with the same points it costs (every character open)
+function htDraftTest(enemy, budget){
+  const cost=budget||enemy.reduce((a,id)=>a+BYID[id].cost,0), fams=new Set(enemy.map(id=>BYID[id].fam));
+  Object.assign(S,{mode:'cpu', n:2, duo:false, names:[playerName()||'You','Hantengu'], askName:null, unlockAll:true, maxTeam:6, bansOn:false, banning:false, bans:[], budget:cost, level:'normal', poolType:'all',
+    phase:'draft', first:0, lastPicker:null, history:[], k:0, sel:null, picks:[[], enemy.slice()], locked:[false,true]});
+  S.pool=ROSTER.filter(c=>!c.spawn && !c.helper && c.cost<=cost && !fams.has(c.fam)).map(c=>c.id).sort((a,b)=>BYID[b].cost-BYID[a].cost || BYID[a].name.localeCompare(BYID[b].name)).concat(dealHelpers());
 }
 setTimeout(koTest, 900);
 function render(){
@@ -472,6 +497,7 @@ const ACTIONS = {
   keepmoves(){ if(typeof isCtl==='function' && isCtl()) return ctlKeep(); if(isOnline()) return onlineKeepMoves(); nextScoutOrFight(); },
   focus(v){ S.focus = focusOf(S.planFor)===v ? 'none' : v; S.reveal=true; },
   act(v,b){ const u=findU(b.dataset.u); setMove(u,v); if(unitReady(u)) advanceFocus(u.p); S.reveal=true; },
+  spot(v,b){ const u=findU(b.dataset.u); S.plans[u.p][u.uid].spot=+v; advanceFocus(u.p); S.reveal=true; },   // Hantengu H: the hiding place a hunter checks
   tgt(v,b){ const u=findU(b.dataset.u); S.plans[u.p][u.uid].t=v; advanceFocus(u.p); S.reveal=true; },
   lockMoves(){
     if(typeof isCtl==='function' && isCtl()) return ctlLock();   // controller: send the picks to the TV
@@ -561,7 +587,7 @@ const artFile = (dir, name) => { const f=((typeof ART_FILES!=='undefined'&&ART_F
 function findArt(){
   const found={}, ids=ROSTER.map(c=>c.id).concat(EXTRA_ART).filter(id=>artFile('img',id));
   ids.forEach(id=>{ const im=new Image(); found[id]=im.src=artFile('img',id); ART_KEEP.push(im); if(im.decode) im.decode().catch(()=>{}); });
-  ROSTER.forEach(c=>{ const src=found[c.id]||found[c.id.replace(/_mark$/,'')]||found[c.fam]; if(src) ART[c.id]=src; });
+  ROSTER.forEach(c=>{ const src=found[c.id]||(c.art&&found[c.art])||found[c.id.replace(/_mark$/,'')]||found[c.fam]; if(src) ART[c.id]=src; });
   EXTRA_ART.forEach(id=>{ if(found[id]) ART[id]=found[id]; });
 }
 function findPlaces(){ [...ALL_STAGES.map(st=>st.id), ...Object.keys(ARCS)].forEach(arc=>{ const f=artFile('places',arc); if(f) PLACE_ART[arc]=f; }); }
