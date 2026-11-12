@@ -22,10 +22,10 @@ add({id:'yoriichi_old',fam:'yoriichi',sk:'yoriichi_old',name:'Yoriichi (Age 85)'
   sig:{name:'The Last Strike',desc:'Strike for PWR+10, ignores DEF.',cd:3,kind:'single'}});
 
 // Demons
-add({id:'muzan',name:'Muzan Kibutsuji',short:'Muzan',g:'鬼',type:'Demon King',demon:true,cost:16,hp:62,pow:17,spd:11,def:8,regen:5,
+add({id:'muzan',name:'Muzan Kibutsuji',short:'Muzan',g:'鬼',type:'Demon King',demon:true,cost:16,hp:68,pow:17,spd:11,def:8,regen:5,
   sig:{name:'Blood Whips',desc:'Every enemy takes PWR−7, ignores DEF, and Muzan heals 2 for each enemy hit.',cd:3,kind:'all'}});
 // Final-Form Muzan: the other version of Muzan (one or the other is dealt)
-add({id:'muzan_final',fam:'muzan',sk:'muzan_final',name:'Muzan Kibutsuji (Final Form)',short:'Final Muzan',g:'終',type:'Demon King · Final Form',demon:true,cost:18,hp:64,pow:17,spd:11,def:8,regen:5,
+add({id:'muzan_final',fam:'muzan',sk:'muzan_final',name:'Muzan Kibutsuji (Final Form)',short:'Final Muzan',g:'終',type:'Demon King · Final Form',demon:true,cost:18,hp:78,pow:17,spd:11,def:8,regen:5,
   revive:.35,
   passive:'Seven Hearts: the first time he falls, he gets back up with 35% health. If he hasn’t used it by sunrise, he burns his hearts to heal 35% at once instead; after sunrise he never gets back up.',
   sig:{name:'Thorned Flesh Whips',desc:'Every enemy takes PWR−6, ignores DEF, and he heals 3 for each enemy hit.',cd:3,kind:'all'}});
@@ -51,8 +51,13 @@ add({id:'nakime',name:'Nakime',short:'Nakime',g:'琵',type:'Upper Moon 4 · Infi
   basic:{name:'Biwa Strum',tag:'enemy acts last',k:'琵',flee:'Nakime is alone. She flees into the castle.',desc:'Instead of attacking: pick an enemy. They act last this round. Always goes first.'},
   passive:"Biwa, not blade: she never attacks. Her basic move, Biwa Strum, makes an enemy act last this round. If she's the last one standing on her team, she flees and counts as knocked out.",
   sig:{name:'Castle Shift',desc:"Moves first. Sends an enemy to another room: they can't act and can't be hit this round.",cd:3,kind:'single',prio:3}});
-add({id:'gyokko',name:'Gyokko',short:'Gyokko',g:'壺',type:'Upper Moon 5',demon:true,upper:true,cost:6,hp:32,pow:10,spd:8,def:4,regen:2,
+add({id:'gyokko',name:'Gyokko',short:'Gyokko',g:'壺',type:'Upper Moon 5',demon:true,upper:true,cost:7,hp:32,pow:10,spd:8,def:4,regen:2,
+  passive:'Perfect Form: the first time he ends a round at half health or less, he sheds his shell: +2 PWR, +3 SPD, +4 DEF, and his special becomes Jinmei Kaigyo (ready at once).',
   sig:{name:'Water Prison Pot',desc:'Traps one enemy: it takes PWR−2 (ignores DEF) and can\'t act next round.',cd:3,kind:'single'}});
+// Gyokko's Perfect Form (CK, Nov 12, 2026, testing): the first time he ends a round at half health or less, he sheds his shell and becomes this card
+add({id:'gyokko_perfect',fam:'gyokko',sk:'gyokko_perfect',spawn:true,name:'Gyokko (Perfect Form)',short:'Perfect Gyokko',g:'鱗',type:'Upper Moon 5 · Perfect Form',demon:true,upper:true,cost:0,hp:32,pow:12,spd:11,def:8,regen:2,
+  passive:'Diamond scales: harder than any blade, and far faster than before.',
+  sig:{name:'Jinmei Kaigyo',desc:'His hands turn what they touch to fish: one enemy takes PWR+4, ignoring DEF.',cd:3,kind:'single'}});
 // Hantengu splits when knocked out: Hantengu → all four emotions (Sekido, Karaku, Aizetsu, Urogi). When the last
 // emotion falls they merge into Zohakuten (merge: the form that appears once every form with that merge is down).
 // The split-off forms (spawn:true) are never dealt in the draft; they only appear in battle.
@@ -95,7 +100,7 @@ add({id:'enmu',name:'Enmu',short:'Enmu',g:'夢',type:'Lower Moon 1',demon:true,c
 add({id:'rui',name:'Rui',short:'Rui',g:'糸',type:'Lower Moon 5',demon:true,cost:4,hp:24,pow:7,spd:7,def:4,regen:1,
   sig:{name:'Cutting Thread Cage',desc:'Strike for PWR and stun the target next round.',cd:3,kind:'single'}});
 add({id:'kyogai',name:'Kyogai',short:'Kyogai',g:'鼓',type:'Former Lower Moon',demon:true,cost:3,hp:22,pow:6,spd:6,def:3,regen:1,
-  sig:{name:'Drum Room Spin',desc:'Flip the room. The target is stunned next round.',cd:4,kind:'single'}});
+  sig:{name:'Drum Room Spin',desc:'Flip the room. The target loses a turn: this round if they haven\'t moved yet, or next round if they were faster.',cd:4,kind:'single'}});
 add({id:'susamaru',name:'Susamaru',short:'Susamaru',g:'鞠',type:'Temari demon',demon:true,cost:3,hp:22,pow:7,spd:8,def:3,regen:1,
   passive:"Temari & Arrows: with Yahaba on her team, her hits slip past Defend.",
   sig:{name:'Temari Barrage',desc:'Strike your target and one other enemy for PWR−1.',cd:3,kind:'single'}});
@@ -111,12 +116,12 @@ add({id:'swamp',name:'Swamp Demon',short:'Swamp Demon',g:'沼',type:'Lesser demo
 const giyu = add({id:'giyu',name:'Giyu Tomioka',short:'Giyu',g:'水',type:'Water Hashira',hashira:true,cost:8,hp:32,pow:10,spd:8,def:5,
   sig:{name:'Dead Calm',desc:'Moves first. Your whole team takes no damage this round.',cd:4,kind:'self',prio:3}});
 markOf(giyu,{cost:10});
-const gyomei = add({id:'gyomei',name:'Gyomei Himejima',short:'Gyomei',g:'岩',type:'Stone Hashira',hashira:true,cost:8,hp:42,pow:13,spd:8,def:7,
+const gyomei = add({id:'gyomei',name:'Gyomei Himejima',short:'Gyomei',g:'岩',type:'Stone Hashira',hashira:true,cost:9,hp:50,pow:14,spd:8,def:7,
   sig:{name:'Volcanic Rock',desc:'Every enemy takes 9, ignoring DEF.',cd:3,kind:'all',dmg:9}});
-markOf(gyomei,{cost:12, sig:Object.assign({}, gyomei.sig, {cd:2, dmg:11, desc:'Every enemy takes 11, ignoring DEF.'})});
-const sanemi = add({id:'sanemi',name:'Sanemi Shinazugawa',short:'Sanemi',g:'風',type:'Wind Hashira',hashira:true,cost:7,hp:38,pow:12,spd:9,def:5,
+markOf(gyomei,{cost:12, hp:50, pow:17, sig:Object.assign({}, gyomei.sig, {cd:2, dmg:11, desc:'Every enemy takes 11, ignoring DEF.'})});
+const sanemi = add({id:'sanemi',name:'Sanemi Shinazugawa',short:'Sanemi',g:'風',type:'Wind Hashira',hashira:true,cost:8,hp:44,pow:13,spd:9,def:5,
   sig:{name:'Black Wind Mountain Mist',desc:'Strike your target and one other enemy for PWR.',cd:3,kind:'single'}});
-markOf(sanemi,{cost:11});   // Oct 27, 2026 (CK): Sanemi 7 pts 38/12, Mark 11 pts (second only to Gyomei ✦); 53% / 48% at 20 pts
+markOf(sanemi,{cost:11, hp:46, pow:16});   // Oct 27, 2026 (CK): Sanemi 7 pts 38/12, Mark 11 pts (second only to Gyomei ✦); 53% / 48% at 20 pts
 const muichiro = add({id:'muichiro',name:'Muichiro Tokito',short:'Muichiro',g:'霞',type:'Mist Hashira',hashira:true,cost:6,hp:26,pow:10,spd:11,def:4,
   sig:{name:'Obscuring Clouds',desc:'Moves early. Vanishes into mist (attacks miss him this round) and strikes for PWR+2.',cd:3,kind:'single',prio:1}});
 markOf(muichiro,{cost:10, hp:40});   // Nov 10, 2026 (CK): 34 HP was 38% at 20 and 30 pts
@@ -144,9 +149,9 @@ add({id:'kanae',name:'Kanae Kocho',short:'Kanae',g:'蝶',type:'Former Flower Has
   passive:"Retired: she no longer counts as a Hashira. Kocho Sisters: with Shinobu on her team, Shinobu's poison lasts a round longer. Her student Kanao gets +1 PWR on her team.",
   sig:{name:'Crimson Hanagoromo',desc:'Strike for PWR+3, and your most hurt fighter heals 4.',cd:3,kind:'single'}});
 
-const tanjiro = add({id:'tanjiro',name:'Tanjiro Kamado',short:'Tanjiro',g:'日',type:'Sun & Water',cost:5,hp:28,pow:8,spd:7,def:4,
+const tanjiro = add({id:'tanjiro',name:'Tanjiro Kamado',short:'Tanjiro',g:'日',type:'Sun & Water',cost:5,hp:30,pow:9,spd:7,def:4,
   sig:{name:'Hinokami Kagura',desc:'Strike for PWR+5, ignores DEF.',cd:3,kind:'single'}});
-markOf(tanjiro,{cost:9, hp:46, selfless:true});   // 9 pts, 46 HP (Oct 27, 2026): 49% at 20 pts once attacking reveals him in the Selfless State (40 HP gave 38%)
+markOf(tanjiro,{cost:9, hp:46, pow:12, spd:9, selfless:true});   // 9 pts, 46 HP (Oct 27, 2026): 49% at 20 pts once attacking reveals him in the Selfless State (40 HP gave 38%)
 // Mark Tanjiro's second special: after his first Hinokami Kagura, the next one ready is the Selfless State (once per
 // match; unlocked by winning Destructive Death in the story). See special() and hit() in engine.js.
 const SELFLESS = {id:'selfless', name:'Selfless State', quote:'No wasted motion. No anger. Just breathe.', cd:Math.max(1,tanjiro.sig.cd-1), kind:'self', prio:3, tag:'untouchable · save allies',
@@ -199,7 +204,7 @@ add({id:'makio',name:'Makio',short:'Makio',g:'牧',type:"Kunoichi · Tengen's wi
 add({id:'suma',name:'Suma',short:'Suma',g:'須',type:"Kunoichi · Tengen's wife",cost:2,hp:14,pow:3,spd:9,def:2,
   sig:{name:'Panic Dodge',desc:'Moves first. Dodges everything this round, and flails at a random enemy for PWR.',cd:3,kind:'auto',prio:3}});
 add({id:'michikatsu',fam:'kokushibo',sk:'michikatsu',name:'Michikatsu Tsugikuni',short:'Michikatsu',g:'道',type:'Human swordsman',cost:9,hp:48,pow:15,spd:11,def:5,
-  sig:{name:'Envy of the Sun',desc:'Strike for PWR plus the round number (up to +6). He only gets stronger.',cd:3,kind:'single'}});
+  sig:{name:'Moon Breathing, First Form: Dark Moon, Evening Palace',desc:'Moves first. One enemy takes PWR+4.',cd:3,kind:'single',prio:2}});   // CK, Nov 12, 2026: was Envy of the Sun (PWR + the round number), hard to read
 add({id:'hakuji',fam:'akaza',sk:'hakuji',name:'Hakuji',short:'Hakuji',g:'狛',type:'Human · Soryu fists',cost:4,hp:26,pow:8,spd:9,def:2,
   passive:'Vow: the first time a teammate falls, he gets +3 PWR for the rest of the match.',
   sig:{name:'Soryu Kick',desc:'Strike for PWR+3.',cd:3,kind:'single'}});
@@ -242,8 +247,8 @@ add({id:'kiriya',name:'Kiriya Ubuyashiki',short:'Kiriya',g:'産',type:'Corps com
   sig:{name:'Ambush Orders',desc:`Pick one of your fighters. This round, every enemy that attacks them takes ${AMBUSH_DMG} damage back.`,kind:'helper'}});
 
 // A few words shown under each fighter's Special button, like "hit one enemy" under Attack
-const SPECIAL_TAGS = {
-  makomo:'dodge + hit', hinatsuru:'hit + poison', makio:'strong hit', suma:'dodge + random hit', michikatsu:'hit grows each round', hakuji:'strong hit', tanjuro:'team heals 3', dojo_fighter:'strong hit',
+const SPECIAL_TAGS = {gyokko_perfect:'big hit, ignores DEF', 
+  makomo:'dodge + hit', hinatsuru:'hit + poison', makio:'strong hit', suma:'dodge + random hit', michikatsu:'strike first', hakuji:'strong hit', tanjuro:'team heals 3', dojo_fighter:'strong hit',
   yoriichi:'hit all, stops regen', yoriichi_old:'huge hit, ignores DEF',
   muzan:'hit all, heal self', muzan_final:'hit all, heal self', kokushibo:'hit all enemies', doma:'hit all enemies',
   akaza:'big hit', gyutaro:'hit all + poison', daki:'hit all enemies', nakime:'send an enemy away', zohakuten:'hit all, through Defend', hantengu_true:'hides this round',
@@ -262,7 +267,7 @@ const SPECIAL_TAGS = {
 };
 ROSTER.forEach(c=>{ c.sig.tag = SPECIAL_TAGS[c.sk]; });
 // One short line each fighter says when their special fires (shown on the fight stage)
-const SPECIAL_QUOTES = {
+const SPECIAL_QUOTES = {gyokko_perfect:'Behold my true form!', 
   makomo:'Don’t be stiff. Flow.', hinatsuru:'Hold still. This won’t take long.', makio:'Get out of my way!', suma:'I don’t want to die!', michikatsu:'For once, look at me.', hakuji:'I swore I’d protect them.', tanjuro:'Breathe. Then dance.', dojo_fighter:'Nobody beats our dojo!',
   yoriichi:'Sun Breathing has thirteen forms. This is the last.', yoriichi_old:'Even now, my sword has not dulled.',
   muzan:'I decide who lives.', muzan_final:'I will not die. Not to the sun, not to you.', kokushibo:'Moonlight, cut them down.',
@@ -310,6 +315,7 @@ const LORE = {
   gyutaro: ['Whoever made my sister cry, I’ll take everything from them.', 'Upper Moon Six, born in Yoshiwara’s gutters. He shares one rank, and one life, with his sister.'],
   daki: ['Brother, they’re bullying me!', 'The proud oiran of Yoshiwara. Her obi sashes keep the people she means to eat.'],
   nakime: ['*strum*', 'The biwa player of the Infinity Castle. One note moves every room.'],
+  gyokko_perfect: ['Behold my true form!', 'Gyokko out of his pot: scales harder than diamond, and hands that turn whatever they touch into fish.'],
   gyokko: ['Admire my art!', 'Upper Moon Five, an artist of pots and fish who traps his victims in water.'],
   hantengu: ['Don’t hurt me! I’m so weak!', 'Upper Moon Four, a coward whose fear splits him into emotions, each one deadlier than the last.'],
   kaigaku: ['I was the one meant to rise.', 'Zenitsu’s senior under Jigoro Kuwajima. He took Muzan’s blood and became Upper Moon Six.'],
@@ -355,11 +361,11 @@ const LORE = {
 };
 const loreOf = c => LORE[c.id] || LORE[c.fam] || null;
 // One short line under each draft card: what the special does at a glance (the full text is on the card's details)
-const SIG_CAPTION = {yoriichi:'Hits all · stops regen', yoriichi_old:'Huge single hit', muzan:'Hits all · heals him', muzan_final:'Hits all · heals him', kokushibo:'Three moon forms in turn', doma:'Hits all · then the ice Buddha',
+const SIG_CAPTION = {gyokko_perfect:'Huge hit · ignores DEF', yoriichi:'Hits all · stops regen', yoriichi_old:'Huge single hit', muzan:'Hits all · heals him', muzan_final:'Hits all · heals him', kokushibo:'Three moon forms in turn', doma:'Hits all · then the ice Buddha',
   akaza:'Big single hit', gyutaro:'Hits all · poison', daki:'Hits all · through Defend', nakime:'Banishes one enemy', gyokko:'Hit + stun', hantengu:'Splits when cut · hunt the real one', kaigaku:'Hits two', enmu:'Delays all specials',
   rui:'Hit + stun', kyogai:'Stuns one enemy', susamaru:'Hits two', yahaba:'Enemy\'s hits miss', hand:'Big single hit', swamp:'Dodges + hits', giyu:'Team takes no damage', gyomei:'Hits all · ignores DEF',
   sanemi:'Hits two', muichiro:'Dodges + hits', mitsuri:'Hits all · through Defend', obanai:'Big hit · through Defend', rengoku:'Big single hit', tengen:'Hits all', tengen_retired:'Guards an ally', shinobu:'Poisons one enemy',
   kanae:'Hit + heals', tanjiro:'Big hit · ignores DEF', tanjiro_demon:'Hits all · ignores DEF', nezuko:'Hits all · ignores DEF', nezuko_awakened:'Hits all · cures poison', zenitsu:'Moves first · double hit', inosuke:'Two random hits',
   kanao:'Moves early · big hit', genya:'Heals · +2 PWR', tamayo:'Heals ally · cures poison', yushiro:'Hides an ally', sabito:'Ally +2 PWR', typezero:'Ally +2 SPD', urokodaki:'Big single hit', makomo:'Dodges + hits',
-  hinatsuru:'Hit + poison', makio:'Big single hit', suma:'Dodges + random hit', michikatsu:'Stronger every round', hakuji:'Big single hit', tanjuro:'Heals whole team', kagaya:'Awakens Marks · he falls', murata:'Strong single hit'};
+  hinatsuru:'Hit + poison', makio:'Big single hit', suma:'Dodges + random hit', michikatsu:'Moves first · big hit', hakuji:'Big single hit', tanjuro:'Heals whole team', kagaya:'Awakens Marks · he falls', murata:'Strong single hit'};
 const sigCaption = c => SIG_CAPTION[c.id] || SIG_CAPTION[c.fam] || (c.sig && c.sig.name) || '';

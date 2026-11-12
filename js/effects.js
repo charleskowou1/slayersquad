@@ -16,7 +16,7 @@ const FIGHT_STYLE = {
   murata:'water', rengoku:'flame', zenitsu:'thunder', kaigaku:'darkthunder', muichiro:'mist', sanemi:'wind', gyomei:'stone',
   mitsuri:'love', obanai:'serpent', tengen:'sound', tengen_retired:'sound', shinobu:'insect', inosuke:'beast', kanao:'flower',
   genya:'claw', nezuko:'blood', tamayo:'blood', yushiro:'blood', kagaya:'slash',
-  muzan:'blood', muzan_final:'blood', kokushibo:'moon', doma:'ice', akaza:'compass', gyutaro:'blood', gyokko:'water',
+  muzan:'blood', muzan_final:'blood', kokushibo:'moon', doma:'ice', akaza:'compass', gyutaro:'blood', gyokko:'water', gyokko_perfect:'water',
   hantengu:'claw', hantengu_true:'claw', sekido:'thunder', karaku:'wind', aizetsu:'slash', urogi:'sound', enmu:'dream', rui:'thread', kyogai:'drum',
   hand:'claw', swamp:'claw',
   daki:'thread', nakime:'sound', zohakuten:{attack:'thunder', special:'beast'}, susamaru:'compass', yahaba:'wind', kanae:'flower',
@@ -57,7 +57,7 @@ const FX_ART = {
 // Big moments for a few specials (CK): drawn over the whole screen on the special's first hit, keyed by character (sk).
 // Akaza's and Doma's are drawn on their targets instead, so the eye stays on the damage. Tengen's plays on every hit, like
 // a drum. Rengoku has one for each special (tiger, then ninth for Ninth Form).
-const SPECIAL_FX = {doma:'frostbloom', kokushibo:'kmoon', zenitsu:'bolt', muichiro:'mist', tengen:'mscore', kanae:'hanagoromo', inosuke:'twinblades', shinobu:'stinger', tanjiro:'firering', rengoku:'tiger', zohakuten:'dragons', kaigaku:'darkbolt', sanemi:'tornado', gyutaro:'sickles', susamaru:'temari', sekido:'redbolt', suma:'kunai', akaza:'annihil', yoriichi:'sunform', yoriichi_old:'sunform',
+const SPECIAL_FX = {doma:'frostbloom', kokushibo:'kmoon', zenitsu:'bolt', muichiro:'mist', tengen:'mscore', kanae:'hanagoromo', inosuke:'twinblades', shinobu:'stinger', tanjiro:'firering', rengoku:'tiger', zohakuten:'dragons', kaigaku:'darkbolt', sanemi:'tornado', gyutaro:'sickles', susamaru:'temari', sekido:'redbolt', suma:'kunai', akaza:'compass', yoriichi:'sunform', yoriichi_old:'sunform',
   muzan:'whips', muzan_final:'whipfan2', gyomei:'flail', mitsuri:'ribbon', obanai:'snake', enmu:'sleep',
   urokodaki:'waterwheel', makio:'burst', hand:'hands', tanjuro:'kagura', sabito:'boulder',
   kanao:'bloom', tanjiro_demon:'tendrils', murata:'fizzle', gyokko:'goldfish'};   // Awakened Nezuko: her targets catch pink fire (TARGET_ART)   // Sabito: the boulder on Mount Sagiri, cut clean in two   // CK, Nov 3, 2026: the last specials without their own moment
@@ -145,6 +145,12 @@ const SFX_ART = {
   crack: () => `<span class="husk">${emoFace('hantengu')}</span><svg viewBox="0 0 100 100" preserveAspectRatio="none"><polyline points="50,0 46,22 54,34 44,52 56,68 48,100"/><polyline points="46,22 26,30 12,24"/><polyline points="54,34 74,40 90,32"/><polyline points="44,52 22,62 8,60"/><polyline points="56,68 78,72 94,84"/></svg><i class="mflash"></i>${EMOTIONS.map(([id,k],i)=>`<span class="emo" style="--x:${[-30,30,-30,30][i]}vmin;--y:${[-26,-26,26,26][i]}vmin;--i:${i}">${emoFace(id)}<b>${k}</b></span>`).join('')}`,
   darkbolt: () => `<svg viewBox="0 0 100 40" preserveAspectRatio="none"><polyline class="b1" points="-2,28 16,14 30,30 48,12 62,28 80,10 102,24"/><polyline class="b2" points="-2,28 16,14 30,30 48,12 62,28 80,10 102,24"/></svg>`,
   dragons: () => `<svg viewBox="0 0 100 100" preserveAspectRatio="none">${rep(4, i=>`<path style="--d:${i*.12}s" d="M${10+i*27} 108 C${i%2?34+i*14:i*14} 70 ${i%2?i*18:30+i*18} 50 ${20+i*20} ${16+(i%2)*12}"/>`)}</svg>`,
+  // Akaza's Compass Needle (Nov 12, 2026, CK: his special was weak): the snowflake compass opens across the floor, the needle
+  // swings and locks onto the target with a glint, then a barrage of shockwaves bursts on them (no fist: CK turned that down)
+  compass: () => `<span class="ak-dim"></span><svg class="ak-flake" viewBox="0 0 200 200"><g class="ak-spin">${rep(12,i=>`<g transform="rotate(${i*30} 100 100)"><line x1="100" y1="100" x2="100" y2="8"/><line x1="100" y1="40" x2="88" y2="28"/><line x1="100" y1="40" x2="112" y2="28"/><line x1="100" y1="64" x2="92" y2="56"/><line x1="100" y1="64" x2="108" y2="56"/></g>`)}<circle cx="100" cy="100" r="92"/><circle cx="100" cy="100" r="58"/><circle cx="100" cy="100" r="22"/></g><line class="ak-needle" x1="100" y1="100" x2="100" y2="14"/><circle class="ak-hub" cx="100" cy="100" r="6"/></svg>
+    <span class="ak-glint"></span>${rep(7,i=>`<i class="ak-burst" style="--d:${(1.05+i*.09).toFixed(2)}s;--x:${(((i*37)%30)-15)}px;--y:${(((i*23)%26)-13)}px"></i>`)}${rep(10,i=>`<i class="ak-streak" style="--a:${i*36+8}deg;--d:${(1.05+(i%5)*.08).toFixed(2)}s"></i>`)}<b class="ak-k">破壊殺</b>`,
+  // Annihilation Type (Nov 12, 2026): the compass opens under every enemy, then the whole field erupts in shockwaves
+  annihilx: () => `<span class="ak-dim"></span>${SFX_ART.annihil()}<span class="ax-flash"></span><span class="ax-ring"></span><span class="ax-ring r2"></span>${rep(16,i=>`<i class="ax-beam" style="--a:${i*22.5}deg;--d:${(1.05+(i%4)*.05).toFixed(2)}s"></i>`)}${rep(5,i=>`<i class="ak-burst ax" style="--d:${(1.1+i*.1).toFixed(2)}s;--x:${(i-2)*22}vw;--y:0px"></i>`)}<b class="ak-k">破壊殺・滅式</b>`,
   annihil: () => `<svg class="annring" viewBox="0 0 100 100"><g>${rep(16, i=>`<line x1="50" y1="50" x2="${50+48*Math.cos(i*Math.PI/8)}" y2="${50+48*Math.sin(i*Math.PI/8)}"/>`)}${rep(8, i=>`<polygon points="50,2 54,14 50,26 46,14" transform="rotate(${i*45} 50 50)"/>`)}<circle cx="50" cy="50" r="26"/><circle cx="50" cy="50" r="47"/></g></svg>`,
   merge: () => EMOTIONS.map(([id,k],i)=>`<span class="emo" style="--x:${[-34,34,-34,34][i]}vmin;--y:${[-28,-28,28,28][i]}vmin">${emoFace(id)}<b>${k}</b></span>`).join('')+`<i class="mflash"></i><span class="husk zoh">${emoFace('zohakuten')}<b>憎</b></span>`,
   biwa: () => rep(3, i=>`<i style="--d:${i*.14}s"></i>`)+'<b>♪</b>',
@@ -156,7 +162,7 @@ const SFX_ART = {
   kunai: () => rep(8, i=>`<i style="--a:${i*45+12}deg;--d:${i*.04}s"></i>`),
   somehow: () => '<b class="smh">Somehow!</b>',
   h_mice: () => rep(5, i=>`<img class="hrun mice" style="--i:${i}" src="${ART.mice||''}" alt="">`),
-  h_crow: () => `<img class="hrun fly" src="${ART.crow||''}" alt="">`,
+  h_crow: () => `<img class="hrun fly" src="${ART.crow||''}" alt=""><span class="crowletter"><b>報</b><em>Report!</em></span>${rep(6,i=>`<i class="crowfeather" style="--x:${14+i*13}%;--d:${(.35+i*.11).toFixed(2)}s;--r:${(i*67)%360}deg"></i>`)}`,   // swoops across, drops its letter, feathers drift down (Nov 12, 2026)
   h_chachamaru: () => `<img class="hrun pad" src="${ART.chachamaru||''}" alt=""><svg class="hcup" viewBox="0 0 100 50"><g transform="rotate(-20 50 25)"><rect x="8" y="12" width="84" height="26" rx="13" fill="#f4e7c6" stroke="#3b2a1c" stroke-width="2"/><path d="M50 12 H79 a13 13 0 0 1 0 26 H50 Z" fill="#c93c4b" stroke="#3b2a1c" stroke-width="2"/><rect x="16" y="16" width="26" height="4" rx="2" fill="#fff" opacity=".7"/></g></svg>`,
   h_goto: m => { const u=m&&m.on&&findU(m.on); return `<img class="hrun haul" src="${ART.goto||''}" alt="">${u&&ART[u.id]?`<img class="hrun hauled" src="${ART[u.id]}" alt="">`:''}`; },
   h_aoi: () => `<svg class="hcup tea" viewBox="0 0 100 80"><path class="steam" d="M38 22 C30 12 46 8 38 -2 M60 22 C52 12 68 8 60 -2" fill="none" stroke="#d7efdc" stroke-width="3" stroke-linecap="round"/><path d="M16 28 H84 C84 56 70 70 50 70 C30 70 16 56 16 28 Z" fill="#e9e2d0" stroke="#3b2a1c" stroke-width="2"/><ellipse cx="50" cy="28" rx="34" ry="8" fill="#7fbf6a" stroke="#3b2a1c" stroke-width="2"/><ellipse cx="50" cy="74" rx="26" ry="4" fill="#8a6a44"/></svg><span class="hwash"></span>`,

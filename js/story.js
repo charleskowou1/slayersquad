@@ -142,7 +142,7 @@ const MAIN_STAGES = [
     stars:{standing:1, hp2:45, rounds:7},
     beats:[{when:'low', id:'gyokko', at:.5, text:'My true form! Behold my perfect body!'}],
     outro:[['gyokko','Impossible! My masterpiece!'],['muichiro','I remember now. My brother. Why I fight.']],
-    boosts:[{side:1, hp:1.5, label:'Gyokko: +50% HP'}],
+    boosts:[{side:1, hp:1.5, label:'Gyokko: +50% HP'}],   // +90% while Muichiro had Rival vs Gyokko but before Gyokko's Perfect Form (Nov 12, 2026)
     blurb:'Upper Moon Five and his pots against the Mist Hashira.',
     scene:[['gyokko','Admire my art! Every pot is a masterpiece!'],
       ['muichiro',"I don't care about pots. I'll forget you soon anyway."],
@@ -154,7 +154,7 @@ const MAIN_STAGES = [
     stars:{standing:2, rounds:12},
     beats:[{when:'ko', id:'hantengu', who:'tanjiro', text:'He split again?!'}, {when:'low', id:'nezuko', at:.4, text:'Mmph!!'}],
     outro:[['','Tanjiro’s blade finds the real Hantengu at last, and Zohakuten crumbles with him.'],['nezuko','Mmph!'],['tanjiro','Nezuko… you’re standing in the sun!']],
-    boosts:[{side:1, hp:2, pow:1, label:'Upper Moons: +100% HP, +1 PWR'}],
+    boosts:[{side:1, hp:1.6, label:'Upper Moons: +60% HP'}],   // +100% HP +1 PWR before Gyokko's Perfect Form (Nov 12, 2026)
     blurb:'Two Upper Moons at once. Cut Hantengu down and four more appear. Then they merge.',
     scene:[['hantengu',"Don't hurt me! I'm so weak! So very weak!"],
       ['genya',"Cut his head off and he splits? Then I'll eat them all!"],
@@ -163,7 +163,7 @@ const MAIN_STAGES = [
   // Hashira Training (CK, Oct 27, 2026): the retired Sound Hashira drills the trio. Beat him.
   {id:'hashira_training', arc:'castle', title:'Hashira Training', place:'The Ubuyashiki estate, weeks before', foe:'Retired Tengen', mine:['tanjiro','zenitsu','inosuke'], enemy:['tengen_retired'], level:'normal',
     stars:{standing:2, rounds:7},
-    boosts:[{side:1, hp:3.75, pow:6, label:'Retired Tengen: +275% HP, +6 PWR'}],
+    boosts:[{side:1, hp:4.1, pow:6, label:'Retired Tengen: +310% HP, +6 PWR'}],
     beats:[{when:'round', round:2, id:'tengen_retired', text:'Too slow! Flashier! FLASHIER!'}],
     outro:[['tengen_retired','Not bad! You three are almost flashy enough.'],['zenitsu','Almost?! I’ve been running for nine hours!'],['inosuke','Again! I’m not done!']],
     blurb:'The retired Sound Hashira wants to see some flash. Knock him down.',
@@ -176,7 +176,7 @@ const MAIN_STAGES = [
     stars:{standing:2, health:15},
     twist:{survive:7},
     boosts:[{side:0, only:['gyomei','sanemi','obanai','mitsuri','muichiro'], pow:2, spd:1, label:"Kagaya's Final Resolve: Hashira +2 PWR, +1 SPD"},
-      {side:1, hp:5, pow:7, label:'Muzan: +400% HP, +7 PWR'}],   // ~70% at every level (+8 PWR is a cliff: his whips ignore DEF)
+      {side:1, hp:5, pow:9, label:'Muzan: +400% HP, +9 PWR'}],   // ~70% at every level (+8 PWR is a cliff: his whips ignore DEF)
     beats:[{when:'round', round:3, id:'tamayo', text:'My medicine is working. Keep him here!'}, {when:'low', id:'muzan', at:.5, text:'Enough of this. Nakime!'}],
     outro:[['nakime','*strum*'],['gyomei','The floor is falling away… Everyone, stay alive. We meet again in his castle.'],['muzan','Come, then. I will kill every one of you in my own home.']],
     blurb:'Kagaya’s last gift. Five Hashira and Tamayo against Muzan himself.',
@@ -193,7 +193,7 @@ const MAIN_STAGES = [
     stars:{standing:2, rounds:5},
     beats:[{when:'round', round:2, id:'nakime', text:'*strum*'}, {when:'low', id:'murata', at:.5, text:'Why is it always me?!'}],
     outro:[['nakime','*the strings snap*'],['murata','We’re alive! I’m alive! Somehow!'],['giyu','Keep moving. The upper floors are worse.']],
-    boosts:[{side:1, pow:4, label:'Castle demons: +4 PWR'}],
+    boosts:[{side:1, hp:1.15, pow:4, label:'Castle demons: +15% HP, +4 PWR'}],
     blurb:'One strum of the biwa and the whole castle moves.',
     scene:[['','The floor drops away. The slayers fall into a castle with no end.'],
       ['nakime','*strum* The castle answers to me.'],
@@ -262,7 +262,7 @@ const MAIN_STAGES = [
       ['yoriichi_old',"Brother. How sad. I'm here to cut you down."]]},
   {id:'kokushibo', arc:'castle', title:'Upper Moon One', place:'Infinity Castle, deep', foe:'Kokushibo', mine:['muichiro','genya','kiriya'], enemy:['kokushibo'], level:'hard',
     stars:{standing:2, rounds:7},
-    boosts:[{side:1, hp:2.35, pow:5, label:'Kokushibo: +135% HP, +5 PWR'}],   // +120% until he got three specials (Nov 11, 2026); was +90% until Mark Muichiro got 40 HP (Nov 10, 2026); +65% before Nov 5, 2026: retuned Nov 5, 2026 when Sanemi and Gyomei started arriving with their synergies
+    boosts:[{side:1, hp:2.45, pow:5, label:'Kokushibo: +145% HP, +5 PWR'}],   // +135% until Sanemi and Gyomei were buffed (Nov 12, 2026); +120% until he got three specials (Nov 11) until Mark Muichiro got 40 HP (Nov 10, 2026); +65% before Nov 5, 2026: retuned Nov 5, 2026 when Sanemi and Gyomei started arriving with their synergies
     beats:[{when:'round', round:3, id:'sanemi', text:'Hands off my brother!'}, {when:'round', round:4, id:'gyomei', text:'Namu Amida Butsu. It ends here.'}],
     phases:[{id:'kokushibo', at:.5, pow:2, spd:1, ready:true, second:true, label:'+2 PWR, +1 SPD, Moonbow ready', line:'My blade grows. Moon Breathing, Sixteenth Form.'}],
     outro:[['kokushibo','What is this… monster I’ve become?'],['','Kokushibo crumbles. The Hashira who fought him gave everything.'],['sanemi','Genya… hang on.']],
@@ -279,7 +279,7 @@ const MAIN_STAGES = [
     stars:{standing:1, hp2:10, rounds:5},
     beats:[{when:'low', id:'muzan', at:.5, text:'Impossible… what IS this man?!'}],
     outro:[['muzan','That man… he will haunt me for centuries.'],['','Muzan shatters into pieces and flees. Yoriichi lets Tamayo go.'],['tamayo','I will spend my life finishing what he started.']],
-    boosts:[{side:1, only:['tamayo'], hp:1.25, label:'Tamayo: +25% HP'}],
+    boosts:[{side:1, only:['tamayo'], hp:1.2, label:'Tamayo: +20% HP'}],
     blurb:'The only swordsman Muzan ever truly feared.',
     scene:[['','Four hundred years ago, on a quiet night road.'],
       ['muzan','A swordsman? Step aside before I lose my patience.'],
@@ -363,7 +363,7 @@ const DREAM_STAGES = [
     scene:[['tanjiro',"Where is this? I know these mountains. These are my ancestors' memories."],['michikatsu',"Stay close to me, Yoriichi. I'm the elder. I'll protect you."],['yoriichi','Yes, brother.'],['tanjiro',"Him… that's him? Before?"]],
     outro:[['michikatsu','You were everywhere at once. I barely touched my sword.'],['yoriichi',"We won together, brother. That's what matters."],['michikatsu','Together. Yes.'],['','His hand tightens on his blade.']]},
   {id:'dr_envy', arc:'dream3', title:"The Moon's Envy", place:'The Tsugikuni lands, at dusk', foe:'Michikatsu', mine:['yoriichi'], enemy:['michikatsu'], level:'hard',
-    boosts:[{side:1, hp:1.7, pow:2, label:'Michikatsu: +70% HP, +2 PWR'}],
+    boosts:[{side:1, hp:1.65, pow:2, label:'Michikatsu: +65% HP, +2 PWR'}],
     blurb:'Every step he takes, his brother was already there.',
     scene:[['michikatsu','Every step I take, you were already there.'],['yoriichi','Brother, I never wanted to be ahead of you.'],['michikatsu','I know. That is what I cannot forgive.'],['michikatsu','Draw your sword. For once in my life, look at me as an equal.']],
     outro:[['yoriichi',"I've always looked up to you. All of my life."],['michikatsu',"…Even a dream won't let me win."],['yoriichi','A dream?'],['','They both go still, and turn toward where Tanjiro is standing.']]},
@@ -398,7 +398,7 @@ const DREAM_STAGES = [
     scene:[['tanjiro_demon',"Why would you leave? They're alive here. Father. Mother. Rengoku."],['tanjiro','None of this is real.'],['tanjiro_demon',"It's real enough. Stay, and nobody ever dies again. Isn't that what you wanted?"],['tanjiro','…More than anything.']],
     outro:[['tanjiro','But Nezuko is calling me. The real Nezuko.'],['tanjiro_demon',"Then you'll lose them all a second time."],['tanjiro','I know.'],['','The shadow breaks. Muzan stands behind it, where he has always been.'],['muzan_final',"Then I'll keep this world for myself."]]},
   {id:'dr_nine', pockets:['goto'], arc:'dream5', title:'Nine Hashira', place:'Where the dream is breaking', foe:'Final Muzan', mine:['giyu','shinobu','rengoku','muichiro','mitsuri','obanai','sanemi','gyomei','tengen'], enemy:['muzan_final'], level:'hard', waves:3,
-    boosts:[{side:1, hp:2.85, pow:2, label:'Muzan: +185% HP, +2 PWR'}],   // was +260%: retuned Nov 5, 2026 (later waves now get their synergies)
+    boosts:[{side:1, hp:2.42, pow:2, label:'Muzan: +142% HP, +2 PWR'}],   // was +260%: retuned Nov 5, 2026 (later waves now get their synergies)
     phases:[{id:'muzan_final', at:.25, rally:true, pow:3, label:'+3 PWR', line:'Why won\'t you stay DEAD?!', reply:{id:'rengoku', text:'Because he remembers us!'}}],
     blurb:'Three at a time. Choose the order. Everyone left charges in at the end.',
     scene:[['muzan_final',"You cling to the dead, boy. So I'll use them. I've lived in your grief since the last sunrise."],['tanjiro',"I can't beat him alone."],['rengoku','You never had to!'],['giyu','Tanjiro. Stay behind us.'],['shinobu','Just once more, all of us.'],['gyomei','Namu Amida Butsu. Hashira, to your places.']],

@@ -14,7 +14,7 @@ cards: {
   win: ['Cheap ignore-DEF damage: Hinokami Kagura (PWR+5, ignores DEF) is one of the best 5-pt specials against high-DEF Hashira and Upper Moons.',
         'Pair him with Nezuko (Siblings counterattack), Zenitsu + Inosuke (Kamaboko Squad: +2 SPD to the whole team) or Urokodaki (+1 DEF).',
         'With Yoriichi on the team he gets +2 PWR (Sun Lineage).'],
-  beat: ['He is only 28 HP: two solid hits on the round his special is recharging take him out.',
+  beat: ['He is only 30 HP: two solid hits on the round his special is recharging take him out.',
          'Kill him first and you break whichever synergy he was holding up (Siblings, Kamaboko).'] },
  tanjiro_mark: {
   win: ['After his first Hinokami Kagura he gets the Selfless State once (after you\'ve won the story battle Destructive Death): nothing can hit him until Hinokami is ready again, and the next Hinokami can\'t be blocked by anything.',
@@ -126,13 +126,13 @@ cards: {
   beat: ['Hantengu\'s many bodies waste his single-target special.'] },
  sanemi: {
   win: ['Black Wind Mountain Mist hits your target and one other for full PWR: two big hits per special.',
-        '7 pts, 38 HP, 12 PWR: one of the best value Hashira.'],
+        '8 pts, 46 HP, 13 PWR: as tough as his Mark card, with less power.'],
   beat: ['No defensive tricks: trade hits with something tankier.'] },
  sanemi_mark: {
   win: ['Mark version: 46 HP, 16 PWR. Strong at 20 pts, weaker at 30 where the Legends and Marks crowd him out.'],
   beat: ['At 30 pts both Yoriichis and Giyu ✦ beat him easily.'] },
  gyomei: {
-  win: ['Volcanic Rock: 9 damage to every enemy, ignoring DEF. One of the best 8-pt cards.',
+  win: ['Volcanic Rock: 9 damage to every enemy, ignoring DEF. 9 pts, 50 HP: the sturdiest base Hashira.',
         'Fixed damage means it\'s great against high-DEF teams.'],
   beat: ['SPD 8: he acts late. Hit him hard before his rocks land, or Defend your fragile fighters on his special rounds.'] },
  gyomei_mark: {
@@ -181,8 +181,8 @@ cards: {
   win: ['Panic Dodge moves first and dodges everything, so she can bait a big special.', 'She flails at a random enemy, so use her for the dodge, not the damage.'],
   beat: ['Very low PWR. Ignore her and spend your hits elsewhere.'] },
  michikatsu: {
-  win: ['Envy of the Sun adds the round number, up to +6: keep him alive and he hits harder every time.', 'He shares a family with Kokushibo, so only one of them can be drafted.'],
-  beat: ['Rush him early, before his special grows.'] },
+  win: ['Moon Breathing, First Form moves first for PWR+4: he lands his big hit before the enemy acts.', 'He shares a family with Kokushibo, so only one of them can be drafted.'],
+  beat: ['No defensive tricks: Defend the fighter he is likely to target on his special rounds.'] },
  hakuji: {
   win: ['Soryu Kick is a clean PWR+3, and his Vow adds +3 PWR for the match once a teammate falls.', 'He shares a family with Akaza, so only one of them can be drafted.'],
   beat: ['Low DEF. Finish his team in one sweep so his Vow comes too late to matter.'] },
@@ -247,8 +247,9 @@ cards: {
   beat: ['Same as Daki: finish both in one round. Tamayo and Awakened Nezuko cure the poison.'] },
  gyokko: {
   win: ['Water Prison Pot: PWR−2 ignoring DEF, and the target can\'t act next round. Trap their carry.',
+        'Drop him under half and he sheds his shell into his Perfect Form: tougher, faster, and Jinmei Kaigyo ready at once.',
         'Best with Hantengu (two Upper Moons: +1 regen).'],
-  beat: ['Average stats for an Upper Moon: focus him early.'] },
+  beat: ['Finish him in one push: if he ends a round under half, his Perfect Form is much harder to bring down.'] },
  hantengu: {
   win: ['Cut him and it gets worse: the first hit cuts his head off and Sekido and Karaku burst out, the first of them to fall brings Aizetsu and Urogi, and when the last emotion falls they merge into Zohakuten while the real Hantengu hides. Many bodies for 9 pts.',
         'Zohakuten has no Defend: Drums of Hatred adds +2 PWR for good, and Wood Dragons hit every enemy for full PWR through Defend.',
@@ -388,9 +389,9 @@ module.exports.depth = {
  muichiro_mark: { role: 'Evasive attacker (Mark)', draft: ['10 pts; a mid pick, weaker than the other 10-pt Marks.'], plan: ['Mist every other round; Attack in between.'] },
  obanai: { role: 'Guard-breaker', draft: ['5 pts; take him against Defend-heavy players.'], plan: ['Twin-Headed Reptile on a fighter you expect to Defend: it goes straight through.'] },
  obanai_mark: { role: 'Guard-breaker (Mark)', draft: ['8 pts; good at 20 points beside a second Hashira.'], plan: ['Same as Obanai, more often.'] },
- sanemi: { role: 'Double hit', draft: ['7 pts; great value in any Hashira team.'], plan: ['Black Wind Mountain Mist when two enemies can be hit hard: aim at the stronger one.'] },
+ sanemi: { role: 'Double hit', draft: ['8 pts; great in any Hashira team.'], plan: ['Black Wind Mountain Mist when two enemies can be hit hard: aim at the stronger one.'] },
  sanemi_mark: { role: 'Double hit (Mark)', draft: ['11 pts; take him at 20 points, think twice at 30.'], plan: ['Same as Sanemi, with bigger numbers.'] },
- gyomei: { role: 'Area damage that ignores DEF', draft: ['8 pts; one of the best 8-pt cards.'], plan: ['Volcanic Rock every time it\'s ready; Attack between.', 'He\'s slow: Defend him on the round their fast burst comes.'] },
+ gyomei: { role: 'Area damage that ignores DEF', draft: ['9 pts; the sturdiest base Hashira.'], plan: ['Volcanic Rock every time it\'s ready; Attack between.', 'He\'s slow: Defend him on the round their fast burst comes.'] },
  gyomei_mark: { role: 'Area damage that ignores DEF (Mark)', draft: ['12 pts; with Giyu at 20, a core at 30.'], plan: ['Volcanic Rock comes back a round sooner: 11 to every enemy every other round.'] },
  yoriichi: { role: 'Giant: double strikes, damage cap, area special', draft: ['18 pts: take him whenever he\'s dealt. At 20 points he leaves 2 pts (Murata or Kagaya).'], plan: ['Sun Breathing first (demons lose regeneration for good), then Attack twice a round.', 'He can\'t take more than 18 a round: let him soak, protect his partner.'] },
  yoriichi_old: { role: 'Giant: double strikes, tight damage cap', draft: ['17 pts: at 20 points add a 3-pt partner (Swamp Demon, Kyogai, Tamayo).'], plan: ['The Last Strike (PWR+10, ignores DEF) on their giant; Attack twice otherwise.', 'He takes at most 12 a round, so he wins long fights.'] },
@@ -411,7 +412,7 @@ module.exports.depth = {
  kaigaku: { role: 'Damage plus splash', draft: ['5 pts; with another Upper Moon.'], plan: ['Black Thunder on the biggest target; the splash finishes low fighters.'] },
  daki: { role: 'Area chip, half of Two as One', draft: ['6 pts; only take her with Gyutaro.'], plan: ['Obi Sashes when ready; keep her alive while Gyutaro stands so she can rise.'] },
  gyutaro: { role: 'Area poison, half of Two as One', draft: ['8 pts; with Daki (14 for the pair).'], plan: ['Blood Sickles on round 1 to poison everyone, then Attack the weakest.'] },
- gyokko: { role: 'Control (trap) plus damage', draft: ['6 pts; with another Upper Moon.'], plan: ['Trap their carry the round before its special is ready.'] },
+ gyokko: { role: 'Control (trap) plus damage, then a Perfect Form', draft: ['7 pts; with another Upper Moon. Not dealt in 10-pt games.'], plan: ['Trap their carry the round before its special is ready.', 'Once he\'s under half he transforms: use Jinmei Kaigyo right away on their biggest threat.'] },
  hantengu: { role: 'Many lives: splits, merges, then hides', draft: ['9 pts; with another Upper Moon (Doma is his best partner).'], plan: ['The emotions are small: use their specials while they stand (Lightning Staff and Gale Fan hit everyone).', 'As Zohakuten, pound Drums of Hatred on quiet rounds and fire Wood Dragons when ready. Every round the real one stays hidden, Zohakuten can get back up, +2 PWR stronger each time.'] },
  nakime: { role: 'Control (send away, act last)', draft: ['4 pts; never alone, and best against a single giant.'], plan: ['Castle Shift their giant on its special round; Biwa Strum their fastest fighter otherwise.'] },
  akaza: { role: 'Fast burst, then area damage', draft: ['9 pts; with Doma or Gyutaro.'], plan: ['Compass Needle for the single big hit, then Annihilation Type when several enemies are low.', 'Win before round 10: the sun ends his regeneration.'] },
@@ -421,8 +422,8 @@ module.exports.depth = {
  makomo: { role: 'Fast dodge and hit', draft: ['3 pts; with Sabito.'], plan: ['Flowing Step on the round their special is ready.'] },
  hinatsuru: { role: 'Cheap poison', draft: ['2 pts; with Makio and Suma, or Tengen.'], plan: ['Wisteria Kunai on a demon.'] },
  makio: { role: 'Cheap damage', draft: ['2 pts; the best filler of the three wives.'], plan: ['Fierce Strike whenever ready.'] },
- suma: { role: 'Cheap decoy', draft: ['2 pts; for the Three Wives bonus.'], plan: ['Panic Dodge to waste a big special.'] },
- michikatsu: { role: 'Late-game damage', draft: ['9 pts; a mid-game anchor who peaks late. One version with Kokushibo.'], plan: ['Keep him alive and fire Envy of the Sun late.'] },
+ suma: { role: 'Cheap decoy', draft: ['2 pts; with Tengen for Tengen\'s Family.'], plan: ['Panic Dodge to waste a big special.'] },
+ michikatsu: { role: 'Fast single-target damage', draft: ['9 pts; one version with Kokushibo.'], plan: ['Fire his First Form whenever it is ready, on whoever is about to act.'] },
  hakuji: { role: 'Fast fighter, grows when a teammate falls', draft: ['4 pts; one version with Akaza.'], plan: ['Soryu Kick when ready; he hits harder after his Vow.'] },
  tanjuro: { role: 'Team healer', draft: ['3 pts; best with any Tanjiro and a big team.'], plan: ['Hinokami Dance every time it recharges.'] },
  muzan_final: { role: 'Giant: two lives, area damage', draft: ['18 pts; better at 30 than 20.'], plan: ['Thorned Flesh Whips whenever ready; he comes back once at 35%, so trade freely early.'] },

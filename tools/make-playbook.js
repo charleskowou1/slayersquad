@@ -52,7 +52,7 @@ const pct = x => Math.round(x * 100) + '%';
 
 /* ---------- synergies and counters (mirrors synergies() in engine.js) ---------- */
 const SYN = [
-  { name: 'Kamaboko Squad', fams: ['tanjiro', 'zenitsu', 'inosuke'], all: true, text: 'Tanjiro + Zenitsu + Inosuke: the whole team +2 SPD.' },
+  { name: 'Kamaboko Squad', test: c => ['tanjiro', 'zenitsu', 'inosuke'].includes(c.fam), text: 'Any two of Tanjiro, Zenitsu, Inosuke: those two +1 SPD. All three: the whole team +2 SPD.' },
   { name: 'Siblings', fams: ['tanjiro', 'nezuko'], all: true, text: 'Tanjiro + Nezuko: when one is hit, the other counter-hits the attacker for 3.' },
   { name: 'Hashira', test: c => c.hashira, text: 'Two or more Hashira: each +1 PWR.' },
   { name: 'Upper Moons', test: c => c.upper, text: 'Two or more Upper Moons: each +1 regeneration.' },
@@ -71,6 +71,10 @@ const SYN = [
   { name: 'Love Hashira', fams: ['obanai', 'mitsuri'], all: true, text: 'Obanai + Mitsuri: both +1 PWR, +1 SPD.' },
   { name: 'Set Your Heart Ablaze', fams: ['rengoku', 'tanjiro'], all: true, text: 'Rengoku + Tanjiro: Tanjiro +1 PWR, Rengoku +1 DEF.' },
   { name: 'Old Friends', fams: ['giyu', 'sabito'], all: true, text: 'Giyu + Sabito: Giyu +2 PWR +1 DEF, Sabito +1 SPD.' },
+  { name: 'For Nezuko!', fams: ['zenitsu', 'nezuko'], all: true, text: 'Zenitsu + Nezuko: Zenitsu +1 PWR.' },
+  { name: 'Butterfly Mansion', fams: ['shinobu', 'kanao'], all: true, text: 'Shinobu + Kanao: Kanao +1 SPD.' },
+  { name: "Gyomei's student", fams: ['gyomei', 'genya'], all: true, text: 'Gyomei + Genya: Genya +1 DEF.' },
+  { name: "Tengen's Family", fams: ['tengen'], plus: c => ['hinatsuru', 'makio', 'suma'].includes(c.fam), text: 'Tengen + his wives: Tengen +1 PWR per wife, each wife +1 SPD.' },
 ];
 const VERSUS = [
   { fams: ['muzan', 'yoriichi'], text: 'Muzan fears the Sun: against Yoriichi, Muzan −3 PWR −2 SPD.' },
@@ -78,6 +82,8 @@ const VERSUS = [
   { fams: ['muzan', 'tamayo'], text: "Tamayo's medicine: against Tamayo, Muzan −2 regeneration." },
   { fams: ['zenitsu', 'kaigaku'], text: 'Rival: against Kaigaku, Zenitsu +2 PWR.' },
   { fams: ['rengoku', 'akaza'], text: 'Rival: against Akaza, Rengoku +2 PWR.' },
+  { fams: ['muichiro', 'gyokko'], text: 'Rival: against Gyokko, Muichiro +2 PWR.' },
+  { fams: ['mitsuri', 'hantengu'], text: 'Rival: against Hantengu, Mitsuri +2 PWR.' },
   { fams: ['kanao', 'inosuke', 'doma'], text: 'Revenge on Doma: against Doma, Kanao and Inosuke +2 SPD, and +4 damage on Doma through his DEF.' },
   { fams: ['shinobu'], demonFoe: true, text: "Shinobu's wisteria: a demon (not Akaza) that knocks her out loses 5 HP every round." },
 ];

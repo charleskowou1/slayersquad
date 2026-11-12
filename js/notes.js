@@ -63,7 +63,8 @@ function poolNotes(){
 
   // same team
   const kama=['tanjiro','zenitsu','inosuke'];
-  if(kama.every(has)) add('team', kama, 'Kamaboko Squad', 'All three on one team: the whole team gets +2 SPD.', together(kama));
+  const kamaIn=kama.filter(has);
+  if(kamaIn.length>=2) add('team', kamaIn, 'Kamaboko Squad', 'Any two of Tanjiro, Zenitsu and Inosuke on one team: those two get +1 SPD. All three: the whole team gets +2 SPD.', twoOf(kamaIn));
   if(has('tanjiro')&&has('nezuko')) add('team', ['tanjiro','nezuko'], 'Siblings', 'On one team: when either is hit, the other strikes back at the attacker for 3 damage.', together(['tanjiro','nezuko']));
   if(has('yoriichi')&&has('tanjiro')) add('team', ['yoriichi','tanjiro'], 'Sun Lineage', 'Yoriichi and Tanjiro on one team: Tanjiro gets +2 PWR.', together(['yoriichi','tanjiro']));
   if(has('tamayo')&&has('yushiro')) add('team', ['tamayo','yushiro'], 'Devoted', 'Tamayo and Yushiro on one team: Yushiro gets +2 PWR.', together(['tamayo','yushiro']));
@@ -77,10 +78,11 @@ function poolNotes(){
   if(has('giyu')&&has('sabito')) add('team', ['giyu','sabito'], 'Old Friends', 'Giyu and Sabito on one team: Giyu gets +2 PWR and +1 DEF, Sabito +1 SPD.', together(['giyu','sabito']));
   if(has('typezero')&&has('muichiro')) add('team', ['typezero','muichiro'], 'Training partner', 'Yoriichi Type Zero and Muichiro on one team: Muichiro gets +1 PWR.', together(['typezero','muichiro']));
   const wiveList=['hinatsuru','makio','suma'].filter(has);
-  if(wiveList.length===3) add('team', wiveList, 'The Three Wives', 'Hinatsuru, Makio and Suma on one team: all three get +1 SPD.', together(wiveList));
-  if(has('tengen')&&wiveList.length) add('team', ['tengen',...wiveList], "Tengen's Family", 'Tengen or Retired Tengen plus any of his wives on one team: Tengen gets +1 PWR.', withAnchor('tengen',wiveList));
+  if(has('tengen')&&wiveList.length) add('team', ['tengen',...wiveList], "Tengen's Family", 'Tengen or Retired Tengen plus his wives on one team: Tengen gets +1 PWR for each wife, and each wife gets +1 SPD.', withAnchor('tengen',wiveList));
   if(has('tanjuro')&&has('tanjiro')) add('team', ['tanjuro','tanjiro'], 'Father and Son', 'Tanjuro and any Tanjiro on one team: Tanjiro gets +2 PWR.', together(['tanjuro','tanjiro']));
-  if(has('makomo')&&has('sabito')) add('team', ['makomo','sabito'], "Urokodaki's Pupils", 'Makomo and Sabito on one team: both get +1 SPD.', together(['makomo','sabito']));
+  if(has('zenitsu')&&has('nezuko')) add('team', ['zenitsu','nezuko'], 'For Nezuko!', 'Zenitsu and any Nezuko on one team: Zenitsu gets +1 PWR.', together(['zenitsu','nezuko']));
+  if(has('shinobu')&&has('kanao')) add('team', ['shinobu','kanao'], 'Butterfly Mansion', 'Shinobu and Kanao on one team: Kanao gets +1 SPD.', together(['shinobu','kanao']));
+  if(has('gyomei')&&has('genya')) add('team', ['gyomei','genya'], "Gyomei's student", 'Gyomei and Genya on one team: Genya gets +1 DEF.', together(['gyomei','genya']));
   const hashira=famsWhere(c=>c.hashira);
   if(hashira.length>=2) add('team', hashira, 'Hashira', 'Two or more Hashira on one team: each Hashira gets +1 PWR.', twoOf(hashira));
   const upper=famsWhere(c=>c.upper);
@@ -101,6 +103,11 @@ function poolNotes(){
   const avengers=['kanao','inosuke'].filter(has);
   if(has('doma')&&avengers.length) add('vs', [...avengers,'doma'], 'Revenge on Doma', 'Facing Doma, Kanao and Inosuke get +2 SPD, and their hits on Doma do 4 more damage and ignore his DEF.', facing(avengers,['doma']));
   if(has('kaigaku')&&has('zenitsu')) add('vs', ['zenitsu','kaigaku'], 'Rivals', 'Facing Kaigaku, Zenitsu gets +2 PWR.', facing(['zenitsu'],['kaigaku']));
+  Object.entries(DESTINED).forEach(([f,foes])=>{ if(!has(f) || BYID[inPool[f]].mark) return; const fs=foes.filter(x=>has(x)); if(!fs.length) return;
+    const nm=[...new Set(fs.map(x=>BYID[inPool[x]].short))].join(' or ');
+    add('vs', [f,...fs], 'Destined foe', `Facing ${nm}, ${BYID[inPool[f]].short} may awaken the Demon Slayer Mark when down to ${Math.round(DESTINY_AT*100)}% (rare, once a match). Don't count on it.`, facing([f],fs)); });
+  if(has('muichiro')&&has('gyokko')) add('vs', ['muichiro','gyokko'], 'Rival', 'Facing Gyokko, Muichiro gets +2 PWR.', facing(['muichiro'],['gyokko']));
+  if(has('mitsuri')&&has('hantengu')) add('vs', ['mitsuri','hantengu'], 'Rival', 'Facing Hantengu, Mitsuri gets +2 PWR.', facing(['mitsuri'],['hantengu']));
   if(has('muzan')&&has('yoriichi')) add('vs', ['muzan','yoriichi'], 'Muzan fears the Sun', 'Facing Yoriichi, Muzan gets −3 PWR and −2 SPD.', facing(['muzan'],['yoriichi']));
   if(has('kokushibo')&&has('yoriichi')) add('vs', ['kokushibo','yoriichi'], 'Kokushibo shaken', 'Facing Yoriichi, Kokushibo gets −1 DEF.', facing(['kokushibo'],['yoriichi']));
   if(has('tamayo')&&has('muzan')) add('vs', ['tamayo','muzan'], "Tamayo's medicine", 'Facing Tamayo, Muzan regenerates 2 less HP a round.', facing(['tamayo'],['muzan']));

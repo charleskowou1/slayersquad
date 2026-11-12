@@ -6,7 +6,7 @@ const nm = p => esc(titled(S.names[p]));
 // The round is worked out before it plays, so a pot or thread only shows once the replay reaches the move that did it
 const boundNow = u => { const p=S.play; if(!u.bound || !p || p.done || !p.steps || !p.steps[p.k]) return u.bound||'';
   return S.log.slice(p.steps[0][0], p.steps[p.k][1]+1).some(l=>l.kind===u.bound && l.on===u.uid) ? u.bound : ''; };
-const glyphCls = c => { const b=boundNow(c); return (c.legend?'leg':c.mark?'mk':'')+(b?' bound'+b:''); };
+const glyphCls = c => { const b=boundNow(c); return (c.legend?'leg':c.mark?'mk':'')+(b?' bound'+b:'')+(c.poison&&c.alive!==false?' poisoned':''); };   // poisoned: bubbles rise off the picture (Nov 12, 2026)
 const plural = (n,w) => `${n} ${w}${n===1?'':'s'}`;
 // Character pictures found in img/ (filled in by app.js at startup): card id → file path
 const ART = {};
@@ -29,7 +29,7 @@ const tip = (id, text) => (typeof isCtl==='function'&&isCtl()) || !(inPrologue()
 function topbar(eyebrow, title, quit=true){
   if(typeof isCtl==='function' && isCtl()) return `<header class="top"><div><div class="eyebrow">${eyebrow}</div><div class="title">${title}</div></div><div class="topbtns">${ctlPill()}</div></header>`;   // TV controller: no Quit, just the TV link
   return `<header class="top"><div><div class="eyebrow">${eyebrow}</div><div class="title">${title}</div></div>
-    <div class="topbtns"><button class="btn ghost small gearmini" data-a="settings" aria-label="Settings">⚙</button>${quit?(isAsync()?'<button class="btn ghost small" data-a="quit" data-v="home">Leave</button>':inMatch()?'<button class="btn ghost small" data-a="askquit">Quit</button>':S.mode==='story'?'<button class="btn ghost small" data-a="home">Back</button>':'<button class="btn ghost small" data-a="home">Quit</button>'):''}</div></header>`;
+    <div class="topbtns"><button class="btn ghost small gearmini" data-a="settings" aria-label="Settings">⚙</button>${quit&&S.replaying?'<button class="btn ghost small" data-a="rexit">Exit replay</button>':quit?(isAsync()?'<button class="btn ghost small" data-a="quit" data-v="home">Leave</button>':inMatch()?'<button class="btn ghost small" data-a="askquit">Quit</button>':S.mode==='story'?'<button class="btn ghost small" data-a="home">Back</button>':'<button class="btn ghost small" data-a="home">Quit</button>'):''}</div></header>`;
 }
 // In a match (from who-picks-first to the last round), Quit asks first instead of leaving straight away (CK).
 // Two-phone online games carry on without you, so they say Leave and need no warning.
@@ -227,7 +227,8 @@ function codexSheet(){
   const c=BYID[S.codexSel]; if(!c) return '';
   const pas=[c.passive, c.mark?MARK_PASSIVE:''].filter(Boolean), ui=unlockStage(c.id), lock=!isUnlocked(c.id);
   const notes=c.helper?[]:allNotesFor(c.id);
-  return `<div class="scrim" data-a="unsel"></div><div class="modal"><div class="in ${glyphCls(c)}" role="dialog" aria-modal="true" aria-label="${esc(c.name)}">
+  const flip=S.phase==='codex' && freshFor('codexflip|'+c.id+'|'+(codexSheet.n=(codexSheet.last===c.id?codexSheet.n:(codexSheet.n||0)+1), codexSheet.last=c.id, codexSheet.n), 700);   // the Codex card flips over as it opens
+  return `<div class="scrim" data-a="unsel"></div><div class="modal"><div class="in ${glyphCls(c)}${flip?' flipcard':''}" role="dialog" aria-modal="true" aria-label="${esc(c.name)}">
     <button class="x" data-a="unsel" aria-label="Close">×</button>
     ${banner(c)}
     <div class="shead">${seal(c,'lg')}<div><div class="eyebrow">${esc(c.type)}</div><h2>${esc(c.name)}</h2></div><span class="cost${c.cost>=12?' big':''}">${c.cost}<small>pts</small></span></div>
@@ -239,6 +240,7 @@ function codexSheet(){
     ${c.selfless?`<div class="pas"><b>Then: ${esc(SELFLESS.name)}</b>: ${esc(SELFLESS.desc)}${selflessOpen()?'':' <span class="muted">🔒 Unlocks when you win Destructive Death in the story.</span>'}</div>`:''}
     ${c.sig2?`<div class="pas"><b>Then: ${esc(c.sig2.name)}</b>: ${esc(c.sig2.desc)}${c.sig3?'':` <span class="muted">After it, back to ${esc(c.sig.name)}: the two take turns.${sig2Open(c)?'':` 🔒 Unlocks when you win ${esc((STAGES.find(s=>s.id===c.sig2.lock)||{}).title||'its story battle')}.`}</span>`}</div>`:''}
     ${c.sig3?`<div class="pas"><b>Then: ${esc(c.sig3.name)}</b>: ${esc(c.sig3.desc)} <span class="muted">After it, back to ${esc(c.sig.name)}: the three take turns.</span></div>`:''}
+    ${destinyLine(c)}
     ${c.basic?`<div class="pas"><b>${esc(c.basic.name)}</b> (instead of Attack): ${esc(c.basic.desc)}</div>`:''}
     ${c.regen?`<div class="pas">Regenerates ${c.regen} HP every round.</div>`:''}
     ${pas.map(x=>`<div class="pas">${esc(x)}</div>`).join('')}
@@ -438,12 +440,13 @@ const RARE_PULLS = ['yoriichi','yoriichi_old','muzan_final','tanjiro_demon'], FR
 const freshFor = (key, ms) => { const t=FRESH_AT[key] ?? (FRESH_AT[key]=Date.now()); return Date.now()-t < ms; };
 const rareFresh = c => RARE_PULLS.includes(c.id) && freshFor('rare|'+c.id+'|'+(S.pool||[]).join(','), 3200);
 const pickFresh = (q,id,i) => freshFor(`pick|${q}|${i}|${id}|${(S.pool||[]).join(',')}`, 900);
-function cardHTML(c,p){
+function cardHTML(c,p,i){
+  const deal = i!=null && freshFor('deal|'+(S.pool||[]).join(','), 2600);   // the deal: cards fly onto the table one by one (Nov 12, 2026)
   const owner=S.picks.findIndex(t=>t.includes(c.id)), ban=(S.bans||[]).find(b=>BYID[b.id].fam===c.fam);
   const ok = S.banning ? canBan(p,c.id) : canPick(p,c.id);
   const badge = c.legend?'Legend':c.mark?'✦ Mark':'';
   // picture-first card: art on top (kanji if no picture), name and type over its lower edge, stats below
-  return `<button class="card ${glyphCls(c)}${c.upper&&!c.mark&&!c.legend?' um':''}${ok?'':' off'}${S.sel===c.id?' sel':''}${owner>=0?' taken':''}${rareFresh(c)?' rarepull':''}" data-a="sel" data-v="${c.id}" ${ok?'':'aria-disabled="true"'}>${rareFresh(c)?'<span class="rshine" aria-hidden="true"></span>':''}
+  return `<button class="card ${glyphCls(c)}${c.fam==='muzan'||c.id==='tanjiro_demon'?' dkcard':c.upper&&!c.mark&&!c.legend?' um':''}${ok?'':' off'}${S.sel===c.id?' sel':''}${owner>=0?' taken':''}${rareFresh(c)?' rarepull':''}${deal?' dealing':''}"${deal?` style="--i:${i}"`:''} data-a="sel" data-v="${c.id}" ${ok?'':'aria-disabled="true"'}>${rareFresh(c)?'<span class="rshine" aria-hidden="true"></span>':''}
     <span class="cart">${ART[c.id]?`<img decoding="sync" src="${ART[c.id]}" alt="">`:`<span class="ck">${c.g}</span>`}</span>
     <span class="cost${c.cost>=12?' big':''}">${c.cost}<small>pts</small></span>
     ${badge?`<span class="badge">${badge}</span>`:''}
@@ -488,7 +491,7 @@ function vDraft(){
     <div class="dealt"><span>${(n=>final?`Marks and Corps support · ${n}`:gm?`Every character · ${n}`:story?`The Corps · ${n} characters`:daily?`Your unlocked characters · ${n}`:fullPool()?`${poolName(S.poolType)} · ${n}`:`${n} characters dealt`)(S.pool.filter(id=>!isHelper(id)).length)} · tap one to see it</span>${undo}${fresh&&!cpuTurn&&!fixed&&S.poolType!=='all'&&(!isOnline()||iAmHost())?'<button class="btn ghost small" data-a="redeal">Re-deal</button>':''}</div>
     ${(story||daily)&&S.showTheirs?`<section class="theirs"><div class="tlabel">Their team · tap a card to study it</div><div class="grid">${S.picks[1].map(id=>cardHTML(BYID[id],p)).join('')}</div></section>`:''}</div>
     ${notesPanel()}
-    <div class="grid">${S.pool.filter(id=>!isHelper(id)).map(id=>cardHTML(BYID[id],p)).join('')}</div>
+    <div class="grid">${S.pool.filter(id=>!isHelper(id)).map((id,i)=>cardHTML(BYID[id],p,i)).join('')}</div>
     ${S.banning?'':pocketDraft(p)}</div>`;
 }
 // The back-pocket helpers in the draft: a slim optional row at the bottom. 1 pt, one helper per player.
@@ -770,6 +773,7 @@ function vSheet(){
     ${c.selfless?`<div class="pas"><b>Then: ${esc(SELFLESS.name)}</b>: ${esc(SELFLESS.desc)}${selflessOpen()?'':' <span class="muted">🔒 Unlocks when you win Destructive Death in the story.</span>'}</div>`:''}
     ${c.sig2?`<div class="pas"><b>Then: ${esc(c.sig2.name)}</b>: ${esc(c.sig2.desc)}${c.sig3?'':` <span class="muted">After it, back to ${esc(c.sig.name)}: the two take turns.${sig2Open(c)?'':` 🔒 Unlocks when you win ${esc((STAGES.find(s=>s.id===c.sig2.lock)||{}).title||'its story battle')}.`}</span>`}</div>`:''}
     ${c.sig3?`<div class="pas"><b>Then: ${esc(c.sig3.name)}</b>: ${esc(c.sig3.desc)} <span class="muted">After it, back to ${esc(c.sig.name)}: the three take turns.</span></div>`:''}
+    ${destinyLine(c)}
     ${c.regen?`<div class="pas">Regenerates ${c.regen} HP every round.</div>`:''}
     ${pas.map(x=>`<div class="pas">${esc(x)}</div>`).join('')}
     ${c.splitOnHit?splitTree(c):''}
@@ -883,7 +887,10 @@ function stage(line){
   if(line.calm && by) return stageCalm2(by);
   if(line.gone && by && on) return stageCastle(by,on);
   if(line.inCastle && on) return stageLost(on);
+  if(line.nofind && by && on) return stageNoFind(by,on);
   if(line.flee && on) return stageFlee(on);
+  if(line.kind==='drum' && on) return stageDrum(on);
+  if(line.stuck==='drum' && on) return stageDrum(on, true);   // the round they can't move: still spinning in his room
   if(line.calmblock && by && on) return stageCalmBlock(by,on);
   const dart=(line.dodge||line.guard) && by && on ? dodgeArt(line,on) : '';
   if(dart){ const rev=by.p!==leftSide(), att=`<div class="st-by">${seal(by,'stg')}<span class="st-nm" style="color:${pc(by.p)}">${esc(by.name)}</span></div>`, tgt=`<div class="st-on">${dart}<span class="st-nm" style="color:${pc(on.p)}">${esc(on.name)}</span></div>`;
@@ -981,8 +988,7 @@ function fxName(lines, from){
   const sup=lines.find(x=>x.by && x.move==='special' && ['heal','buff'].includes(x.fx) && ['tanjuro','sabito'].includes((findU(x.by)||{}).sk)); if(sup) return SPECIAL_FX[findU(sup.by).sk];   // support specials that don't hit
   const l=lines.find(x=>x.by && x.move==='special' && (SPECIAL_HITS.includes(x.fx) || (x.fx==='stun' && !x.on) || (x.fx==='poison' && (findU(x.by)||{}).sk==='shinobu'))), by=l&&findU(l.by); let name=by&&SPECIAL_FX[by.sk];
   if(!name) return null;
-  if(name==='annihil' && sigFor(l)!=='annihilation') return null;
-  if(name!=='drum' && name!=='mscore') for(let i=from-1;i>=0;i--){ const m=S.log[i]; if(m.by!==l.by) continue; if(m.fx==='special'){ const SIGFX={ninth:'ninth', seventh:'thunderdragon', unblock:'sundragon', bodhisattva:'buddha', moonbow:'moonbow', catastrophe:'crescents'}; if(SIGFX[m.sig]) name=SIGFX[m.sig]; break; } if(m.move==='special' && SPECIAL_HITS.includes(m.fx)) return null; }
+  if(name!=='drum' && name!=='mscore') for(let i=from-1;i>=0;i--){ const m=S.log[i]; if(m.by!==l.by) continue; if(m.fx==='special'){ const SIGFX={annihilation:'annihilx', ninth:'ninth', seventh:'thunderdragon', unblock:'sundragon', bodhisattva:'buddha', moonbow:'moonbow', catastrophe:'crescents'}; if(SIGFX[m.sig]) name=SIGFX[m.sig]; break; } if(m.move==='special' && SPECIAL_HITS.includes(m.fx)) return null; }
   return name==='kmoon' ? null : name;   // kmoon: Kokushibo's first form keeps his blade, only the other two get an overlay
 }
 const beatFx = (lines, from) => { const name=fxName(lines,from); if(!name) return ''; const l=lines.find(x=>x.by), by=l&&findU(l.by), right=by && by.p!==leftSide();   // which side the attacker is on (Yoriichi's glow comes from there)
@@ -995,7 +1001,6 @@ function momentOf(lines, to, cur){
   if(lines.some(l=>l.sunrise)) return {k:'sunsweep'};
   { const l=lines.find(x=>x.by && x.move==='special' && (BYID[(findU(x.by)||{}).id]||{}).upper), u=l&&findU(l.by), key=S.round+':'+(S.play?S.play.k:0);   // an Upper Moon's first special this match (CK: not every first move)
     if(u){ S.upSeen=S.upSeen||{}; if(!S.upSeen[u.uid] || S.upSeen[u.uid]===key){ S.upSeen[u.uid]=key; return {k:'upper', u}; } } }
-  if(lines.some(l=>l.kind==='drum')) return {k:'tilt'};
   if(lines.some(l=>l.fx==='stun' && l.move==='attack' && l.by && (findU(l.by)||{}).sk==='nakime')) return {k:'biwa'};
   if(lines.some(l=>l.fx==='spawn' && !l.htcut && !l.hunt && !l.htbare && l.on && findU(l.on) && findU(l.on).sk==='hantengu')) return {k:'crack'};   // the Hantengu test version has its own moments
   const ko=lines.filter(l=>l.fx==='ko'); if(!ko.length) return null;
@@ -1050,6 +1055,9 @@ function stageCalm2(by){
 // A Dead Calm block (CK, Nov 11, 2026): the blow lands on a dome of still water around the teammate, ripples spread
 // from the point it struck, water splashes, and the attacker is pushed back
 const calmDome = () => `<span class="cb-dome" aria-hidden="true"><i class="cb-rip"></i><i class="cb-rip r2"></i><i class="cb-rip r3"></i>${rep(8,i=>`<i class="cb-drop" style="--a:${-150+i*17}deg;--l:${30+(i%3)*12}px;--d:${(.42+(i%4)*.03).toFixed(2)}s"></i>`)}</span>`;
+// Destined foe (Nov 12, 2026): printed on the card so it's never a hidden surprise
+const destinyLine = c => { const f=destinedFoes(c); if(!f) return ''; const names=[...new Set(f.filter(x=>BYID[x]&&!BYID[x].spawn).map(x=>BYID[x].short))];
+  return `<div class="pas"><b>✦ Destined foe</b>: facing ${esc(names.join(' or '))}, may awaken the Mark when down to ${Math.round(DESTINY_AT*100)}% (rare, once a match).</div>`; };
 // Who cast the Dead Calm protecting this team this round (for his silhouette behind a blocked teammate)
 const calmCaster = p => { const l=S.log.find(x=>x.calm && x.by && sameSide(findU(x.by).p,p)); return l ? findU(l.by) : null; };
 // Shinobu's blade stops at a demon's neck: a thin needle mark and a crossed-out 首 (head)
@@ -1067,8 +1075,27 @@ function stageCalmBlock(by,on){
 // side, and a seal stamps down: no move this round.
 // Hantengu's Flee (CK, Nov 11, 2026): he shrinks to almost nothing, sweats, and scurries off the stage in little hops,
 // leaving puffs of dust; 逃 is all that's left where he stood
+// Kyogai's Drum Room Spin (CK, Nov 12, 2026): he strikes the drums in his body three times; each beat flips the room a
+// quarter turn with claw slashes, the fighter tumbles to the new floor, and ends dizzy (they lose their next turn)
+function stageDrum(t, dizzy){
+  const k=!dizzy && players().flatMap(q=>S.teams[q]).find(u=>u.sk==='kyogai' && !sameSide(u.p,t.p)), beat=i=>(.25+i*.55).toFixed(2);
+  if(dizzy) return `<div class="stage drumstage dizzy" aria-hidden="true"><b class="dr-dz">眩</b><div class="dr-room"><span class="dr-grid"></span><span class="dr-floor"></span><span class="dr-t">${seal(t,'stg')}<span class="dr-stars"><i>✦</i><i>✧</i><i>✦</i><i>✧</i></span></span></div><span class="st-nm" style="color:${pc(t.p)}">${esc(t.name)}</span></div>`;
+  return `<div class="stage drumstage" aria-hidden="true">
+    ${k?`<div class="dr-k">${seal(k,'stg')}${rep(3,i=>`<i class="dr-drum d${i}" style="--d:${beat(i)}s"></i>`)}</div>`:''}
+    <div class="dr-room"><span class="dr-grid"></span><span class="dr-floor"></span><span class="dr-t">${seal(t,'stg')}<span class="dr-stars"><i>✦</i><i>✧</i><i>✦</i></span></span>
+      ${rep(3,i=>`<i class="dr-claw" style="--d:${(+beat(i)+.08).toFixed(2)}s;--r:${-30+i*30}deg"><b></b><b></b><b></b></i>`)}</div>
+    ${rep(3,i=>`<b class="dr-pon" style="--d:${beat(i)}s;--x:${i*22-22}px">鼓</b>`)}<span class="st-nm" style="color:${pc(t.p)}">${esc(t.name)}</span></div>`;
+}
 function stageFlee(u){   // runs off toward his own edge of the screen
   return `<div class="stage fleestage${u.p===leftSide()?'':' rev'}" aria-hidden="true"><b class="fl-k">逃</b><div class="fl-u">${seal(u,'stg')}<i class="fl-sweat"></i><i class="fl-sweat b"></i></div>${rep(6,i=>`<i class="fl-dust" style="--x:${12+i*15}%;--d:${(.7+i*.12).toFixed(2)}s"></i>`)}<span class="fl-nm" style="color:${pc(u.p)}">${esc(u.name)}</span></div>`;
+}
+// Attacking someone Nakime sent away (CK, Nov 12, 2026): the attacker strikes a shoji door, it slides open on an empty
+// room, the castle shifts, and far off their target flits past in another room
+function stageNoFind(by,t){
+  const rev=by.p!==leftSide();
+  return `<div class="stage nofind${rev?' rev':''}" aria-hidden="true"><span class="cs-shaft nf-rooms">${rep(6,i=>`<i class="cs-room" style="--i:${i}"></i>`)}</span>
+    <div class="nf-by">${seal(by,'stg')}<span class="st-nm" style="color:${pc(by.p)}">${esc(by.name)}</span></div>
+    <span class="nf-door l"></span><span class="nf-door r"></span><span class="nf-far">${seal(t,'stg')}</span><b class="nf-q">?</b><b class="nf-k">空</b></div>`;
 }
 function stageLost(u){
   return `<div class="stage castlelost" aria-hidden="true"><span class="cs-shaft cl-rooms">${rep(6,i=>`<i class="cs-room" style="--i:${i}"></i>`)}</span><b class="cl-k">迷</b>
@@ -1197,7 +1224,8 @@ function vResult(){
   const slow = them.filter(q=>S.readyNext&&!S.readyNext[q]);
   const next = S.final ? '<button class="btn" data-a="finish">See who won</button>'
     : waiting ? `<button class="btn" disabled>Waiting for ${slow.length?slow.map(q=>nm(q)+(S.away&&S.away[q]?' (away)':'')).join(', '):'the others'}…</button>` : '<button class="btn" data-a="next">Next round</button>';
-  return `${topbar(`Round ${S.round}${done?'':` · ${step} of ${total}`}`, done?'What happened':'The clash')}
+  const R=S.replaying;
+  return `${topbar(`Round ${S.round}${done||R?'':` · ${step} of ${total}`}`, R?(R.kind==='hl'?'Highlights':'Replay'):done?'What happened':'The clash')}
     ${done?'':tip('clash','The round plays out one move at a time, fastest first. Tap <b>Skip</b> if you’re in a hurry.')}${awayBanner()}
     ${strengthBar(me, done?undefined:u=>cur.hp[u.uid], done?undefined:u=>prev.hp[u.uid])}
     <div class="reswide${done?' done':''}${!done&&!k&&S.round===1?' opener':''}"><div class="rcol">${them.map(q=>done?teamBlock(q,solo&&!multi?'Opponent':null,moment):miniTeam(q,moment,involved)).join('')}</div>
@@ -1210,7 +1238,7 @@ function vResult(){
       :`<div class="now intro" aria-live="polite"><span class="ir">Round ${S.round}</span><span class="ig">Fight!</span></div>`}
     <div class="rcol">${done?teamBlock(me,solo?'Your team':null,moment):miniTeam(me,moment,involved)}</div></div>
     ${done?`<div class="panel"><div class="mlhead"><span class="tlabel">Round log</span>${(S.matchLog||[]).length?`<button class="btn ghost small copylog" data-a="copyround" aria-label="Copy this round's log">${COPY_ICON}${S.logCopied?'Copied ✓':'Copy'}</button>`:''}</div>${logHTML()}</div>`:''}
-    ${done||!k?'':beatFx(lines,from)+momentFx(momentOf(lines,to,cur))}${actionbar(done ? next : '<button class="btn ghost" data-a="skip">Skip</button>')}`;
+    ${done||!k?'':beatFx(lines,from)+momentFx(momentOf(lines,to,cur))}${actionbar(R ? replayBar(R) : done ? next : '<button class="btn ghost" data-a="skip">Skip</button>')}`;
 }
 // MVP of the match plus a few awards, from S.stats (see tallyRound in engine.js)
 function mvpPanel(){
@@ -1411,8 +1439,11 @@ const overBar = () => { const w=S.winner; return actionbar(gameMode() ? `<button
       ? `<button class="btn ghost" data-a="storymap">Story map</button>${w===0&&S.campaign==='six'?'<button class="btn" data-a="ceremony">You are summoned</button>':w===0&&S.stage+1<STAGES.length?`<button class="btn" data-a="stage" data-v="${S.stage+1}">Next battle</button>`:w===0?'<button class="btn" data-a="finale">Finish the story</button>':`<button class="btn" data-a="${S.storyDraft?'stagedraft':'stage'}" data-v="${S.stage}">Try again</button>`}`
       : isOnline() ? `<button class="btn ghost" data-a="home">Leave room</button><button class="btn" data-a="rematch">${S.coop?(S.series&&coopWon()?'Next wave':'Try again'):S.gm?'Deal again':isAsync()?'Rematch: loser picks first':'Rematch'}</button>`
       : `<button class="btn ghost" data-a="home">Main menu</button><button class="btn" data-a="rematch">Rematch</button>`); };
+// Watch again (Nov 12, 2026): controls while a replay plays, and the two buttons on the win screen
+const replayBar = R => `<div class="wbar"><button class="btn ghost small" data-a="rpause" aria-label="${R.paused?'Play':'Pause'}">${R.paused?'▶':'❚❚'}</button>${R.kind==='full'?'<button class="btn ghost small" data-a="rnext">Next round</button>':''}<button class="btn ghost small${R.fast?' on':''}" data-a="rfast">2×</button><span class="wprog">${R.i+1} / ${R.seq.length}</span><button class="btn small" data-a="rexit">Exit</button></div>`;
+const replayRow = () => (S.replayLog||[]).length ? `<div class="replayrow"><button class="btn" data-a="watch" data-v="hl">▶ Watch highlights</button><button class="btn ghost" data-a="watch" data-v="full">Full replay</button></div>` : '';
 function vOver(){
-  return `${winHero()}${overUnlocks()}
+  return `${winHero()}${replayRow()}${overUnlocks()}
     ${mvpPanel()}
     <div class="overteams${nPlayers()>2?' many':''}">${players().map(q=>teamBlock(q)).join('')}</div>
     ${matchLogPanel()}

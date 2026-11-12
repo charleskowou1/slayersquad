@@ -6,7 +6,7 @@ const VIEWS = {reveal:vReveal, ceremony:vCeremony, order:vOrder, credits:vCredit
 const quickMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 let scored = false, spinShown = null;   // spinShown: the number game already revealed on this screen (for its ding)
 // which screen to draw: online, each phone shows the win screen on its own; a crow re-plan reuses the move screen
-const viewName = () => isOnline() && S.final && S.localOver ? 'over' : S.phase==='scout' && S.scouting ? 'plan' : S.phase;
+const viewName = () => S.replaying ? 'result' : isOnline() && S.final && S.localOver ? 'over' : S.phase==='scout' && S.scouting ? 'plan' : S.phase;
 
 // Start a clip with no play button: phones only autoplay a video that is muted inline, and a video added by script
 // has to be told so in code. If the phone still refuses (iPhone Low Power Mode), the next tap anywhere starts it.
@@ -38,11 +38,12 @@ function rosterDrift(now){
 // Who a synergy is about, for its portraits: fighters named in it, or the group it counts (Hashira, Upper Moons, Marks, demons)
 const SYN_GROUPS = {'Hashira':u=>BYID[u.id].hashira, 'Corps Master':u=>BYID[u.id].hashira||u.fam==='kagaya', 'Upper Moons':u=>BYID[u.id].upper, 'Marks spread':u=>u.mark,
   "Muzan's Blood":u=>u.demon&&u.fam!=='nezuko', 'Kamaboko Squad':u=>['tanjiro','zenitsu','inosuke'].includes(u.fam), 'Siblings counter':u=>['tanjiro','nezuko'].includes(u.fam),
-  'Mentor':u=>['urokodaki','tanjiro','giyu','sabito'].includes(u.fam), 'The Three Wives':u=>['hinatsuru','makio','suma'].includes(u.fam)};
+  'Mentor':u=>['urokodaki','tanjiro','giyu','sabito'].includes(u.fam)};
 // Pairs: both fighters are pictured even when only one gets the bonus (CK: Sun Lineage shows Yoriichi and Tanjiro)
 [['Sun Lineage','yoriichi','tanjiro'],['Devoted','tamayo','yushiro'],['Two as One','gyutaro','daki'],['Father and Son','tanjuro','tanjiro'],["Kanae's student",'kanae','kanao'],
  ['Training partner','typezero','muichiro'],['Kocho Sisters','kanae','shinobu'],['Temari & Arrows','susamaru','yahaba'],['Old Friends','giyu','sabito'],['Set Your Heart Ablaze','rengoku','tanjiro'],
- ['Love Hashira','obanai','mitsuri'],['Brothers','sanemi','genya'],["Urokodaki's Pupils",'makomo','sabito'],["Tengen's Family",'tengen','hinatsuru','makio','suma']].forEach(([n,...f])=>{ SYN_GROUPS[n]=u=>f.includes(u.fam); });
+ ['Love Hashira','obanai','mitsuri'],['Brothers','sanemi','genya'],["Tengen's Family",'tengen','hinatsuru','makio','suma'],
+ ['For Nezuko!','zenitsu','nezuko'],['Butterfly Mansion','shinobu','kanao'],["Gyomei's student",'gyomei','genya']].forEach(([n,...f])=>{ SYN_GROUPS[n]=u=>f.includes(u.fam); });
 function synMembers(p, label){
   const name=label.replace(/^!/,'').split(':')[0].replace(/ [+−-]\d.*$/,''), grp=SYN_GROUPS[name], team=S.teams[p].filter(u=>!u.spawn);
   let us=grp ? team.filter(grp) : team.filter(u=>[u.name,u.short,BYID[u.id].short,u.fam].some(n=>n && label.toLowerCase().includes(String(n).toLowerCase().replace(/ ✦$/,''))));
@@ -55,6 +56,31 @@ const synBonus = t => t.split(/,\s*/).map(part=>{ const m=part.match(/^((?:[A-Z]
   .join(', ').replace(/^(.*?) and (.*?) ([+−-]\d.*)$/,'$3');
 // Synergy reveal (CK, Nov 3, 2026: "do it better"): one cut-in per synergy. A band sweeps across, the fighters slide in, a link
 // lights between them, then the name. Tap to skip.
+// Battle entrance (Nov 12, 2026): before round 1 (not story, which has its VS card), the two squads slam in from either
+// side with their kanji stamped on, and a VS slash cuts between them. Tap to skip.
+function entranceIntro(after){
+  const me=myP(), them=enemiesOf(me); if(!them.length) return after&&after();
+  const side=(us,cls,p,name)=>`<div class="en-side ${cls}" style="--tc:${pc(p)}"><span class="en-name">${esc(name)}</span><div class="en-cards">${us.map((u,i)=>`<span class="en-c" style="--i:${i}">${seal(u,'lg')}<b>${u.g}</b></span>`).join('')}</div></div>`;
+  const el=document.createElement('div'); el.className='entrance'; el.setAttribute('role','status');
+  el.innerHTML=side(S.teams[me].filter(u=>!u.spawn),'l',me,soloView()?'You':titled(S.names[me]))+'<span class="en-slash"></span><b class="en-vs">VS</b>'+side(them.flatMap(q=>S.teams[q]).filter(u=>!u.spawn),'r',them[0],them.map(q=>titled(S.names[q])).join(' & '));
+  document.body.appendChild(el); sfx('vs');
+  let gone=false; const done=()=>{ if(gone) return; gone=true; el.classList.add('out'); setTimeout(()=>{ el.remove(); after&&after(); },350); };
+  el.addEventListener('click',done); setTimeout(done, quickMotion()?600:2800);
+}
+// Weather by place (Nov 12, 2026): soft particles behind the battle that match its background
+const WEATHER = {prologue:'snow', mentor:'mist', training:'mist', selection:'wisteria', dr_selection:'wisteria', asakusa:'lanterns', tsuzumi:'dust', natagumo:'leaves',
+  mugen:'embers', mugen_akaza:'embers', dr_wrongtrain:'embers', district:'lanterns', dr_wives:'lanterns', swordsmith:'steam', castle:'paper', estate:'embers',
+  hashira_training:'leaves', kanae:'petals', dr_flowers:'petals', flashback:'petals', dawn:'ash', six:'embers', dr_nine:'paper', dr_waking:'ash', dr_heart:'embers',
+  dr_hakuji:'petals', dr_nothing:'petals', dr_returned:'snow', dream1:'snow', dream2:'petals', dream3:'mist', dream4:'embers', dream5:'petals'};
+const WX_N = {snow:16, mist:4, wisteria:12, lanterns:6, dust:10, leaves:9, embers:14, steam:4, paper:7, petals:11, ash:12};   // kept sparse so they never pull the eye (CK)
+function setWeather(kind){
+  let el=document.getElementById('weather');
+  if(!kind || quickMotion()){ if(el) el.remove(); return; }
+  if(el && el.dataset.k===kind) return;
+  if(!el){ el=document.createElement('div'); el.id='weather'; el.setAttribute('aria-hidden','true'); document.body.prepend(el); }
+  el.dataset.k=kind; el.className='wx-'+kind;
+  el.innerHTML=Array.from({length:WX_N[kind]||16},(_,i)=>`<i style="--x:${(i*37+11)%100}%;--y:${(i*53+7)%90}%;--d:${(-((i*1.7)%9)).toFixed(1)}s;--s:${(.6+(i%4)*.2).toFixed(2)};--t:${(7+(i%5)*1.8).toFixed(1)}s;--r:${(i*47)%360}deg"></i>`).join('');
+}
 function synergyIntro(){
   S.synShown=true; const list=players().flatMap(p=>(S.syn&&S.syn[p]||[]).filter(x=>x[0]!=='!').map(t=>({p,t}))).slice(0,6); if(!list.length) return;
   const el=document.createElement('div'); el.className='synreel'; el.setAttribute('role','status'); document.body.appendChild(el);
@@ -72,6 +98,30 @@ function synergyIntro(){
 const dodge=(id,by,extra)=>({you:['tanjiro'], foe:[id,'hand'], keep:true, setup:()=>{ const t=S.teams[1][0]; Object.assign(t,{hp:t.max,pow:0}, by); S.teams[0][0].spd=99; S.teams[1].forEach(u=>{u.pow=0;u.spd=1;u.cd=9;}); if(extra) extra(); }, note:'Attack '+BYID[id].short+' and Fight.'});
 const KO_TESTS = {
   // Dead Calm and Castle Shift prototypes (Nov 11, 2026): old and new side by side
+  an9_gyokko:  {you:['muichiro','tanjiro'], foe:['gyokko'], keep:true, setup:()=>{ const g=S.teams[1][0]; g.hp=Math.round(g.max*.55); g.cd=9; S.teams[0].forEach(u=>{ u.cd=0; }); }, note:'Gyokko is at 55%. Hit him this round: at the end of it he sheds his shell into his Perfect Form.'},
+  an8_compass: {you:['akaza'], foe:['tanjiro','zenitsu','inosuke'], keep:true, setup:()=>{ S.teams[1].forEach(u=>{ u.pow=0; u.cd=9; u.hp=u.max=200; }); S.teams[0][0].cd=0; }, note:'Pick Compass Needle and Fight.'},
+  an8_annihil: {you:['akaza'], foe:['tanjiro','zenitsu','inosuke'], keep:true, setup:()=>{ S.teams[1].forEach(u=>{ u.pow=0; u.cd=9; u.hp=u.max=200; }); const a=S.teams[0][0]; a.sig=BYID.akaza.sig2; a.cd=0; }, note:'Pick Annihilation Type and Fight.'},
+  an8_muzan:   {custom:()=>{ Object.assign(S,{mode:'cpu', n:2, names:['You','Muzan AI'], askName:null, unlockAll:true, poolType:'all'}); newDraft(0); }, note:'Scroll to Muzan and Final Muzan: their cards have the Demon King lining.'},
+  an7_stuck:   {you:['kyogai','akaza'], foe:['tanjiro','zenitsu'], keep:true, setup:()=>{ S.teams[1].forEach(u=>{ u.pow=0; u.cd=9; u.hp=u.max=200; }); const k=S.teams[0][0]; k.cd=0; k.spd=99; }, note:'Round 1: Drum Room Spin on anyone and Fight. Round 2: they have dizzy stars on their card, and when their turn comes they are stuck in the spinning room.'},
+  an7_nofind:  {you:['nakime','akaza'], foe:['tanjiro','zenitsu'], keep:true, setup:()=>{ S.teams[1].forEach(u=>{ u.pow=0; u.cd=9; u.hp=u.max=200; }); const n=S.teams[0][0]; n.cd=0; n.spd=99; }, note:'Castle Shift on Tanjiro, and have Akaza Attack Tanjiro: Akaza strikes an empty room.'},
+  an7_entrance:{you:['tanjiro','zenitsu','inosuke'], foe:['akaza','doma','hand'], syn:true, keep:true, note:'The two squads slam in before round 1.'},
+  an7_status:  {you:['tanjiro','zenitsu','inosuke'], foe:['akaza','doma'], keep:true, setup:()=>{ const [a,b]=S.teams[0]; a.poison={dmg:2,turns:3}; b.stun=true; b.bound='drum'; S.teams[1][1].poison={dmg:6,turns:3}; }, note:'Tanjiro and Doma are poisoned (bubbles); Zenitsu is dizzy (stars) and will lose his turn.'},
+  an7_codex:   {custom:()=>{ Object.assign(S,{phase:'codex', askName:null, unlockAll:true, codexSel:'tanjiro'}); }, note:'The card flips over as it opens. Close it and tap other cards.'},
+  an7_deal:    {custom:()=>{ Object.assign(S,{mode:'cpu', n:2, names:['You','Muzan AI'], askName:null, unlockAll:true}); newDraft(0); }, note:'The cards fly onto the table one by one.'},
+  an7_crow:    {you:['tanjiro','zenitsu','crow'], foe:['akaza'], keep:true, setup:()=>{ S.teams[1].forEach(u=>{ u.pow=0; u.cd=9; u.hp=u.max=200; }); }, note:'Tap Use Kasugai Crow, then Fight.'},
+  an7_wx_prologue: {you:['tanjiro'], foe:['hand'], keep:true, setup:()=>{ S.place='prologue'; S.teams[1].forEach(u=>{ u.pow=0; u.hp=u.max=200; }); }, note:'Weather: snow.'},
+  an7_wx_selection: {you:['tanjiro'], foe:['hand'], keep:true, setup:()=>{ S.place='selection'; S.teams[1].forEach(u=>{ u.pow=0; u.hp=u.max=200; }); }, note:'Weather: wisteria.'},
+  an7_wx_mugen: {you:['tanjiro'], foe:['hand'], keep:true, setup:()=>{ S.place='mugen'; S.teams[1].forEach(u=>{ u.pow=0; u.hp=u.max=200; }); }, note:'Weather: embers.'},
+  an7_wx_natagumo: {you:['tanjiro'], foe:['hand'], keep:true, setup:()=>{ S.place='natagumo'; S.teams[1].forEach(u=>{ u.pow=0; u.hp=u.max=200; }); }, note:'Weather: leaves.'},
+  an7_wx_district: {you:['tanjiro'], foe:['hand'], keep:true, setup:()=>{ S.place='district'; S.teams[1].forEach(u=>{ u.pow=0; u.hp=u.max=200; }); }, note:'Weather: lanterns.'},
+  an7_wx_castle: {you:['tanjiro'], foe:['hand'], keep:true, setup:()=>{ S.place='castle'; S.teams[1].forEach(u=>{ u.pow=0; u.hp=u.max=200; }); }, note:'Weather: paper.'},
+  an7_wx_swordsmith: {you:['tanjiro'], foe:['hand'], keep:true, setup:()=>{ S.place='swordsmith'; S.teams[1].forEach(u=>{ u.pow=0; u.hp=u.max=200; }); }, note:'Weather: steam.'},
+  an7_wx_mentor: {you:['tanjiro'], foe:['hand'], keep:true, setup:()=>{ S.place='mentor'; S.teams[1].forEach(u=>{ u.pow=0; u.hp=u.max=200; }); }, note:'Weather: mist.'},
+  an7_wx_kanae: {you:['tanjiro'], foe:['hand'], keep:true, setup:()=>{ S.place='kanae'; S.teams[1].forEach(u=>{ u.pow=0; u.hp=u.max=200; }); }, note:'Weather: petals.'},
+  an7_wx_dawn: {you:['tanjiro'], foe:['hand'], keep:true, setup:()=>{ S.place='dawn'; S.teams[1].forEach(u=>{ u.pow=0; u.hp=u.max=200; }); }, note:'Weather: ash.'},
+  an7_wx_tsuzumi: {you:['tanjiro'], foe:['hand'], keep:true, setup:()=>{ S.place='tsuzumi'; S.teams[1].forEach(u=>{ u.pow=0; u.hp=u.max=200; }); }, note:'Weather: dust.'},
+  an6_kyogai: {you:['kyogai'], foe:['tanjiro','zenitsu'], keep:true, setup:()=>{ S.teams[1].forEach(u=>{ u.pow=0; u.cd=9; u.hp=u.max=200; }); const k=S.teams[0][0]; k.cd=0; k.spd=99; }, note:'Pick Drum Room Spin on Tanjiro and Fight.'},
+  an5_destiny:{you:['giyu'], foe:['akaza'], keep:true, setup:()=>{ DESTINY_ODDS=1; const g=S.teams[0][0]; g.hp=Math.round(g.max*.35); S.teams[1][0].pow=8; S.teams[1][0].cd=9; }, note:'Giyu is low against Akaza. Defend and Fight: when Akaza drops him under 30%, he awakens (always, for this test).'},
   an4_flee:   {you:['akaza'], foe:['hantengu_true','zohakuten'], keep:true, setup:()=>{ S.teams[1].forEach(u=>{ u.pow=0; u.hp=u.max=200; }); const h=S.teams[1].find(u=>u.id==='hantengu_true'); h.cd=0; h.spd=99; }, note:'Fight: the real Hantengu flees.'},
   an4_block:  {you:['giyu','tanjiro','zenitsu'], foe:['akaza'], keep:true, setup:()=>{ S.teams[1].forEach(u=>{ u.hp=u.max=300; u.cd=9; u.spd=1; }); const g=S.teams[0][0]; g.cd=0; g.spd=99; }, note:'Pick Giyu\'s Dead Calm, and Fight: Akaza\'s blow lands on the water.'},
   an4_lost:   {you:['nakime','akaza'], foe:['tanjiro','zenitsu'], keep:true, setup:()=>{ S.teams[1].forEach(u=>{ u.pow=0; u.cd=9; u.hp=u.max=300; }); const n=S.teams[0][0]; n.cd=0; n.spd=99; }, note:'Pick Nakime\'s special on Tanjiro and Fight: he falls into the castle, then can\'t act when his turn comes.'},
@@ -220,11 +270,12 @@ function render(){
   document.body.classList.toggle('placebg', !!place);
   // Last stand: your final fighter under 25% gets a heartbeat and red edges while you choose
   { const me=S.teams && (S.planFor??S.me??0), mine=S.teams && S.teams[me] && alive(me); document.body.classList.toggle('laststand', view==='plan' && !!mine && mine.length===1 && mine[0].hp<=mine[0].max*.25); }
-  if(view==='plan' && S.round===1 && S.teams && !S.synShown && !ctl) synergyIntro();   // the TV plays the synergy cut-ins, not the controller phone
+  if(view==='plan' && S.round===1 && S.teams && !S.synShown && !ctl){ if(S.mode!=='story' && !S.entShown && !S.trial){ S.entShown=true; S.synShown=true; entranceIntro(synergyIntro); } else synergyIntro(); }   // battle entrance first, then the synergy cut-ins   // the TV plays the synergy cut-ins, not the controller phone
   // TV controller: a clean phone screen (body.ctlmode), and a buzz + ding when it becomes this phone's turn to choose
   document.body.classList.toggle('ctlmode', !!ctl);
   if(ctl){ const mine=['plan','draft','spin','scout'].includes(view); if(mine && render.ctlWas!==view+S.round){ try{ navigator.vibrate&&navigator.vibrate([30,40,30]); }catch(e){} sfx('pick'); } render.ctlWas=mine?view+S.round:null; }
   if(place) document.body.style.setProperty('--placebg', `url('${place}')`);
+  setWeather(place && (WEATHER[st ? (WEATHER[st.id]?st.id:st.arc) : S.place] || 'dust'));
   cloudCheck();   // back up saved progress a few seconds after it changes
   queueMicrotask(rosterKeep);
   music(ctl ? null : musicFor(view));   // the TV plays the music, not the controller phone   // each kind of screen has its own theme (cross-fades; nothing happens if it's already playing)   // wide landscape layout (tablets) for Local games
@@ -234,9 +285,9 @@ function render(){
   // a pop-up redrawn as the same pop-up keeps its scroll (Settings' bug report sits at the bottom and jumped to the top on Send)
   const mIn=sheet.querySelector('.modal .in'), mKey=mIn&&mIn.getAttribute('aria-label'), mTop=mIn?mIn.scrollTop:0;
   // A screen that fails to draw shows a Reload card instead of a blank page, and is still reported (crashes in render were blanking the home screen)
-  beforeAwake(()=>{ try{ app.innerHTML=VIEWS[view](); sheet.innerHTML=vSheet(); }
+  withReplay(()=>beforeAwake(()=>{ try{ app.innerHTML=VIEWS[view](); sheet.innerHTML=vSheet(); }
     catch(err){ app.innerHTML=`<div class="drawfail"><b>Something went wrong</b><span class="muted">Reloading usually fixes it. Your progress is safe.</span><button class="btn" onclick="location.reload()">Reload</button><button class="btn ghost" data-a="home">Home</button></div>`; sheet.innerHTML='';
-      if(CRASHES<3 && !navigator.webdriver && !LOCAL_COPY && navigator.onLine){ CRASHES++; sendReport(`${err&&err.message||err} (render ${view})`, true).catch(()=>{}); } } });
+      if(CRASHES<3 && !navigator.webdriver && !LOCAL_COPY && navigator.onLine){ CRASHES++; sendReport(`${err&&err.message||err} (render ${view})`, true).catch(()=>{}); } } }));
   { const n=sheet.querySelector('.modal .in'); if(n && mKey && n.getAttribute('aria-label')===mKey) n.scrollTop=mTop; }
   if(app.querySelector('.kolater')) setTimeout(()=>app.querySelectorAll('.kolater').forEach(e=>e.classList.remove('kolater')), quickMotion()?150:620);   // a special's knockout waits for the special to land
   app.querySelectorAll('img:not([data-k])').forEach(im=>{ const old=(pics.get(im.getAttribute('src'))||[]).shift(); if(old){ old.className=im.className; im.replaceWith(old); } });
@@ -275,6 +326,7 @@ function warmClips(){
 }
 // Play the round back one log line at a time. Knockouts buzz the phone (Android; iPhones don't allow vibration).
 function playRound(){
+  (S.replayLog=S.replayLog||[]).push({r:S.round, log:S.log, teams:JSON.parse(JSON.stringify(S.teams))});   // kept for Watch again (the teams as they are after this round)
   S.play={k:0, done:false, steps:playSteps(S.log)};
   const step=()=>{
     if(S.info || S.settings || S.quitAsk){ S._t=setTimeout(step,300); return; }   // paused while an info card, Settings or Quit is open
@@ -294,6 +346,45 @@ function playRound(){
   };
   sfx('gong'); clearTimeout(S._t); S._t=setTimeout(step, quickMotion() ? 250 : 1500*pace());   // the "Round N · Fight!" intro
 }
+// Watch the match again (CK, Nov 12, 2026): Highlights (specials, knockouts, awakenings, comebacks and the final blow) or
+// a Full replay of every round. Each round's log and teams are kept by playRound(); the replay only swaps them in while
+// drawing (withReplay), so the real match state never changes, even if an online update arrives meanwhile.
+const HL_FX = ['special','ko','awaken','revive'];
+function replaySeq(kind){
+  const rl=S.replayLog||[], seq=[];
+  rl.forEach((rd,i)=>{ const steps=playSteps(rd.log); let after=false;
+    steps.forEach((st,k)=>{ if(!k){ if(kind==='full') seq.push([i,0]); return; }
+      const ls=rd.log.slice(st[0],st[1]+1), big=ls.some(l=>HL_FX.includes(l.fx)||l.destiny);
+      if(kind==='full' || big || after || (i===rl.length-1 && k===steps.length-1)) seq.push([i,k]);
+      after = ls.some(l=>l.fx==='special'); }); });   // a special's announcement, then the hit it lands
+  return seq;
+}
+function withReplay(fn){
+  const R=S.replaying; if(!R || !R.cur) return fn();
+  const keep={teams:S.teams, log:S.log, round:S.round, play:S.play, phase:S.phase, final:S.final, localOver:S.localOver};
+  Object.assign(S,{teams:R.cur.teams, log:R.cur.log, round:R.cur.r, play:R.play, phase:'result', final:false, localOver:false});
+  try{ return fn(); } finally { Object.assign(S,keep); }
+}
+function watchStart(kind){
+  const seq=replaySeq(kind); if(!seq.length) return;
+  clearTimeout(S._t); S.replaying={kind, seq, i:-1, paused:false, fast:false}; window.scrollTo(0,0); replayStep();
+}
+function replayStep(){
+  const R=S.replaying; if(!R || R.paused) return; clearTimeout(R.t);
+  if(S.info || S.settings || S.quitAsk){ R.t=setTimeout(replayStep,300); return; }
+  if(++R.i>=R.seq.length) return watchEnd();
+  const [ri,k]=R.seq[R.i], rd=S.replayLog[ri], steps=playSteps(rd.log);
+  R.cur=rd; R.play={k, steps, done:false, clip:null};
+  let t=1500*pace();
+  withReplay(()=>{ if(!k){ sfx('gong'); return; }
+    const [a,b]=steps[k], lines=rd.log.slice(a,b+1), line=lines[0];
+    R.play.clip = b>a || quickMotion() ? null : clipStep(line);
+    if(b>a){ sfx('bighit'); if(lines.some(l=>l.ko)) setTimeout(()=>sfx('ko'),250); } else if(R.play.clip && R.play.clip.sound) clipSound(R.play.clip.sound); else sfxForLine(line);
+    t = b>a ? groupTime(lines) : line.fx==='awaken' ? Math.max(readTime(line), 3600*pace()) : readTime(line);
+    if(R.play.clip) t=Math.max(t, CLIP_MIN*pace()); });
+  render(); R.t=setTimeout(replayStep, R.fast ? t*.5 : t);
+}
+function watchEnd(){ const R=S.replaying; if(!R) return; clearTimeout(R.t); S.replaying=null; render(); window.scrollTo(0,0); }
 // Start a Local or Quickplay match with the mode's settings: names from the boxes (computers get demon names)
 // Story: when the last round has played out, go straight on (the ending scene after a win, the defeat screen after
 // a loss) instead of stopping on a "See who won" button. Returns true if it moved on.
@@ -535,6 +626,11 @@ const ACTIONS = {
     nextScoutOrFight();
   },
   skip(){ clearTimeout(S._t); S.play.done=true; if(!storyEnd()) storyMid(); },   // skipping still plays a Mark awakening's cutscene
+  watch(v){ watchStart(v); },
+  rpause(){ const R=S.replaying; if(!R) return; R.paused=!R.paused; if(R.paused) clearTimeout(R.t); else replayStep(); },
+  rfast(){ if(S.replaying) S.replaying.fast=!S.replaying.fast; },
+  rnext(){ const R=S.replaying; if(!R) return; const ri=R.seq[R.i]&&R.seq[R.i][0]; let j=R.i; while(j+1<R.seq.length && R.seq[j+1][0]===ri) j++; R.i=j; R.paused=false; replayStep(); },
+  rexit(){ watchEnd(); },
   next(){ if(storyMid()) return; if(isAsync()) return asyncWatched(); if(isOnline()){ onlineNext(); return window.scrollTo(0,0); } S.round++; S.planFor=S.mode==='local'?nextChooser(-1):0; S.play=null; S.phase=S.mode==='local'&&!S.tvDuo?'pass':'plan'; newPlanTurn(); },
   finish(){ if(isAsync()) setGame(S.asyncCode,{seen:{m:S.matchNo, r:S.roundId}}); if(isOnline()){ S.asyncWatching=false; S.localOver=true; return window.scrollTo(0,0); } S.play=null;
     if(S.mode==='story' && S.winner===0) return storyWon_();   // ending scene and unlocks first

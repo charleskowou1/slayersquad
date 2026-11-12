@@ -70,6 +70,8 @@ const SFX = {
   // a blow landing on Dead Calm's water: a splash when it strikes (0.3 s in), droplets falling after
   calmhit(){ const a=.28; hiss('bandpass',2600,700,.35,.2,a,SFX_OUT,1.5); tone('sine',560,1500,.06,.12,a+.02); [.2,.3,.42].forEach((d,i)=>tone('sine',1700-i*180,1250-i*150,.08,.07,a+d)); },
   // Hantengu running away: a squeak, then tiny scurrying steps
+  // Kyogai: three tsuzumi strikes, on the beats his room turns (0.25 s, 0.8 s, 1.35 s)
+  tsuzumi(){ [.25,.8,1.35].forEach((a,i)=>{ tone('sine',220-i*15,90,.28,.32,a); tone('triangle',660-i*30,300,.09,.12,a); hiss('bandpass',1800,600,.12,.12,a); }); tone('sine',1400,1200,.5,.05,1.6); },
   scurry(){ tone('sine',1300,2300,.14,.1,0); for(let i=0;i<9;i++) tone('square',2100-(i%2)*300,1900-(i%2)*300,.025,.04,.15+i*.075); },
   // the opening sting (Kwow Media Productions): a taiko hit, a quick koto run up the miyako scale, then a second hit
   // under a bright chime that rings out
@@ -177,6 +179,7 @@ function sfxForLine(line){
   if(line.calm) return sfx('calmdrop');
   if(line.calmblock) return sfx('calmhit');
   if(line.flee) return sfx('scurry');
+  if(line.kind==='drum') return sfx('tsuzumi');
   if(line.fx==='special'){ sfx('cutin'); if(style) setTimeout(()=>styleSfx(style, 1), 250); return; }
   // a basic attack: the fighter's own weapon, their breathing style on top
   if(line.fx==='hit' && by && line.move==='attack' && sfxOn() && !document.hidden){

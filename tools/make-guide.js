@@ -92,7 +92,7 @@ out(`- Moves: ATTACK (hit one enemy with PWR; Legends strike twice), DEFEND (tak
 
 hr('4. TEAM SYNERGIES AND MATCHUPS (applied at the start of battle)');
 out(`Same team:
-- Kamaboko Squad: Tanjiro + Zenitsu + Inosuke → whole team +2 SPD.
+- Kamaboko Squad: any two of Tanjiro, Zenitsu, Inosuke → those two +1 SPD; all three → whole team +2 SPD.
 - Siblings: Tanjiro + Nezuko → when either is hit, the other counter-hits the attacker for 3 (not vs area specials).
 - Hashira: 2+ Hashira → each Hashira +1 PWR.
 - Upper Moons: 2+ Upper Moons → each +1 regen.
@@ -114,12 +114,17 @@ out(`Same team:
 - Love Hashira: Obanai + Mitsuri → both +1 PWR, +1 SPD.
 - Set Your Heart Ablaze: Rengoku + any Tanjiro → Tanjiro +1 PWR, Rengoku +1 DEF.
 - Old Friends: Giyu + Sabito → Giyu +2 PWR +1 DEF, Sabito +1 SPD.
+- For Nezuko!: Zenitsu + any Nezuko → Zenitsu +1 PWR.
+- Butterfly Mansion: Shinobu + Kanao → Kanao +1 SPD.
+- Gyomei's student: Gyomei + Genya → Genya +1 DEF.
 Opposing teams:
 - Muzan fears the Sun: Muzan facing Yoriichi → Muzan −3 PWR, −2 SPD.
 - Kokushibo shaken: Kokushibo facing Yoriichi → −1 DEF.
 - Tamayo's medicine: Muzan facing Tamayo → Muzan regen −2.
 - Rivals: Zenitsu facing Kaigaku → Zenitsu +2 PWR.
 - Rival: Rengoku facing Akaza → Rengoku +2 PWR.
+- Rival: Muichiro facing Gyokko → Muichiro +2 PWR.
+- Rival: Mitsuri facing Hantengu → Mitsuri +2 PWR.
 - Revenge on Doma: Kanao or Inosuke facing Doma → +2 SPD, and +4 damage on Doma through his DEF.
 - Wisteria Body: a demon that knocks out Shinobu loses 5 HP every round after (not Akaza: he never eats women).
 - Sun Breathing: Yoriichi's special stops every demon it hits from regenerating for good (not Demon King Tanjiro: sun-proof).

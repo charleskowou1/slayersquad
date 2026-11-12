@@ -74,7 +74,8 @@ const CLIPS = {
   yoriichi_old:  {special: 'clips/yoriichi_old-special.jpg'},  // The Last Strike: a single manga panel
   kaigaku:       {special: 'clips/kaigaku-special.mp4'},       // Black Thunder: first 4 s
   gyomei_mark:   {special: 'https://media.tenor.com/bHhJrzZO3LMAAAPo/himejima-gyomei-kimetsu-no-yaiba.mp4'},
-  michikatsu:    {},   // not Kokushibo's demon clip: he's still human
+  michikatsu:    {},
+  gyokko_perfect: {},   // Jinmei Kaigyo isn't his Water Prison Pot: don't borrow that clip   // not Kokushibo's demon clip: he's still human
   hakuji:        {special: 'https://media.tenor.com/JOGk6f__jd4AAAPo/demon-slayer-kimetsu-no-yaiba.mp4'},
   tanjuro:       {special: 'https://media.tenor.com/FjuEaNP16-AAAAPo/demon-slayer-tanjiro.mp4'},       // the Hinokami dance in the snow
   aoi:           {use: 'https://media.tenor.com/t61s6eT3YwoAAAPo/aoi-kanzaki-aoi.mp4'},

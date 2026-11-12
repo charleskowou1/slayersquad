@@ -180,7 +180,7 @@ const RIVAL_MIN = 9, RIVAL_GAP = 3;
 const RIVAL_ODDS = {kokushibo:.25};
 // Never each other's rival: a card and its direct counter (CK, Oct 28, 2026: Muzan was always being dealt next to a
 // Yoriichi and fell to ~25%). Either way round, by family.
-const NOT_RIVALS = [['muzan','yoriichi']];
+const NOT_RIVALS = [['muzan','yoriichi'],['kokushibo','muzan']];   // Kokushibo↔Muzan added Nov 12, 2026 (CK): Kokushibo won 22% when dealt into Muzan (half his games), 52% otherwise
 const counterPair = (a,b) => NOT_RIVALS.some(([x,y])=>(BYID[a].fam===x&&BYID[b].fam===y)||(BYID[a].fam===y&&BYID[b].fam===x));
 function addRivals(ids, cards){
   const cost=id=>BYID[id].cost, near=(a,b)=>Math.abs(cost(a)-cost(b))<=RIVAL_GAP && !counterPair(a,b);
@@ -315,7 +315,9 @@ function mkUnit(id,p){ const c=BYID[id]; return {uid:'u'+(UID++),id,fam:c.fam,sk
 // Applies team bonuses to the units and returns their labels ('!' prefix = a penalty)
 function synergies(p){
   const t=S.teams[p], e=enemiesOf(p).flatMap(q=>S.teams[q]), has=f=>t.some(u=>u.fam===f), out=[];
-  if(has('tanjiro')&&has('zenitsu')&&has('inosuke')){ t.forEach(u=>u.spd+=2); out.push('Kamaboko Squad +2 SPD'); }
+  const kama=t.filter(u=>['tanjiro','zenitsu','inosuke'].includes(u.fam)), kn=new Set(kama.map(u=>u.fam)).size;   // CK, Nov 12, 2026: any two count now
+  if(kn===3){ t.forEach(u=>u.spd+=2); out.push('Kamaboko Squad +2 SPD'); }
+  else if(kn===2){ kama.forEach(u=>u.spd+=1); out.push('Kamaboko Squad: the pair +1 SPD'); }
   if(has('tanjiro')&&has('nezuko')){ S.sib[p]=true; out.push('Siblings counter'); }
   const ha=t.filter(u=>BYID[u.id].hashira); if(ha.length>=2){ ha.forEach(u=>u.pow+=1); out.push('Hashira +1 PWR'); }
   const um=t.filter(u=>BYID[u.id].upper); if(um.length>=2){ um.forEach(u=>u.regen+=1); out.push('Upper Moons +1 regen'); }
@@ -328,10 +330,9 @@ function synergies(p){
   if(has('kokushibo') && e.some(u=>u.fam==='yoriichi')){ t.filter(u=>u.fam==='kokushibo').forEach(u=>u.def-=1); out.push('!Kokushibo shaken −1 DEF'); }
   const pupils=t.filter(u=>u.fam==='tanjiro'||u.fam==='giyu'||u.fam==='sabito'); if(has('urokodaki') && pupils.length){ pupils.forEach(u=>u.def+=1); out.push('Mentor: pupils +1 DEF'); }
   const wives=t.filter(u=>['hinatsuru','makio','suma'].includes(u.fam));
-  if(wives.length===3){ wives.forEach(u=>u.spd+=1); out.push('The Three Wives: +1 SPD'); }
-  if(wives.length && has('tengen')){ t.filter(u=>u.fam==='tengen').forEach(u=>u.pow+=1); out.push("Tengen's Family: Tengen +1 PWR"); }
+  // Tengen's Family (CK, Nov 12, 2026; replaces The Three Wives, which needed all three): +1 PWR to Tengen per wife, +1 SPD to each wife
+  if(wives.length && has('tengen')){ const n=new Set(wives.map(u=>u.fam)).size; t.filter(u=>u.fam==='tengen').forEach(u=>u.pow+=n); wives.forEach(u=>u.spd+=1); out.push(`Tengen's Family: Tengen +${n} PWR, wives +1 SPD`); }
   if(has('tanjuro') && has('tanjiro')){ t.filter(u=>u.fam==='tanjiro').forEach(u=>u.pow+=2); out.push('Father and Son: Tanjiro +2 PWR'); }
-  if(has('makomo') && has('sabito')){ t.filter(u=>u.fam==='makomo'||u.fam==='sabito').forEach(u=>u.spd+=1); out.push("Urokodaki's Pupils: +1 SPD"); }
   if(has('kagaya') && ha.length){ ha.forEach(u=>u.def+=1); out.push('Corps Master: Hashira +1 DEF'); }
   if(has('gyutaro')&&has('daki')){ S.twins[p]=true; t.filter(u=>u.fam==='gyutaro').forEach(u=>u.pow+=2); out.push('Two as One: Gyutaro +2 PWR'); }
   if(has('susamaru')&&has('yahaba')){ t.filter(u=>u.fam==='susamaru').forEach(u=>u.pierceAll=true); out.push('Temari & Arrows: past Defend'); }
@@ -346,6 +347,12 @@ function synergies(p){
   if(has('rengoku') && e.some(u=>u.fam==='akaza')){ t.filter(u=>u.fam==='rengoku').forEach(u=>u.pow+=2); out.push('Rival: Rengoku +2 PWR'); }
   if((has('kanao')||has('inosuke')) && e.some(u=>u.fam==='doma')){ t.filter(u=>u.fam==='kanao'||u.fam==='inosuke').forEach(u=>{ u.spd+=2; u.revenge='doma'; }); out.push('Revenge on Doma: +2 SPD, +4 damage to Doma through his DEF'); }
   if(has('zenitsu') && e.some(u=>u.fam==='kaigaku')){ t.filter(u=>u.fam==='zenitsu').forEach(u=>u.pow+=2); out.push('Rival: Zenitsu +2 PWR'); }
+  // CK, Nov 12, 2026: three more pairs and two more rivals
+  if(has('zenitsu')&&has('nezuko')){ t.filter(u=>u.fam==='zenitsu').forEach(u=>u.pow+=1); out.push('For Nezuko!: Zenitsu +1 PWR'); }
+  if(has('shinobu')&&has('kanao')){ t.filter(u=>u.fam==='kanao').forEach(u=>u.spd+=1); out.push('Butterfly Mansion: Kanao +1 SPD'); }
+  if(has('gyomei')&&has('genya')){ t.filter(u=>u.fam==='genya').forEach(u=>u.def+=1); out.push("Gyomei's student: Genya +1 DEF"); }
+  if(has('muichiro') && e.some(u=>u.fam==='gyokko')){ t.filter(u=>u.fam==='muichiro').forEach(u=>u.pow+=2); out.push('Rival: Muichiro +2 PWR'); }
+  if(has('mitsuri') && e.some(u=>u.fam==='hantengu')){ t.filter(u=>u.fam==='mitsuri').forEach(u=>u.pow+=2); out.push('Rival: Mitsuri +2 PWR'); }
   return out;
 }
 function startBattle(){
@@ -359,8 +366,8 @@ function startBattle(){
   S.waveQ=null; S.said={}; S.failed=false; S.awoke={}; S.midScene=null; S.pendingAwake=[]; S.chainDone=false; S.chainPending=null;
   S.survived=false; S.htMore={}; S.htHide={};
   S.sib=players().map(()=>false); S.twins=players().map(()=>false); S.syn=players().map(p=>synergies(p)); S.outOrder=[];
-  S.synShown=false; S.upSeen={};
-  S.round=1; S.plans=players().map(()=>({})); S.lastPlans=players().map(()=>null); S.log=[]; S.matchLog=[]; S.planFor=S.me||0; S.focus=null; S.stats={};
+  S.synShown=false; S.entShown=false; S.upSeen={};
+  S.round=1; S.plans=players().map(()=>({})); S.lastPlans=players().map(()=>null); S.log=[]; S.matchLog=[]; S.replayLog=[]; S.replaying=null; S.planFor=S.me||0; S.focus=null; S.stats={};
   S.movesLocked=players().map(()=>false); S.readyNext=players().map(()=>false); S.roundId=0;   // online play
   // story: stat boosts shown on the stage card ({side, hp: ×, pow/def/spd: +, label}), e.g. a boss with more HP
   (S.boosts||[]).forEach(b=>S.teams[b.side].forEach(u=>{ if(b.only && !b.only.includes(u.id)) return;
@@ -433,7 +440,7 @@ const SIG_EST = {
   sanemi: u=>({base:u.pow, bonus:1.6}),          // also hits a second enemy
   kaigaku: u=>({base:u.pow+3, bonus:1.3}),
   muichiro: u=>({base:u.pow+2}),
-  makomo: u=>({base:u.pow, bonus:1.3}), makio: u=>({base:u.pow+3}), hakuji: u=>({base:u.pow+3}), michikatsu: u=>({base:u.pow+Math.min(6,S.round)}), hinatsuru: u=>({base:u.pow, bonus:1.5}), suma: u=>({random:1, base:u.pow}), dojo_fighter: u=>({base:u.pow+2}),
+  makomo: u=>({base:u.pow, bonus:1.3}), makio: u=>({base:u.pow+3}), hakuji: u=>({base:u.pow+3}), michikatsu: u=>({base:u.pow+4}), hinatsuru: u=>({base:u.pow, bonus:1.5}), suma: u=>({random:1, base:u.pow}), dojo_fighter: u=>({base:u.pow+2}),
   mitsuri: u=>({all:true, base:u.pow-3, o:{pierce:true}}),
   obanai: u=>({base:u.pow+4}),
   rengoku: u=>({base:u.pow+4}),
@@ -454,6 +461,7 @@ const SIG_EST = {
   muzan: u=>({all:true, base:u.pow-7, o:{ignoreDef:true}}),
   muzan_final: u=>({all:true, base:u.pow-6, o:{ignoreDef:true}}),
   gyokko: u=>({base:u.pow-2, o:{ignoreDef:true}, stun:true}),
+  gyokko_perfect: u=>({base:u.pow+4, o:{ignoreDef:true}}),
   sekido: ()=>({all:true, base:5, o:{ignoreDef:true}}),
   karaku: u=>({all:true, base:Math.max(1,u.pow-6)}),
   aizetsu: u=>({base:u.pow+4, o:{pierce:true}}),
@@ -620,7 +628,7 @@ function hit(a,t,base,o={}){
     if(hidden(t)){ L(`${a.name} strikes at ${t.name}, but he's in the Selfless State. Nothing touches him.`,'x',{...fx('miss',a,t), dodge:'selfless'}); return 0; }
     if(t.saved){ L(`${t.name} is untouched. ${t.saved} stands guard over them.`,'x',{...fx('block',a,t), dodge:'save', guard:t.savedBy}); return 0; }
     if(t.evade){ L(`${a.name} strikes at ${t.name}, but hits nothing.`,'x',{...fx('miss',a,t), dodge:t.evadeBy||'evade'}); return 0; }
-    if(t.away){ L(t.carried ? `${a.name} can't reach ${t.name}. Goto has them.` : `${a.name} can't find ${t.name}. They're in another room of the castle.`,'x',fx('miss',a,t)); return 0; }
+    if(t.away){ L(t.carried ? `${a.name} can't reach ${t.name}. Goto has them.` : `${a.name} can't find ${t.name}. They're in another room of the castle.`,'x',{...fx('miss',a,t), nofind:!t.carried}); return 0; }
     if(a.astray){ L(`Yahaba's arrows bend ${a.name}'s blow away from ${t.name}.`,'x',fx('miss',a,t)); return 0; }
   } else if(S.shield[t.p]||t.evade||t.away||t.saved||t.defending||a.astray) L(`Nothing can stop it. ${a.name} cuts straight through to ${t.name}.`,'h',fx('special',a,t));
   let d = o.ignoreDef ? base : Math.max(1, base - t.def, Math.ceil(base/2));
@@ -634,6 +642,7 @@ function hit(a,t,base,o={}){
   // Shinobu is too small to cut a demon's head (CK, Nov 11, 2026): her blade leaves a demon on 1 HP; poison or a teammate finishes it
   const nocut = a && a.fam==='shinobu' && t.demon && t.hp<=0 && !t.splitOnHit; if(nocut){ t.hp=1; d=before-1; }   // never below 1, even when he's already on 1
   if(d>0 && t.splitOnHit){ htSplit(t,a); return d; }
+  if(d>0 && a && (DESTINED[t.fam]||[]).includes(a.fam)){ t.foeHit=S.round; t.foeBy=a.uid; }   // for destiny() at the end of the round
   if(nocut) L(d>0 ? `${a.name} hits ${t.name} ${lost(t,d)}${note}, but she can't cut off a demon's head. ${t.name} hangs on.` : `${a.name} can't cut off ${t.name}'s head. ${t.name} hangs on.`,'x',{...fx(d>0?'hit':'block',a,t), nocut:true, ...(guardLine||{})});
   else L(`${a.name} hits ${t.name} ${lost(t,Math.min(d,before))}${note}.`,'',{...fx('hit',a,t), ...(guardLine||{})});
   if(o.sun && t.demon && t.regen && !t.sunproof){ t.regen=0; t.sunburn=true; L(`${t.name} is burned by the sun. No more regeneration.`,'h',fx('burn',a,t)); }
@@ -707,6 +716,7 @@ function special(u,pl){
     case 'kanao': hit(u,target(u,pl.t),u.pow+4); break;
     case 'genya': { const h=Math.min(8,u.max-u.hp); u.hp+=h; u.pow+=2; u.ate=true; L(`Genya eats demon flesh ${gained(u,h)}, PWR now ${u.pow}.`,'h',{...fx('heal',null,u), ate:true}); break; }
     case 'tamayo': { let t=findU(pl.t); if(!t||!t.alive||!sameSide(t.p,u.p)) t=alive(u.p).sort((a,b)=>a.hp/a.max-b.hp/b.max)[0]; const h=Math.min(10,t.max-t.hp); t.hp+=h; t.poison=null; L(`Tamayo heals ${t===u?'herself':t.name} ${gained(t,h)} and clears any poison.`,'h',fx('heal',u,t)); break; }
+    case 'gyokko_perfect': { const t=target(u,pl.t); if(t&&t.alive) hit(u,t,u.pow+4,{ignoreDef:true}); break; }
     case 'gyokko': { const t=target(u,pl.t); if(t&&t.alive){ hit(u,t,u.pow-2,{ignoreDef:true}); stunT(t,'pot'); } break; }
     case 'sabito': { let t=findU(pl.t); if(!t||!t.alive||!sameSide(t.p,u.p)) t=u; t.pow+=2; L(`Sabito trains ${t===u?'himself':t.name}: +2 PWR for the rest of the match.`,'h',fx('buff',u,t)); break; }
     case 'muzan_final': { let n=0; en().forEach(e=>{ if(hit(u,e,u.pow-6,{ignoreDef:true,counter:false})>0) n++; }); if(u.alive&&n){ const h=Math.min(3*n,u.max-u.hp); u.hp+=h; L(`Final Muzan heals ${gained(u,h)}.`,'k',fx('heal',null,u)); } break; }
@@ -724,14 +734,16 @@ function special(u,pl){
     case 'hinatsuru': { const t=target(u,pl.t); if(t&&t.alive&&!S.shield[t.p]&&!t.evade&&!hidden(t)&&!t.noPoison){ t.poison={dmg:t.demon?4:2,turns:3}; L(`${t.name} is poisoned.`,'h',fx('poison',u,t)); } hit(u,t,u.pow); break; }
     case 'makio': hit(u,target(u,pl.t),u.pow+3); break;
     case 'suma': { const e=en(); if(e.length) hit(u,rnd(e),u.pow); break; }
-    case 'michikatsu': hit(u,target(u,pl.t),u.pow+Math.min(6,S.round)); break;
+    case 'michikatsu': hit(u,target(u,pl.t),u.pow+4); break;   // Moon Breathing, First Form: moves first (prio 2)
     case 'hakuji': hit(u,target(u,pl.t),u.pow+3); break;
     case 'dojo_fighter': hit(u,target(u,pl.t),u.pow+2); break;
     case 'tanjuro': { const healed=alive(u.p).map(m=>{ const h=Math.min(3,m.max-m.hp); m.hp+=h; return h?`${m.name} ${gained(m,h)}`:''; }).filter(Boolean); L(`Tanjuro dances the Hinokami Kagura.${healed.length?' '+healed.join(', ')+'.':''}`,'h',fx('heal',u,null)); break; }
     case 'shinobu': { const t=target(u,pl.t); if(t&&t.alive){ if(S.shield[t.p]||t.evade||hidden(t)){L(`The poison misses.`,'x',fx('miss',u,t));break;} if(t.noPoison){L(`The poison does nothing to ${t.name}. It's only a puppet.`,'x',fx('miss',u,t));break;} t.poison={dmg:t.demon?8:3,turns:u.poisonTurns||3,src:'shinobu'}; L(`${t.name} is poisoned.`,'h',fx('poison',u,t)); } break; }
     case 'tengen': en().forEach(e=>hit(u,e,u.pow-2,{counter:false})); break;
     case 'rui': { const t=target(u,pl.t); hit(u,t,u.pow); stunT(t,'thread'); break; }
-    case 'kyogai': stunT(target(u,pl.t),'drum'); break;
+    case 'kyogai': { const t=target(u,pl.t);   // CK, Nov 12, 2026: someone who hasn't moved yet loses this round's turn; someone faster loses the next one
+      if(t && t.alive && t.actedRound!==S.round && !S.shield[t.p] && !t.evade && !hidden(t) && !t.saved){ t.stunNow=true; t.bound='drum'; L(`${t.name} is trapped in the drum room and loses ${hisHer(t)} turn this round.`,'k',{...fx('stun',null,t), kind:'drum'}); }
+      else stunT(t,'drum'); break; }
     case 'hand': hit(u,target(u,pl.t),u.pow+3); break;
     case 'swamp': hit(u,target(u,pl.t),u.pow+1); break;
     case 'gyutaro': en().forEach(e=>{ hit(u,e,4,{ignoreDef:true,counter:false}); if(e.alive&&!e.noPoison&&!S.shield[e.p]&&!e.evade&&(!e.poison||e.poison.dmg<2)) e.poison={dmg:2,turns:2}; }); break;
@@ -916,8 +928,10 @@ function resolve(){
   aloneCheck(); storyBeats('round');
   for(const x of acts){
     const u=x.u; if(!u.alive || x.done) continue;
+    u.actedRound=S.round;
     S.curMove=x.pl.type;
-    if(x.pl.type==='stunned'){ L(`${u.name} can't move.`,'',fx('stun',null,u)); continue; }
+    if(u.stunNow){ u.stunNow=false; L(`${u.name} can't move.`,'',{...fx('stun',null,u), stuck:'drum'}); continue; }   // Kyogai's room caught them before they moved
+    if(x.pl.type==='stunned'){ L(`${u.name} can't move.`,'',{...fx('stun',null,u), stuck:u.bound||true}); continue; }
     if(u.away){ L(u.carried ? `${u.name} is being carried to safety.` : `${u.name} is lost in the Infinity Castle and can't act.`,'',{...fx('stun',null,u), inCastle:!u.carried}); continue; }
     if(x.pl.type==='attack' && u.basic && u.basic.cower){ L(`${u.name} cowers.`,'',fx('guard',null,u)); continue; }   // Hantengu never attacks
     if(x.pl.type==='attack' && u.basic && u.basic.kind==='self'){   // Kagaya's Words of Resolve
@@ -939,6 +953,8 @@ function resolve(){
   // end of round: poison, Shinobu's devour damage, sunrise, regeneration, cooldowns
   const sun=sunUp();
   htRise();
+  destiny();
+  perfectForm();
   Object.values(S.htHide||{}).forEach(h=>{ if(h) h.spot=Math.floor(Math.random()*HT_SPOTS); });   // the real Hantengu moves every round
   if(sun && S.round===sunRise()) L('The sun rises! From now on demons burn every round, hotter each time, and stop regenerating.','h',{...fx('burn',null,null), sunrise:true});
   // Seven Hearts at dawn (CK, Nov 11, 2026): a demon who still has a second life spends it to endure the sunrise (heals that much at once). He never gets back up after it.
@@ -954,7 +970,7 @@ function resolve(){
     if(u.sk==='hakuji' && u.alive && !u.vowed && S.teams[p].some(m=>!m.alive)){ u.vowed=true; u.pow+=3; L(`${u.name} remembers his vow: +3 PWR.`,'h',fx('buff',null,u)); }
     if(u.cd>0) u.cd--;
     if(u.selfless && u.alive && u.cd===0){ u.selfless=false; u.unblock=true; L(`${u.name} leaves the Selfless State. Hinokami Kagura is ready, and nothing can stop it.`,'h',fx('buff',null,u)); }
-    u.stun=u.stunNext; u.stunNext=false; if(!u.stun) u.bound=null; u.defending=false; u.exposed=false; u.evade=false; u.evadeBy=null; u.guardBy=null; u.savedBy=null; u.away=false; u.carried=false; u.tech=false; u.astray=false; u.late=false; u.ambush=null; u.saved=null; u.reveal=false;
+    u.stun=u.stunNext; u.stunNext=false; u.stunNow=false; if(!u.stun) u.bound=null; u.defending=false; u.exposed=false; u.evade=false; u.evadeBy=null; u.guardBy=null; u.savedBy=null; u.away=false; u.carried=false; u.tech=false; u.astray=false; u.late=false; u.ambush=null; u.saved=null; u.reveal=false;
     if(u.chuBoost){ u.spd-=u.chuBoost; u.chuBoost=0; }
     if(u.miceBoost){ u.pow-=u.miceBoost; u.miceBoost=0; }   // Muscle Mice last one round
   }));
@@ -1001,7 +1017,7 @@ function roundText(r){
 }
 // Sunrise: long games end. From round SUNRISE_ROUND demons (except the sun-proof) burn SUN_BURN of their max HP every
 // round and stop regenerating. Not in story mode (its own fights are about holding out until dawn).
-const FINAL_BUDGET = 45, FINAL_POW = .15, FINAL_FRENZY = .5, FINAL_SUNRISE = 7;   // Final Form (js/daily.js). His play does most of the work: smarter moves alone took the computer's wins from ~16% to ~5% at +25%; these values give ~14% for the computer and 8–15% for a focus-fire script. Real players win more: CK beat an easier build in 13 rounds by stalling for the sun, hence the dawn frenzy.
+const FINAL_BUDGET = 45, FINAL_POW = .14, FINAL_FRENZY = .5, FINAL_SUNRISE = 7;   // Final Form (js/daily.js). His play does most of the work: smarter moves alone took the computer's wins from ~16% to ~5% at +25%; these values give ~14% for the computer and 8–15% for a focus-fire script. Real players win more: CK beat an easier build in 13 rounds by stalling for the sun, hence the dawn frenzy.
 const SUNRISE_ROUND = 10, SUN_BURN = .1;   // round 10 since Oct 27, 2026 (CK: sun in ~10% / 25% / 30% of 10 / 20 / 30-pt games; at 12 it was 5 / 14 / 16%)
 // The burn grows every round the sun is up (CK, Oct 28, 2026): 10% at sunrise, then 15%, 20%, 25%…
 const SUN_GROW = .05, sunBurn = () => SUN_BURN + SUN_GROW*Math.max(0, S.round-sunRise());
@@ -1035,6 +1051,29 @@ function storyBeats(when){
 // line ({awaken:true}), not before: S.pendingAwake holds them until then (applyAwakenings).
 // A fighter becomes their Mark card mid-battle (or, in story, another awakened card: Nezuko → Awakened Nezuko): that
 // card's extra HP, PWR, SPD, DEF and regen on top of what they have now, its special, and its name. Story Marks (ready) also get the special ready now; Kagaya's Final Resolve keeps the current wait.
+// Destined foes (CK, Nov 12, 2026): a base slayer whose Mark awoke against a particular demon in the show may awaken it
+// against that demon, rarely. It's printed on the card. Only once they're down to DESTINY_AT of their health, only at
+// the end of a round that foe hit them, DESTINY_ODDS each time, once per match. Not in story (it has its own awakenings).
+const HANTENGU_ALL = ['hantengu','sekido','karaku','aizetsu','urogi','zohakuten','hantengu_true'];
+const DESTINED = {tanjiro:['gyutaro','daki'], muichiro:['gyokko'], mitsuri:HANTENGU_ALL, giyu:['akaza'], sanemi:['kokushibo'], gyomei:['kokushibo']};
+let DESTINY_ODDS = .25, DESTINY_AT = .3;
+const destinedFoes = c => c && !c.mark && BYID[c.id+'_mark'] && DESTINED[c.fam] || null;
+// Gyokko's Perfect Form: at the end of the first round he ends at PERFECT_AT health or less, he sheds his shell (once)
+let PERFECT_AT = .5, PERFECT_READY = true;
+function perfectForm(){
+  players().forEach(p=>alive(p).forEach(u=>{ if(u.id!=='gyokko' || u.awoke || u.hp>u.max*PERFECT_AT || !BYID.gyokko_perfect) return;
+    const snap=[{uid:u.uid, id:u.id, name:u.name, g:u.g, sk:u.sk, mark:u.mark, max:u.max}]; awakenMark(u,PERFECT_READY,'gyokko_perfect',true);
+    L(`Gyokko sheds his shell. Behold his Perfect Form! Scales harder than diamond, and far faster.`,'h',{...fx('awaken',null,u), act:'awaken', was:snap, perfect:true}); }));
+}
+function destiny(){
+  if(S.mode==='story' || !DESTINY_ODDS) return;
+  players().forEach(p=>alive(p).forEach(u=>{
+    if(u.foeHit!==S.round || u.mark || u.awoke || u.hp>u.max*DESTINY_AT || !destinedFoes(BYID[u.id])) return;
+    if(Math.random()>=DESTINY_ODDS) return;
+    const foe=findU(u.foeBy), was=u.name, snap=[{uid:u.uid, id:u.id, name:u.name, g:u.g, sk:u.sk, mark:u.mark, max:u.max}]; awakenMark(u,false,null,true);
+    L(`${was} won't fall to ${foe?foe.name:'this demon'}. ${was} awakens the Demon Slayer Mark!`,'h',{...fx('awaken',null,u), act:'awaken', was:snap, destiny:true});
+  }));
+}
 function awakenMark(u, ready, to, quiet){
   const b=BYID[u.id], m=BYID[to||u.id+'_mark'];
   const dh=m.hp-b.hp; u.max+=dh; u.hp+=dh; u.pow+=m.pow-b.pow; u.spd+=m.spd-b.spd; u.def+=m.def-b.def; u.regen+=(m.regen||0)-(b.regen||0);
