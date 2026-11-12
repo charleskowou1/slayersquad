@@ -239,6 +239,7 @@ setTimeout(koTest, 900);
 function render(){
   if(isOnline()) S.planFor=S.me;
   const ctl=typeof isCtl==='function' && isCtl(), view = ctl ? ctlViewName() : viewName();   // a phone controlling the TV shows only its moves
+  if(view==='over' && !scored && (S.tourMatch||S.tourRef)){ scored=true; if(typeof tourReport==='function') tourReport(); if(S.tourMatch) sfx(S.winner===0?'win':'lose'); }   // tournament matches report to the bracket and stay out of records and shared stats
   if(view==='over' && !scored && S.mode==='daily'){ scored=true; S.dailyMet=dailyMet(S.daily); if(S.dailyMet) markDaily(S.daily.day); sfx(S.dailyMet?'win':'lose'); }   // no stats
   if(view==='over' && !scored && gameMode()){ scored=true; gmRecord(S.winner===0); if(S.winner===0) track([`m_${S.mode}_win`]); sfx(S.winner===0?'win':'lose'); }   // no shared stats: these aren't fair matchups
   if(view==='over' && !scored && S.coop){ scored=true; track([`m_coop_${S.coop}_finish`]); if(coopWon()) track([`m_coop_${S.coop}_win`]); sfx(coopWon()?'win':'lose'); }   // no shared stats
@@ -469,7 +470,7 @@ const ACTIONS = {
   cfgbans(v){ keepNames(); setCfg('bans',v==='on'); },
   cfgduo(v){ keepNames(); setCfg('duo',v==='on'); },
   start: startDraft,
-  home(){ setCampaign('main'); if(UPDATE_READY) return reloadQuiet(); clearTimeout(S._t); clearTimeout(HANDOFF); HANDOFF=null; if(ONLINE.net){ ONLINE.net.leave(); ONLINE.net=null; ONLINE.last=null; ONLINE.offActs=ONLINE.offState=null; }
+  home(){ setCampaign('main'); S.tourMatch=null; S.tourRef=null; if(UPDATE_READY) return reloadQuiet(); clearTimeout(S._t); clearTimeout(HANDOFF); HANDOFF=null; if(ONLINE.net){ ONLINE.net.leave(); ONLINE.net=null; ONLINE.last=null; ONLINE.offActs=ONLINE.offState=null; }
     if(S.ctl) ctlStop();
     const tv=S.tv, mode=S.mode==='daily'||gameMode()?'cpu':S.mode; S={tv, phase:tv?'tvhome':'setup',mode,vol:S.vol,speed:S.speed,vibeOn:S.vibeOn,clipsOn:S.clipsOn,clipRepeat:S.clipRepeat,tauntsOn:S.tauntsOn,install:S.install,names:mode==='local'?localNames():[S.names[S.me||0]||S.names[0]]}; useModeCfg(mode); },
   clips(v){ S.clipsOn=v==='on'; try{ localStorage.setItem('squad-draft-clips',v) }catch(e){} },
@@ -819,6 +820,7 @@ function kickedOut(){ ONLINE.net.quiet(); ONLINE.net=null; ONLINE.offActs=ONLINE
 async function onlineJoin(){
   const el=document.getElementById('ocode'), code=((el&&el.value)||'').trim().toUpperCase(); S.joinCode=code;
   if(/^[A-Z]{6}$/.test(code)) return asyncJoin(code);
+  if(/^[A-Z]{4}$/.test(code) && typeof tourIs==='function' && await tourIs(code)) return tourJoin(code);   // a tournament's code
   if(/^[A-Z]{4}$/.test(code) && await tvRoom(code)) return ctlJoin(code);   // a TV's code: this phone becomes its controller
   if(!/^[A-Z]{4}$/.test(code)){ S.onlineMsg='Type the code from the other phone (4 or 6 letters).'; return render(); }
   const name=titled(myName()); S.names[0]=name; S.onlineMsg='Joining…'; render();

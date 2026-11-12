@@ -3440,3 +3440,40 @@ body.ctlmode .topbtns .ctlpill{margin-left:auto}
 @keyframes axbeam{0%{opacity:0;transform:rotate(var(--a)) scaleX(0)}1%{opacity:1}60%{opacity:1;transform:rotate(var(--a)) scaleX(1)}100%{opacity:0;transform:rotate(var(--a)) scaleX(1)}}
 
 @media (prefers-reduced-motion:reduce){.sfx-compass *,.sfx-annihilx *{animation:none!important}}
+
+/* Tournament (Nov 12, 2026) */
+.trlobby{text-align:center}
+.trcode{font-family:var(--display);font-size:2.6rem;letter-spacing:.18em;color:var(--gold,#e8b84a);margin:4px 0}
+.trlist{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin:10px 0}
+.trslot{padding:8px;border-radius:10px;border:1px dashed rgba(255,255,255,.18);color:var(--muted);font-size:.9rem}
+.trslot.on{border-style:solid;border-color:var(--p1);color:var(--fg)}
+.trcfg{display:flex;align-items:center;gap:6px;justify-content:center;margin:6px 0;flex-wrap:wrap}
+.trcfg>span{min-width:84px;text-align:right;color:var(--muted);font-size:.85rem}
+.trcfg .trseg{padding:6px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.18);background:transparent;color:var(--fg);font:inherit}
+.trcfg .trseg.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.trcfg .trseg:disabled{opacity:.7}
+.trme{margin:6px 0 12px;display:flex;flex-direction:column;gap:8px}
+.trme>.btn{width:100%}
+.trbracket{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px}
+.trcol{flex:1 0 220px;display:flex;flex-direction:column;gap:10px;justify-content:space-around}
+.trmatch{position:relative;border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:8px;background:var(--surface)}
+.trmatch.live{border-color:var(--gold,#e8b84a);box-shadow:0 0 0 1px rgba(232,184,74,.35)}
+.trside{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:3px 0}
+.trside b{font-size:.88rem;min-width:70px}
+.trside b small{font-weight:600;color:var(--muted);font-size:.7rem}
+.trside.won b{color:var(--gold,#e8b84a)}
+.trside.out{opacity:.45}
+.trside.me b{text-decoration:underline;text-underline-offset:3px}
+.trsq{display:flex;gap:2px;flex-wrap:wrap}
+.trpips{font-style:normal;color:var(--gold,#e8b84a);font-size:.75rem;letter-spacing:2px;margin-left:auto}
+.trvs{display:block;text-align:center;font-size:.7rem;color:var(--muted);margin:2px 0}
+.trstate{position:absolute;top:6px;right:8px;font-size:.7rem;color:var(--gold,#e8b84a)}
+.trspoil .trrow{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:8px 0}
+.trlbl{min-width:64px;color:var(--muted);font-size:.85rem}
+.trpick{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:transparent;color:var(--fg);font:inherit}
+.trpick.on{border-color:var(--gold,#e8b84a);box-shadow:0 0 0 2px rgba(232,184,74,.4)}
+.trpick small{font-size:.7rem}
+.trchamp{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;margin:8px 0 16px;padding:16px;border-radius:16px;background:radial-gradient(circle at 50% 30%,rgba(232,184,74,.25),transparent 70%)}
+.trcrown{font-family:var(--display);font-size:2.4rem;color:var(--gold,#e8b84a);text-shadow:0 0 18px rgba(232,184,74,.6)}
+.trchamp b{font-size:1.5rem}
+@media (max-width:700px){ .trbracket{flex-direction:column;overflow:visible} .trcol{flex:none} }

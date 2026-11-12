@@ -189,12 +189,12 @@ function onlineRematch(){ if(iAmHost()) hostRematch(); else send({a:'rematch'});
    the next time it's opened (it remembers the last round it watched).
    Privacy: each phone only draws the other player's moves once the round has resolved (asyncView = snapshotFor),
    but they are in the database, so this is "no peeking in the game", not a lock against someone reading the data. */
-const ASYNC_EXTRA = ['bansOn','async','first','matchNo','gm'];
+const ASYNC_EXTRA = ['bansOn','async','first','matchNo','gm','tourSquads','tourRef'];
 const isAsync = () => isOnline() && !!S.async;
 const asyncJSON = () => { const o={}; SHARED.concat(ASYNC_EXTRA).forEach(k=>{ if(S[k]!==undefined) o[k]=S[k]; }); return JSON.stringify(o); };
 // A new match in a 2-player game: the number game decides who picks first, or in a rematch the loser does (`first`, no number
 // game: straight back to the draft, CK Nov 2, 2026). S.gm games ('random' or 'mirror') are dealt with no draft at all.
-function dealMatch(){ Object.assign(S,{picks:dealSquads(S.gm,nPlayers()), locked:players().map(()=>true), pool:[], history:[], k:0, first:0, lastPicker:null, banning:false, bans:[], sel:null}); startBattle(); }
+function dealMatch(){ Object.assign(S,{picks:S.gm==='tour'&&S.tourSquads ? S.tourSquads.map(q=>q.slice()) : dealSquads(S.gm,nPlayers()), locked:players().map(()=>true), pool:[], history:[], k:0, first:0, lastPicker:null, banning:false, bans:[], sel:null}); startBattle(); }
 function asyncBegin(first){
   Object.assign(S,{final:false, localOver:false, winner:undefined, spin:null, matchLog:[], roundId:0, matchNo:(S.matchNo||0)+1});
   if(S.gm) return dealMatch();
