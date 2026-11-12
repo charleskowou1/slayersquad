@@ -119,7 +119,7 @@ cards: {
   win: ['Mark version: the mist comes back a round sooner.'],
   beat: ['Akaza and Hantengu beat him most often at 20 pts; on his special round, don\'t waste hits on him.'] },
  obanai: {
-  win: ['Twin-Headed Reptile: PWR+4 and Defend does nothing against it. Perfect for finishing a turtling enemy.'],
+  win: ['Slithering Serpent: PWR+4 and Defend does nothing against it. Perfect for finishing a turtling enemy.'],
   beat: ['He\'s fragile: hit him first. His special is single-target, so hiding (Yushiro) or Dead Calm still stops it.'] },
  obanai_mark: {
   win: ['Mark version of the guard-breaker; a better pick at 20 pts than the base.'],
@@ -387,7 +387,7 @@ module.exports.depth = {
  mitsuri_mark: { role: 'Area chip damage (Mark)', draft: ['8 pts; better at 30 points.'], plan: ['Area special on rounds 1, 3, 5…; Attack in between.'] },
  muichiro: { role: 'Evasive attacker', draft: ['6 pts; strong at 30 points and with Type Zero.'], plan: ['Use Obscuring Clouds on the round you expect him to be focused: he dodges and still deals damage.'] },
  muichiro_mark: { role: 'Evasive attacker (Mark)', draft: ['10 pts; a mid pick, weaker than the other 10-pt Marks.'], plan: ['Mist every other round; Attack in between.'] },
- obanai: { role: 'Guard-breaker', draft: ['5 pts; take him against Defend-heavy players.'], plan: ['Twin-Headed Reptile on a fighter you expect to Defend: it goes straight through.'] },
+ obanai: { role: 'Guard-breaker', draft: ['5 pts; take him against Defend-heavy players.'], plan: ['Slithering Serpent on a fighter you expect to Defend: it goes straight through.'] },
  obanai_mark: { role: 'Guard-breaker (Mark)', draft: ['8 pts; good at 20 points beside a second Hashira.'], plan: ['Same as Obanai, more often.'] },
  sanemi: { role: 'Double hit', draft: ['8 pts; great in any Hashira team.'], plan: ['Black Wind Mountain Mist when two enemies can be hit hard: aim at the stronger one.'] },
  sanemi_mark: { role: 'Double hit (Mark)', draft: ['11 pts; take him at 20 points, think twice at 30.'], plan: ['Same as Sanemi, with bigger numbers.'] },

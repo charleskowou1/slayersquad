@@ -261,6 +261,7 @@ function gameStatus(g){
   if(!m) return {t:'Loading…'};
   if(m.phase==='lobby') return g.qm ? {t:Date.now()-(m.updated||0)<QUEUE_TTL?'Looking for an opponent…':'Nobody joined. Tap × and try again.'} : {t:`Waiting for someone to join · code ${g.code}`};
   const unseen=(m.roundId||0) > seenRound(g, m.matchNo);
+  if(m.final && g.left && g.left[1-me] && !unseen) return {t:`${opp} left the game`};
   if(m.final) return unseen ? {t:'The last round is ready to watch', mine:true} : {t: m.winner===me ? 'You won' : m.winner===null||m.winner<0 ? 'Nobody won' : `${opp} won`};
   if(unseen) return {t:'New round to watch', mine:true};
   if((m.turn||[]).includes(me)) return {t: m.phase==='spin' ? 'Pick your number' : m.phase==='draft' ? 'Your pick' : m.phase==='scout' ? 'Your crow is back' : 'Your turn', mine:true};

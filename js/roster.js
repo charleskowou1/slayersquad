@@ -120,8 +120,9 @@ const gyomei = add({id:'gyomei',name:'Gyomei Himejima',short:'Gyomei',g:'岩',ty
   sig:{name:'Volcanic Rock',desc:'Every enemy takes 9, ignoring DEF.',cd:3,kind:'all',dmg:9}});
 markOf(gyomei,{cost:12, hp:50, pow:17, sig:Object.assign({}, gyomei.sig, {cd:2, dmg:11, desc:'Every enemy takes 11, ignoring DEF.'})});
 const sanemi = add({id:'sanemi',name:'Sanemi Shinazugawa',short:'Sanemi',g:'風',type:'Wind Hashira',hashira:true,cost:8,hp:44,pow:13,spd:9,def:5,
-  sig:{name:'Black Wind Mountain Mist',desc:'Strike your target and one other enemy for PWR.',cd:3,kind:'single'}});
-markOf(sanemi,{cost:11, hp:46, pow:16});   // Oct 27, 2026 (CK): Sanemi 7 pts 38/12, Mark 11 pts (second only to Gyomei ✦); 53% / 48% at 20 pts
+  sig:{name:'Black Wind Mountain Mist',desc:'Strike your target and one other enemy for PWR.',cd:3,kind:'single'},
+  sig2:{id:'claws',name:'Second Form: Claws-Purifying Wind',desc:'Every enemy takes PWR−4, ignoring DEF.',cd:3,kind:'all',tag:'hit all, ignores DEF',quote:'Wind Breathing, Second Form: Claws-Purifying Wind!'}});   // Nov 12, 2026 (CK): alternates with Black Wind Mountain Mist
+markOf(sanemi,{cost:11, hp:46, pow:16, sig2:Object.assign({}, sanemi.sig2, {cd:2})});   // Oct 27, 2026 (CK): Sanemi 7 pts 38/12, Mark 11 pts (second only to Gyomei ✦); 53% / 48% at 20 pts
 const muichiro = add({id:'muichiro',name:'Muichiro Tokito',short:'Muichiro',g:'霞',type:'Mist Hashira',hashira:true,cost:6,hp:26,pow:10,spd:11,def:4,
   sig:{name:'Obscuring Clouds',desc:'Moves early. Vanishes into mist (attacks miss him this round) and strikes for PWR+2.',cd:3,kind:'single',prio:1}});
 markOf(muichiro,{cost:10, hp:40});   // Nov 10, 2026 (CK): 34 HP was 38% at 20 and 30 pts
@@ -129,7 +130,7 @@ const mitsuri = add({id:'mitsuri',name:'Mitsuri Kanroji',short:'Mitsuri',g:'恋'
   sig:{name:'Catlove Shower',desc:'Every enemy takes PWR−3, even through Defend: her blade bends around any guard.',cd:3,kind:'all'}});
 markOf(mitsuri,{cost:8});
 const obanai = add({id:'obanai',name:'Obanai Iguro',short:'Obanai',g:'蛇',type:'Serpent Hashira',hashira:true,cost:5,hp:26,pow:9,spd:10,def:4,
-  sig:{name:'Twin-Headed Reptile',desc:'Strike for PWR+4. Slips past guards (Defend does nothing).',cd:3,kind:'single'}});
+  sig:{name:'Fifth Form: Slithering Serpent',desc:'Strike for PWR+4. Slips past guards (Defend does nothing).',cd:3,kind:'single'}});
 markOf(obanai,{cost:8});
 add({id:'rengoku',name:'Kyojuro Rengoku',short:'Rengoku',g:'炎',type:'Flame Hashira',hashira:true,cost:7,hp:38,pow:11,spd:9,def:5,
   sig:{name:'Fifth Form: Flame Tiger',desc:'Strike for PWR+4.',cd:3,kind:'single'},

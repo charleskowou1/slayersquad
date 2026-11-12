@@ -100,6 +100,7 @@ const KO_TESTS = {
   // Dead Calm and Castle Shift prototypes (Nov 11, 2026): old and new side by side
   an9_gyokko:  {you:['muichiro','tanjiro'], foe:['gyokko'], keep:true, setup:()=>{ const g=S.teams[1][0]; g.hp=Math.round(g.max*.55); g.cd=9; S.teams[0].forEach(u=>{ u.cd=0; }); }, note:'Gyokko is at 55%. Hit him this round: at the end of it he sheds his shell into his Perfect Form.'},
   an8_compass: {you:['akaza'], foe:['tanjiro','zenitsu','inosuke'], keep:true, setup:()=>{ S.teams[1].forEach(u=>{ u.pow=0; u.cd=9; u.hp=u.max=200; }); S.teams[0][0].cd=0; }, note:'Pick Compass Needle and Fight.'},
+  an10_claws: {you:['sanemi'], foe:['akaza','doma','gyokko'], keep:true, setup:()=>{ S.teams[1].forEach(u=>{ u.pow=0; u.cd=9; u.hp=u.max=200; }); const a=S.teams[0][0]; a.sig=BYID.sanemi.sig2; a.cd=0; }, note:'Pick Claws-Purifying Wind and Fight.'},
   an8_annihil: {you:['akaza'], foe:['tanjiro','zenitsu','inosuke'], keep:true, setup:()=>{ S.teams[1].forEach(u=>{ u.pow=0; u.cd=9; u.hp=u.max=200; }); const a=S.teams[0][0]; a.sig=BYID.akaza.sig2; a.cd=0; }, note:'Pick Annihilation Type and Fight.'},
   an8_muzan:   {custom:()=>{ Object.assign(S,{mode:'cpu', n:2, names:['You','Muzan AI'], askName:null, unlockAll:true, poolType:'all'}); newDraft(0); }, note:'Scroll to Muzan and Final Muzan: their cards have the Demon King lining.'},
   an7_stuck:   {you:['kyogai','akaza'], foe:['tanjiro','zenitsu'], keep:true, setup:()=>{ S.teams[1].forEach(u=>{ u.pow=0; u.cd=9; u.hp=u.max=200; }); const k=S.teams[0][0]; k.cd=0; k.spd=99; }, note:'Round 1: Drum Room Spin on anyone and Fight. Round 2: they have dizzy stars on their card, and when their turn comes they are stuck in the spinning room.'},
@@ -375,6 +376,9 @@ function replayStep(){
   if(S.info || S.settings || S.quitAsk){ R.t=setTimeout(replayStep,300); return; }
   if(++R.i>=R.seq.length) return watchEnd();
   const [ri,k]=R.seq[R.i], rd=S.replayLog[ri], steps=playSteps(rd.log);
+  // which round this is, and how many quiet rounds the highlights jumped over to get here (CK, Nov 12, 2026)
+  const prev=R.i>0 ? S.replayLog[R.seq[R.i-1][0]] : null;
+  R.newRound = !prev || prev!==rd ? {skipped: prev ? rd.r-prev.r-1 : rd.r-1, at:Date.now()} : R.newRound;
   R.cur=rd; R.play={k, steps, done:false, clip:null};
   let t=1500*pace();
   withReplay(()=>{ if(!k){ sfx('gong'); return; }
@@ -470,7 +474,7 @@ const ACTIONS = {
   cfgbans(v){ keepNames(); setCfg('bans',v==='on'); },
   cfgduo(v){ keepNames(); setCfg('duo',v==='on'); },
   start: startDraft,
-  home(){ setCampaign('main'); S.tourMatch=null; S.tourRef=null; if(UPDATE_READY) return reloadQuiet(); clearTimeout(S._t); clearTimeout(HANDOFF); HANDOFF=null; if(ONLINE.net){ ONLINE.net.leave(); ONLINE.net=null; ONLINE.last=null; ONLINE.offActs=ONLINE.offState=null; }
+  home(){ setCampaign('main'); if(isAsync() && S.final && S.asyncCode) leaveFinished(S.asyncCode, S.me); S.tourMatch=null; S.tourRef=null; if(UPDATE_READY) return reloadQuiet(); clearTimeout(S._t); clearTimeout(HANDOFF); HANDOFF=null; if(ONLINE.net){ ONLINE.net.leave(); ONLINE.net=null; ONLINE.last=null; ONLINE.offActs=ONLINE.offState=null; }
     if(S.ctl) ctlStop();
     const tv=S.tv, mode=S.mode==='daily'||gameMode()?'cpu':S.mode; S={tv, phase:tv?'tvhome':'setup',mode,vol:S.vol,speed:S.speed,vibeOn:S.vibeOn,clipsOn:S.clipsOn,clipRepeat:S.clipRepeat,tauntsOn:S.tauntsOn,install:S.install,names:mode==='local'?localNames():[S.names[S.me||0]||S.names[0]]}; useModeCfg(mode); },
   clips(v){ S.clipsOn=v==='on'; try{ localStorage.setItem('squad-draft-clips',v) }catch(e){} },
@@ -863,7 +867,7 @@ function asyncNet(db, code){
   return {
     // apply this phone's action in one transaction; resolves true if it changed the game
     send(msg){ let res=null;
-      return ref.transaction(g=>{ res=null; if(!g || !g.s) return g; const r=asyncApply(g.s, msg); if(!r) return; res=r; return Object.assign({}, g, {s:r.json, meta:r.meta}); })
+      return ref.transaction(g=>{ res=null; if(!g || !g.s) return g; if(msg.a==='rematch' && g.left) return; const r=asyncApply(g.s, msg); if(!r) return; res=r; return Object.assign({}, g, {s:r.json, meta:r.meta}); })
         .then(t=>{ if(t.committed && res && res.ended) postStats({...res.ended, humans:res.ended.humans}); if(t.committed && res) pushTurn(code,msg.p); return t.committed && !!res; })
         .catch(e=>{ S.onlineMsg=netError(e); render(); return false; }); },
     onGame(cb){ const f=s=>{ const v=s.val(); if(v && v.s) cb(v); else if(!v){ setGame(code,{gone:true}); } }; ref.on('value',f); offs.push(()=>ref.off('value',f)); },
@@ -940,7 +944,7 @@ async function openGame(code){
     Object.assign(S,{mode:'online', async:true, asyncCode:code, me:g.seat, planFor:g.seat, hostSeat:-1, away:{}, phase:'lobby', lobby:{code, seats:[]},
       onlineMsg:'', asyncWatching:false, play:null, final:false, localOver:false, plans:null, helperPlan:null, lastPlans:null, sel:null, info:null});
     pushGame(code,g.seat); ONLINE.net=asyncNet(db, code); ONLINE.full=null; ONLINE.offActs=ONLINE.offState=null; ONLINE.net.here(db, g.seat);
-    ONLINE.net.onGame(v=>{ if(!isAsync() || S.asyncCode!==code) return; ONLINE.full=v.s; S.oppHere=!!(v.here&&v.here[1-g.seat]); setGame(code,{meta:v.meta, gone:false});
+    ONLINE.net.onGame(v=>{ if(!isAsync() || S.asyncCode!==code) return; ONLINE.full=v.s; S.oppHere=!!(v.here&&v.here[1-g.seat]); S.oppLeft=!!(v.left&&v.left[1-g.seat]); setGame(code,{meta:v.meta, gone:false});
       if(v.taunt && v.taunt.p!==g.seat) showTaunt(v.taunt);
       if(!S.asyncWatching){ asyncShow(); render(); } });
     window.scrollTo(0,0);
@@ -975,10 +979,29 @@ async function watchGames(){
     const db=await firebaseReady();
     loadGames().forEach(g=>{ if(GAME_WATCH[g.code]) return;
       const ref=db.ref('games/'+g.code+'/meta'), f=s=>{ const m=s.val(); if(!myGame(g.code)) return; setGame(g.code, m ? {meta:m, gone:false} : {gone:true}); gamesBadge(); if(S.phase==='setup') render(); };
-      ref.on('value',f); GAME_WATCH[g.code]=()=>ref.off('value',f); });
+      const lref=db.ref('games/'+g.code+'/left'), lf=s=>{ if(!myGame(g.code)) return; setGame(g.code,{left:s.val()||null}); pruneGames(); if(S.phase==='setup') render(); };
+      ref.on('value',f); lref.on('value',lf); GAME_WATCH[g.code]=()=>{ ref.off('value',f); lref.off('value',lf); }; });
   }catch(e){}
 }
+// Finished own-pace matches clean themselves up (players reported games staying on the home screen after both had left,
+// Nov 12, 2026): leaving a finished match marks this seat as left (games/<code>/left/<seat>) and drops it here; the other
+// phone drops it once they've watched the end. Games that no longer exist, finished ones over 3 days old and any game
+// untouched for 7 days go too. A game left mid-match stays: that's what playing at your own pace is for.
+function leaveFinished(code, seat){
+  firebaseReady().then(db=>db.ref('games/'+code+'/left/'+seat).set(true)).catch(()=>{});
+  const f=GAME_WATCH[code]; if(f){ f(); delete GAME_WATCH[code]; } dropGame(code);
+}
+function pruneGames(){
+  const now=Date.now();
+  loadGames().forEach(g=>{
+    if(isAsync() && S.asyncCode===g.code) return;   // never the game on screen
+    const m=g.meta||{}, unseen=(m.roundId||0) > seenRound(g, m.matchNo), oppLeft=g.left && g.left[1-g.seat], age=now-(m.updated||g.at||now);
+    const drop = g.gone || (m.final && !unseen && oppLeft) || (m.final && age>3*864e5) || age>7*864e5;
+    if(drop){ const f=GAME_WATCH[g.code]; if(f){ f(); delete GAME_WATCH[g.code]; } dropGame(g.code); }
+  });
+}
 function gamesBadge(){
+  pruneGames();
   const n=gamesToPlay();
   document.title = n ? `(${n}) Slayer Squad` : BASE_TITLE;
   try{ if(n && navigator.setAppBadge) navigator.setAppBadge(n); else if(navigator.clearAppBadge) navigator.clearAppBadge(); }catch(e){}

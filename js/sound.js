@@ -68,7 +68,7 @@ const SFX = {
   // lake 0.7 s in, when the drawn drop does, and the ripple rings out
   calmdrop(){ const a=.68; tone('sine',650,1900,.07,.24,a); tone('sine',1900,1350,.22,.09,a+.06); hiss('bandpass',3200,1400,.12,.05,a+.02); tone('sine',1100,1000,.6,.04,a+.12); },
   // a blow landing on Dead Calm's water: a splash when it strikes (0.3 s in), droplets falling after
-  calmhit(){ const a=.28; hiss('bandpass',2600,700,.35,.2,a,SFX_OUT,1.5); tone('sine',560,1500,.06,.12,a+.02); [.2,.3,.42].forEach((d,i)=>tone('sine',1700-i*180,1250-i*150,.08,.07,a+d)); },
+  calmhit(){ const a=.36; hiss('bandpass',2600,700,.35,.2,a,SFX_OUT,1.5); tone('sine',560,1500,.06,.12,a+.02); [.2,.3,.42].forEach((d,i)=>tone('sine',1700-i*180,1250-i*150,.08,.07,a+d)); },
   // Hantengu running away: a squeak, then tiny scurrying steps
   // Kyogai: three tsuzumi strikes, on the beats his room turns (0.25 s, 0.8 s, 1.35 s)
   tsuzumi(){ [.25,.8,1.35].forEach((a,i)=>{ tone('sine',220-i*15,90,.28,.32,a); tone('triangle',660-i*30,300,.09,.12,a); hiss('bandpass',1800,600,.12,.12,a); }); tone('sine',1400,1200,.5,.05,1.6); },

@@ -261,7 +261,7 @@ const pickTile = (attrs, hero, kj, title, line, stat, art) => `<button class="gm
 function gmList(){
   const stat=id=>{ const r=gmStats(id); return !r.played?'':id==='gauntlet'?`Best ${plural(r.best,'wave')}`:id==='rush'?`Best ${r.best} of ${RUSH_FIGHTS.length}`:triesText(r); };
   return `<div class="qphead"><span class="qpk" aria-hidden="true">戦</span><b>Battles</b><small>Draft a squad and fight the computer</small></div><div class="gmgrid qp">${pickTile('data-a="qpmode" data-v="classic"',true,'戦','Classic','Choose your difficulty, points and pool.','','rengoku')}${gmTile('final','終','Final Form','Muzan picks the Upper Moons to beat you. Harder than Hard.',stat('final'),'muzan_final')}
-    ${Object.entries(GM).map(([id,m])=>gmTile(id,m.kj,m.title,m.line,stat(id),m.art)).join('')}${pickTile('data-a="openmode" data-v="practice"',false,'練','Practice','Draft every team yourself','','typezero')}</div>${miniList()}`;
+    ${Object.entries(GM).map(([id,m])=>gmTile(id,m.kj,m.title,m.line,stat(id),m.art)).join('')}${typeof tourSolo==='function'?(tourSoloOpen()?pickTile('data-a="toursoloresume"',false,'杯','Your tournament','Back to your bracket','','giyu'):pickTile('data-a="toursolo"',false,'杯','Tournament','Win a bracket of 4 or 8','','tengen')):''}${pickTile('data-a="openmode" data-v="practice"',false,'練','Practice','Draft every team yourself','','typezero')}</div>${miniList()}`;
 }
 // Quickplay → Mini-games (js/mini.js): quick games with a best score each
 function miniList(){
@@ -989,7 +989,7 @@ function fxName(lines, from){
   const sup=lines.find(x=>x.by && x.move==='special' && ['heal','buff'].includes(x.fx) && ['tanjuro','sabito'].includes((findU(x.by)||{}).sk)); if(sup) return SPECIAL_FX[findU(sup.by).sk];   // support specials that don't hit
   const l=lines.find(x=>x.by && x.move==='special' && (SPECIAL_HITS.includes(x.fx) || (x.fx==='stun' && !x.on) || (x.fx==='poison' && (findU(x.by)||{}).sk==='shinobu'))), by=l&&findU(l.by); let name=by&&SPECIAL_FX[by.sk];
   if(!name) return null;
-  if(name!=='drum' && name!=='mscore') for(let i=from-1;i>=0;i--){ const m=S.log[i]; if(m.by!==l.by) continue; if(m.fx==='special'){ const SIGFX={annihilation:'annihilx', ninth:'ninth', seventh:'thunderdragon', unblock:'sundragon', bodhisattva:'buddha', moonbow:'moonbow', catastrophe:'crescents'}; if(SIGFX[m.sig]) name=SIGFX[m.sig]; break; } if(m.move==='special' && SPECIAL_HITS.includes(m.fx)) return null; }
+  if(name!=='drum' && name!=='mscore') for(let i=from-1;i>=0;i--){ const m=S.log[i]; if(m.by!==l.by) continue; if(m.fx==='special'){ const SIGFX={annihilation:'annihilx', claws:'windclaws', ninth:'ninth', seventh:'thunderdragon', unblock:'sundragon', bodhisattva:'buddha', moonbow:'moonbow', catastrophe:'crescents'}; if(SIGFX[m.sig]) name=SIGFX[m.sig]; break; } if(m.move==='special' && SPECIAL_HITS.includes(m.fx)) return null; }
   return name==='kmoon' ? null : name;   // kmoon: Kokushibo's first form keeps his blade, only the other two get an overlay
 }
 const beatFx = (lines, from) => { const name=fxName(lines,from); if(!name) return ''; const l=lines.find(x=>x.by), by=l&&findU(l.by), right=by && by.p!==leftSide();   // which side the attacker is on (Yoriichi's glow comes from there)
@@ -1064,13 +1064,22 @@ const calmCaster = p => { const l=S.log.find(x=>x.calm && x.by && sameSide(findU
 // Shinobu's blade stops at a demon's neck: a thin needle mark and a crossed-out 首 (head)
 const NOCUT = '<b class="nocut" aria-hidden="true"><i></i><em>首</em></b>';
 function stageCalmBlock(by,on){
-  const rev=by.p!==leftSide(), g=calmCaster(on.p);
-  const att=`<div class="cb2-by">${seal(by,'stg')}<span class="cb2-trail"></span><span class="st-nm" style="color:${pc(by.p)}">${esc(by.name)}</span></div>`;
-  const tgt=`<div class="cb2-on">${g&&g!==on?`<span class="cb2-ghost">${seal(g,'stg')}</span>`:''}${seal(on,'stg')}<span class="cb2-refl">${seal(on,'stg')}</span><span class="st-nm" style="color:${pc(on.p)}">${esc(on.name)}</span></div>`;
-  return `<div class="stage calm2 calmblk2${rev?' rev':''}" aria-hidden="true"><span class="c2-sky"></span><span class="cb2-lake">${rep(4,i=>`<i class="cb2-rip" style="--d:${(.5+i*.2).toFixed(2)}s"></i>`)}</span>
-    <div class="cb2-row">${rev?tgt+att:att+tgt}</div>
-    <span class="cb2-wall"><svg viewBox="0 0 40 200" preserveAspectRatio="none"><path d="M20 0 C34 30 6 60 20 100 C34 140 6 170 20 200"/><path class="w2" d="M20 0 C6 34 34 66 20 100 C6 134 34 166 20 200"/></svg></span>
-    <span class="cb2-slash"></span>${rep(10,i=>`<i class="cb2-drop" style="--x:${((i*13)%26)-13}px;--y:${-30+((i*17)%50)}px;--d:${(.5+(i%5)*.04).toFixed(2)}s;--l:${40+(i%4)*14}px"></i>`)}<b class="c2-k cb2-k">凪</b><span class="cb2-pop">blocked</span></div>`;
+  // v3 (Nov 12, 2026, CK: "make it better"): Dead Calm as in the show, Giyu cuts down every blow that enters his reach.
+  // Giyu dashes in front of the teammate, a crescent of water sweeps out to meet the blow, the slash shatters into
+  // droplets, everything holds still for a beat in blue, the attacker is thrown back and the lake rings out.
+  const rev=by.p!==leftSide(), g=calmCaster(on.p), self=!g || g===on;
+  const att=`<div class="cb2-by">${seal(by,'stg')}<span class="st-nm" style="color:${pc(by.p)}">${esc(by.name)}</span></div>`;
+  const tgt=`<div class="cb2-on${self?' cb3-self':''}">${seal(on,'stg')}<span class="cb2-refl">${seal(on,'stg')}</span><span class="st-nm" style="color:${pc(on.p)}">${esc(on.name)}</span></div>`;
+  const giyu=self?'':`<div class="cb3-giyu"><i class="cb3-after"></i>${seal(g,'stg')}</div>`;
+  const crescent=`<span class="cb3-arc"><svg viewBox="0 0 100 200" preserveAspectRatio="none"><defs><linearGradient id="cb3g" x1="0" x2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".45" stop-color="#9fdcff"/><stop offset="1" stop-color="#2f7fc4" stop-opacity="0"/></linearGradient></defs>
+    <path class="cb3-fill" d="M88 4 C8 46 8 154 88 196 C40 150 40 50 88 4Z"/><path class="cb3-edge" d="M88 4 C8 46 8 154 88 196"/><path class="cb3-edge e2" d="M80 22 C30 60 30 140 80 178"/>
+</svg></span>`;
+  const shards=rep(18,i=>{ const a=-80+i*9.5+((i*7)%7), l=30+((i*13)%5)*11; return `<i class="cb3-shard" style="--a:${a}deg;--l:${l}px;--d:${(.4+(i%4)*.025).toFixed(3)}s;--s:${(.6+(i%3)*.25).toFixed(2)}"></i>`; });
+  return `<div class="stage calm2 calmblk2 cb3${rev?' rev':''}${self?' self':''}" aria-hidden="true"><span class="c2-sky"></span>
+    <span class="cb2-lake"><span class="cb3-still"></span>${rep(4,i=>`<i class="cb2-rip" style="--d:${(.45+i*.18).toFixed(2)}s"></i>`)}</span>
+    <div class="cb2-row">${rev?tgt+giyu+att:att+giyu+tgt}</div>
+    <span class="cb3-hit"><span class="cb3-slash"></span>${crescent}<span class="cb3-burst"></span>${shards}</span>
+    <span class="cb3-flash"></span><b class="c2-k cb2-k">凪</b><span class="cb2-pop">Blocked</span></div>`;
 }
 // Lost in the castle (CK, Nov 11, 2026): the round they can't act. They wander the shifting rooms, doors slam on every
 // side, and a seal stamps down: no move this round.
@@ -1227,8 +1236,9 @@ function vResult(){
     : waiting ? `<button class="btn" disabled>Waiting for ${slow.length?slow.map(q=>nm(q)+(S.away&&S.away[q]?' (away)':'')).join(', '):'the others'}…</button>` : '<button class="btn" data-a="next">Next round</button>';
   const R=S.replaying;
   return `${topbar(`Round ${S.round}${done||R?'':` · ${step} of ${total}`}`, R?(R.kind==='hl'?'Highlights':'Replay'):done?'What happened':'The clash')}
-    ${done?'':tip('clash','The round plays out one move at a time, fastest first. Tap <b>Skip</b> if you’re in a hurry.')}${awayBanner()}
+    ${done||R?'':tip('clash','The round plays out one move at a time, fastest first. Tap <b>Skip</b> if you’re in a hurry.')}${awayBanner()}
     ${strengthBar(me, done?undefined:u=>cur.hp[u.uid], done?undefined:u=>prev.hp[u.uid])}
+    ${R?replayRound(R):''}
     <div class="reswide${done?' done':''}${!done&&!k&&S.round===1?' opener':''}"><div class="rcol">${them.map(q=>done?teamBlock(q,solo&&!multi?'Opponent':null,moment):miniTeam(q,moment,involved)).join('')}</div>
     ${done?vsDivider():flurry?`<div class="now${lines.some(bigHit)?' big':''}" aria-live="polite">${stageFlurry(lines)}<span>${flurrySummary(lines)}</span></div>`:group?`<div class="now${lines.some(bigHit)?' big':''}${lines.some(l=>l.fx==='ko')?' k':''}" aria-live="polite">${stageGroup(lines)}<span>${groupSummary(lines)}</span></div>`
       :k&&cur.fx==='say'&&findU(cur.by)?`<div class="now saybeat" aria-live="polite" style="--tc:${pc(findU(cur.by).p)}">${seal(findU(cur.by),'stg')}<div><span class="sayn">${esc(findU(cur.by).name)}</span><span class="sayq">“${esc(cur.t)}”</span></div></div>`
@@ -1438,9 +1448,12 @@ const overUnlocks = () => S.mode==='story' && S.newUnlocks && S.newUnlocks.lengt
       <div class="ulist">${S.newUnlocks.map((id,i)=>`<span class="ucard" style="--i:${i}">${seal(BYID[id],'lg')}<b>${esc(BYID[id].short)}</b></span>`).join('')}</div></section>` : '';
 const overBar = () => { const w=S.winner; if(S.tourMatch||S.tourRef) return actionbar('<button class="btn" data-a="tourback">Back to the tournament</button>'); return actionbar(gameMode() ? `<button class="btn ghost" data-a="home">Main menu</button>${w===0 && S.series && gmFights()>S.series.wave?'<button class="btn" data-a="nextfight">Next fight</button>':`<button class="btn" data-a="rematch">${S.mode==='final'?'Face him again':S.mode==='random'?'Deal again':'Try again'}</button>`}` : S.mode==='daily' ? `<button class="btn ghost" data-a="home">Main menu</button><button class="btn" data-a="daily">${S.dailyMet?'Play again':'Try again'}</button>` : S.mode==='story'
       ? `<button class="btn ghost" data-a="storymap">Story map</button>${w===0&&S.campaign==='six'?'<button class="btn" data-a="ceremony">You are summoned</button>':w===0&&S.stage+1<STAGES.length?`<button class="btn" data-a="stage" data-v="${S.stage+1}">Next battle</button>`:w===0?'<button class="btn" data-a="finale">Finish the story</button>':`<button class="btn" data-a="${S.storyDraft?'stagedraft':'stage'}" data-v="${S.stage}">Try again</button>`}`
-      : isOnline() ? `<button class="btn ghost" data-a="home">Leave room</button><button class="btn" data-a="rematch">${S.coop?(S.series&&coopWon()?'Next wave':'Try again'):S.gm?'Deal again':isAsync()?'Rematch: loser picks first':'Rematch'}</button>`
+      : isOnline() ? `<button class="btn ghost" data-a="home">Leave room</button><button class="btn" data-a="rematch" ${isAsync()&&S.oppLeft?'disabled':''}>${S.coop?(S.series&&coopWon()?'Next wave':'Try again'):S.gm?'Deal again':isAsync()&&S.oppLeft?'Opponent left':isAsync()?'Rematch: loser picks first':'Rematch'}</button>`
       : `<button class="btn ghost" data-a="home">Main menu</button><button class="btn" data-a="rematch">Rematch</button>`); };
 // Watch again (Nov 12, 2026): controls while a replay plays, and the two buttons on the win screen
+// Highlights/replay: a round tag above the stage that pops when the round changes and says how many quiet rounds were skipped
+const replayRound = R => { const last=(S.replayLog||[]).slice(-1)[0], n=last?last.r:S.round, j=R.newRound||{}, fresh=j.at && Date.now()-j.at<900;
+  return `<div class="hlround${fresh?' hlnew':''}"><span class="hlrk" aria-hidden="true">${S.round===n?'終':'回'}</span><b>Round ${S.round}</b><small>of ${n}</small>${R.kind==='hl'&&j.skipped>0?`<em>${j.skipped===1?'1 quiet round':j.skipped+' quiet rounds'} skipped</em>`:''}</div>`; };
 const replayBar = R => `<div class="wbar"><button class="btn ghost small" data-a="rpause" aria-label="${R.paused?'Play':'Pause'}">${R.paused?'▶':'❚❚'}</button>${R.kind==='full'?'<button class="btn ghost small" data-a="rnext">Next round</button>':''}<button class="btn ghost small${R.fast?' on':''}" data-a="rfast">2×</button><span class="wprog">${R.i+1} / ${R.seq.length}</span><button class="btn small" data-a="rexit">Exit</button></div>`;
 const replayRow = () => (S.replayLog||[]).length ? `<div class="replayrow"><button class="btn" data-a="watch" data-v="hl">▶ Watch highlights</button><button class="btn ghost" data-a="watch" data-v="full">Full replay</button></div>` : '';
 function vOver(){

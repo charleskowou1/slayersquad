@@ -449,6 +449,7 @@ const SIG_EST = {
   moonbow: u=>({base:u.pow+8, o:{ignoreDef:true}}),
   catastrophe: u=>({all:true, base:u.pow-5}),
   annihilation: u=>({all:true, base:u.pow-4, o:{ignoreDef:true}}),
+  claws: u=>({all:true, base:u.pow-4, o:{ignoreDef:true}}),
   ninth: u=>({base:u.pow+10, o:{ignoreDef:true}}),
   tengen: u=>({all:true, base:u.pow-2}),
   rui: u=>({base:u.pow, stun:true}),
@@ -706,6 +707,7 @@ function special(u,pl){
   switch(s.id||u.sk){   // a second special has its own id
     case 'seventh': hit(u,target(u,pl.t),u.pow*3,{ignoreDef:true}); break;
     case 'annihilation': en().forEach(e=>hit(u,e,u.pow-4,{ignoreDef:true,counter:false})); break;
+    case 'claws': en().forEach(e=>hit(u,e,u.pow-4,{ignoreDef:true,counter:false})); break;   // Sanemi's Second Form
     case 'ninth': hit(u,target(u,pl.t),u.pow+10,{ignoreDef:true}); break;
     case 'yoriichi': en().forEach(e=>hit(u,e,u.pow,{ignoreDef:true,sun:true,counter:false})); break;
     case 'yoriichi_old': hit(u,target(u,pl.t),u.pow+10,{ignoreDef:true}); break;

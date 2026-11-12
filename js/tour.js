@@ -111,12 +111,34 @@ function tourAdvance(s, raw){
   return make.filter((mi,i,a)=>a.indexOf(mi)===i);
 }
 
+/* ---------- single player (CK, Nov 12, 2026): the same bracket on this phone only ----------
+  Code TOUR_SOLO, stored in localStorage instead of Firebase, behind a small stand-in for a Firebase ref
+  (child(path).set, on/off 'value'), so every rule above runs unchanged. You and computers; works offline. */
+const TOUR_SOLO = 'SOLO', TOUR_SOLO_KEY = 'squad-draft-tour-solo';
+let SOLO_REF = null;
+function soloRef(){
+  if(SOLO_REF) return SOLO_REF;
+  let raw=null; try{ raw=JSON.parse(localStorage.getItem(TOUR_SOLO_KEY)); }catch(e){}
+  const subs=[], snap={val:()=>raw};
+  const save=()=>{ try{ if(raw) localStorage.setItem(TOUR_SOLO_KEY, JSON.stringify(raw)); else localStorage.removeItem(TOUR_SOLO_KEY); }catch(e){} setTimeout(()=>subs.slice().forEach(f=>f(snap)),0); };
+  SOLO_REF = { raw:()=>raw, reset(v){ raw=v; save(); },
+    child(path){ return { set(v){ if(!raw) return Promise.resolve(); const ks=path.split('/'); let o=raw; ks.slice(0,-1).forEach(k=>{ o=o[k]=o[k]||{}; }); o[ks[ks.length-1]]=v; save(); return Promise.resolve(); } }; },
+    on(_, f){ subs.push(f); setTimeout(()=>f(snap),0); }, off(_, f){ const i=subs.indexOf(f); if(i>=0) subs.splice(i,1); } };
+  return SOLO_REF;
+}
+const tourSoloOpen = () => { const r=soloRef().raw(); if(!r) return false; try{ const s=JSON.parse(r.s); return s && s.phase!=='done'; }catch(e){ return false; } };
+function tourSolo(){
+  const name=titled(myName()), s={phase:'lobby', solo:true, id:Date.now(), size:4, budget:20, level:'normal', humans:[{phone:PHONE_ID, name, at:Date.now()}], players:[], round:0, matches:[]};
+  tourOff(); TOUR.code=null; soloRef().reset({host:PHONE_ID, s:JSON.stringify(s), joins:{[PHONE_ID]:{name, at:Date.now()}}});
+  tourEnter(TOUR_SOLO);
+}
+
 /* ---------- network (Firebase, rooms/<CODE>/tour) ---------- */
 const tourWriteS = () => TOUR.ref && TOUR.host && TOUR.ref.child('s').set(JSON.stringify(TOUR.s));
 function tourListen(code){
   tourOff(); TOUR.code=code;
-  firebaseReady().then(db=>{
-    TOUR.ref=db.ref('rooms/'+code+'/tour');
+  (code===TOUR_SOLO ? Promise.resolve(null) : firebaseReady()).then(db=>{
+    TOUR.ref = db ? db.ref('rooms/'+code+'/tour') : soloRef();
     const f=snap=>{ const raw=snap.val(); if(!raw) return; TOUR.raw=raw; TOUR.host=raw.host===PHONE_ID;
       if(TOUR.host){ if(!TOUR.s) TOUR.s=JSON.parse(raw.s||'null'); tourHostStep(); } else TOUR.s=JSON.parse(raw.s||'null');
       tourChampion(); if(S.phase==='tour') render(); };
@@ -166,25 +188,26 @@ async function tourJoin(code){
   catch(e){ S.onlineMsg=netError(e); render(); }
 }
 function tourEnter(code){
-  try{ localStorage.setItem(TOUR_NOW, code); }catch(e){}
+  if(code!==TOUR_SOLO) try{ localStorage.setItem(TOUR_NOW, code); }catch(e){}
   S.tourMsg=''; S.tourSpoil=null; Object.assign(S,{mode:'tour', phase:'tour'}); window.scrollTo(0,0);
   if(TOUR.code!==code || !TOUR.ref) tourListen(code); render();
 }
 const tourPut = (path, v) => TOUR.ref && TOUR.ref.child(path).set(v);
 // The tournament screen again, from a finished match (person vs person or person vs computer)
-function tourBack(){ const code=TOUR.code || (()=>{ try{ return localStorage.getItem(TOUR_NOW); }catch(e){ return null; } })(); ACTIONS.home(); if(code) tourEnter(code); }
+function tourBack(){ const code=(S.tourMatch&&S.tourMatch.code) || TOUR.code || (()=>{ try{ return localStorage.getItem(TOUR_NOW); }catch(e){ return null; } })(); ACTIONS.home(); if(code) tourEnter(code); }
 // A finished match reports its winner to the bracket (once per game; both phones of a person-vs-person game may report the same)
 function tourReport(){
   const ref=S.tourRef || S.tourMatch; if(!ref || S.winner===undefined) return;
   const key=ref.code+':'+ref.mi+'_'+ref.g; if(TOUR.reported[key]) return; TOUR.reported[key]=true;
   let res = S.winner<0 ? -1 : S.winner;
   if(S.tourMatch) res = S.winner<0 ? -1 : (S.winner===0 ? S.tourMatch.side : 1-S.tourMatch.side);   // locally you're side 0
+  if(ref.code===TOUR_SOLO){ soloRef().child(`results/${ref.mi}_${ref.g}`).set(res); return; }
   firebaseReady().then(db=>db.ref(`rooms/${ref.code}/tour/results/${ref.mi}_${ref.g}`).set(res)).catch(()=>{});
 }
 function tourChampion(){
   const s=TOUR.s; if(!s || s.phase!=='done' || s.champion===undefined) return;
-  const rec=tourRec(); if(rec.seen.includes(TOUR.code)) return;
-  rec.seen.push(TOUR.code); if(s.players[s.champion].phone===PHONE_ID){ rec.wins++; if(S.phase==='tour') sfx('win'); }
+  const key=TOUR.code===TOUR_SOLO ? 'solo'+s.id : TOUR.code, rec=tourRec(); if(rec.seen.includes(key)) return;
+  rec.seen.push(key); rec.seen=rec.seen.slice(-60); if(s.players[s.champion].phone===PHONE_ID){ rec.wins++; if(S.phase==='tour') sfx('win'); }
   try{ localStorage.setItem(TOUR_KEY, JSON.stringify(rec)); }catch(e){}
 }
 
@@ -247,18 +270,18 @@ function tourSpoilPanel(s, m, mi, me){
 }
 function vTour(){
   const s=TOUR.s, raw=TOUR.raw||{}, me=tourMeIdx();
-  const top=`<header class="top"><div><div class="eyebrow">Tournament${TOUR.code?` · ${TOUR.code}`:''}</div><div class="title">${!s?'Loading…':s.phase==='lobby'?'Lobby':s.phase==='draft'?'Draft':s.phase==='done'?'Champion':'The bracket'}</div></div><div class="topbtns"><button class="btn ghost small" data-a="tourleave">Leave</button></div></header>`;
+  const top=`<header class="top"><div><div class="eyebrow">Tournament${TOUR.code===TOUR_SOLO?' · Solo':TOUR.code?` · ${TOUR.code}`:''}</div><div class="title">${!s?'Loading…':s.phase==='lobby'?'Lobby':s.phase==='draft'?'Draft':s.phase==='done'?'Champion':'The bracket'}</div></div><div class="topbtns"><button class="btn ghost small" data-a="tourleave">Leave</button></div></header>`;
   if(!s) return top+`<p class="hint">${esc(S.tourMsg||'Connecting…')}</p>`;
   if(s.phase==='lobby'){
     const hs=s.humans||[], opt=(k,v,label)=>`<button class="trseg${s[k]===v?' on':''}" data-a="tourcfg" data-v="${k}:${v}" ${TOUR.host?'':'disabled'}>${label}</button>`;
-    return top+`<div class="panel trlobby"><div class="trcode">${TOUR.code}</div><p class="muted">Friends join from Online → Enter a Code. Computers fill the empty seats.</p>
+    return top+`<div class="panel trlobby">${s.solo?'<div class="trcode solo">戦</div>':`<div class="trcode">${TOUR.code}</div>`}<p class="muted">${s.solo?'You against the computers. Pick the size, points and how hard they play.':'Friends join from Online → Enter a Code. Computers fill the empty seats.'}</p>
       <div class="trlist">${Array.from({length:s.size},(_,i)=>`<div class="trslot${hs[i]?' on':''}">${hs[i]?esc(hs[i].name)+(hs[i].phone===PHONE_ID?' (you)':''):'Computer'}</div>`).join('')}</div>
       <div class="trcfg"><span>Players</span>${opt('size',4,'4')}${opt('size',8,'8')}</div>
       <div class="trcfg"><span>Points</span>${opt('budget',10,'10')}${opt('budget',20,'20')}${opt('budget',30,'30')}</div>
       <div class="trcfg"><span>Computers</span>${opt('level','easy','Easy')}${opt('level','normal','Normal')}${opt('level','hard','Hard')}</div>
       <p class="muted small">Draft from every character. After each win, take one fighter from the team you beat. The final is best of 3.</p></div>
       ${S.tourMsg?`<p class="hint warn">${esc(S.tourMsg)}</p>`:''}
-      ${actionbar(TOUR.host ? `<button class="btn" data-a="tourstart" ${hs.length>=2?'':'disabled'}>${hs.length>=2?'Start the tournament':'Needs at least 2 people'}</button>` : '<button class="btn" disabled>Waiting for the host to start…</button>')}`;
+      ${actionbar(TOUR.host ? `<button class="btn" data-a="tourstart" ${hs.length>=(s.solo?1:2)?'':'disabled'}>${hs.length>=(s.solo?1:2)?'Start the tournament':'Needs at least 2 people'}</button>` : '<button class="btn" disabled>Waiting for the host to start…</button>')}`;
   }
   const R=tourRounds(s), label=r=>r===R-1?'Final · best of 3':r===R-2?'Semi-finals':'Quarter-finals';
   const cols = s.phase==='draft' ? `<div class="panel"><div class="tlabel">Who’s drafted</div>${s.players.map(p=>`<div class="trside${p.squad||(raw.squads||{})[p.phone]?' won':''}"><b>${esc(p.name)}${p.phone?'':' <small>CPU</small>'}</b><span class="muted small">${p.squad||(raw.squads||{})[p.phone]?'Ready':'Drafting…'}</span></div>`).join('')}</div>`
@@ -272,11 +295,13 @@ if(typeof VIEWS!=='undefined') VIEWS.tour = () => vTour();
 Object.assign(ACTIONS, {
   tournew(){ tourCreate(); },
   tourback(){ tourBack(); },
-  tourleave(){ const done=TOUR.s && TOUR.s.phase==='done'; tourOff(); TOUR.code=null; try{ if(done) localStorage.removeItem(TOUR_NOW); }catch(e){} ACTIONS.home(); },   // you can come back to an unfinished one from Online → Your tournament
+  tourleave(){ const done=TOUR.s && TOUR.s.phase==='done', solo=TOUR.code===TOUR_SOLO; tourOff(); TOUR.code=null; try{ if(done && !solo) localStorage.removeItem(TOUR_NOW); }catch(e){} if(done && solo) soloRef().reset(null); ACTIONS.home(); },   // you can come back to an unfinished one from Online → Your tournament
+  toursolo(){ tourSolo(); },
+  toursoloresume(){ tourEnter(TOUR_SOLO); },
   tourresume(){ let c=null; try{ c=localStorage.getItem(TOUR_NOW); }catch(e){} if(c) tourEnter(c); },
   tourcfg(v){ if(!TOUR.host || !TOUR.s || TOUR.s.phase!=='lobby') return; const [k,x]=v.split(':'); TOUR.s[k]= k==='level' ? x : +x; if(k==='size') TOUR.s.humans=(TOUR.s.humans||[]).slice(0,TOUR.s.size); tourWriteS(); render(); },
   tourstart(){
-    const s=TOUR.s; if(!TOUR.host || !s || s.phase!=='lobby' || (s.humans||[]).length<2) return;
+    const s=TOUR.s; if(!TOUR.host || !s || s.phase!=='lobby' || (s.humans||[]).length<(s.solo?1:2)) return;
     s.players=tourPlayers(s.size, s.humans); s.players.forEach(p=>{ if(!p.phone){ p.squad=tourCpuSquad(s.budget, s.level); p.pts=s.budget; } });
     s.phase='draft'; s.round=0; s.matches=[]; tourWriteS(); tourHostStep(); render();
   },

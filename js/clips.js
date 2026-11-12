@@ -38,7 +38,7 @@ const CLIPS = {
   yoriichi:     {special: 'https://media.tenor.com/yncZvQ9iX6MAAAPo/yoriichi-tsugikuni.mp4'}, // Sun Breathing (aura)
   muichiro:     {special: 'https://media.tenor.com/ynS0sUD6YbEAAAPo/tokito.mp4'},             // Obscuring Clouds
   gyomei:       {special: 'https://media.tenor.com/-XFLrcBj-lUAAAPo/gyomei-gyomei-himejima.mp4'},   // Volcanic Rock
-  sanemi:       {special: 'https://media.tenor.com/wuIHjYf2VEUAAAPo/sanemi-wind-breathing.mp4'},   // Wind Breathing
+  sanemi:       {special: 'https://media.tenor.com/wuIHjYf2VEUAAAPo/sanemi-wind-breathing.mp4', claws: 'clips/sanemi-claws.mp4'},   // Second Form: Claws-Purifying Wind (CK's YouTube link; cut at the same moments as the voice line so they match)   // Wind Breathing
   tengen:       {special: 'https://media.tenor.com/Exi_TpZVtQsAAAPo/tengen-uzui-tengen.mp4'},      // Sound Breathing
   tengen_retired:{special: 'https://media.tenor.com/E8_EMliP95EAAAPo/tengen-uzui.mp4'},            // Bodyguard (Hashira Training)
   mitsuri:      {special: 'https://media.tenor.com/Pr283FIcFIsAAAPo/mitsuri-love-breathing.mp4'},  // Swaying Love, Wildclaw
@@ -104,7 +104,7 @@ const CLIP_SOUNDS = {
   nezuko:  {special: 'sounds/nezuko-special.mp3'},    // "Blood Demon Art: Exploding Blood"
   rui:     {special: 'sounds/rui-special.mp3'},       // "Blood Demon Art: Cutting Thread Cage"
   sabito:  {special: 'sounds/sabito-special.mp3'},    // "You look like you finally belong"
-  sanemi:  {special: 'sounds/sanemi-special.mp3'},    // "Rising Dust Storm!"
+  sanemi:  {special: 'sounds/sanemi-special.mp3', claws: 'sounds/sanemi-second.mp3'},   // claws: "Wind Breathing, Second Form: Claws-Purifying Wind"    // "Rising Dust Storm!"
   shinobu: {special: 'sounds/shinobu-special.mp3'},   // "Insect Breathing: Dance of the Bee Sting, True Flutter"
   tanjiro: {special: 'sounds/tanjiro-special.mp3', unblock: 'sounds/tanjiro-special.mp3'},   // "Hinokami Kagura! Dance!"
   tengen:  {special: 'sounds/tengen-special.mp3'},    // "Sound Breathing, Fourth Form: Constant Resounding Slashes"
@@ -112,7 +112,22 @@ const CLIP_SOUNDS = {
   zohakuten:{special: 'sounds/zohakuten-special.mp3'},// "You brutal fiends who torment the weak"
   rengoku: {special: 'sounds/rengoku-special.mp3',    // "Fifth Form! Flame Tiger!"
             ninth:   'sounds/rengoku-ninth.mp3'},     // "The Ninth Form! Rengoku!"
-  giyu: {special: 'sounds/giyu-special.mp3'},   // "Dead Calm" (CK's YouTube pick, 0:18.2-0:22.9; covers Giyu ✦)
+  giyu: {special: 'sounds/giyu-special.mp3'},
+  // Nov 12, 2026 drop (CK's YouTube links, English dub; each cut checked by transcribing it)
+  doma:     {special: 'sounds/doma-special.mp3'},       // "Blood Demon Art... Frozen Lotus"
+  muzan:    {special: 'sounds/muzan-special.mp3'},      // "You think you've driven me into a corner? I'll massacre every one of you before sunrise!" (5.3 s: "with your little plan" cut, 8% faster; covers Final Form)
+  hantengu: {special: 'sounds/hantengu-special.mp3'},   // "How terrifying, terrifying!"
+  sekido:   {special: 'sounds/sekido-special.mp3'},     // "Infuriating! Infuriating!" (CK confirmed)
+  karaku:   {special: 'sounds/karaku-special.mp3'},     // "You guys wouldn't mind if I joined the fight, would ya?" (CK confirmed)
+  aizetsu:  {special: 'sounds/aizetsu-special.mp3'},    // "...Spears!"
+  urogi:    {special: 'sounds/urogi-special.mp3'},      // his cry (no words)
+  obanai:   {special: 'sounds/obanai-special.mp3'},     // "Serpent Breathing, Fifth Form: Slithering Serpent" (covers Obanai ✦)
+  yoriichi: {special: 'sounds/yoriichi-special.mp3'},   // "So tell me then, what is the weight of a human life to you?" (covers Age 85)
+  enmu:     {special: 'sounds/enmu-special.mp3'},       // "What a shame. You could have stayed dreaming forever."
+  kyogai:   {special: 'sounds/kyogai-special.mp3'},     // "Damn insects! So infuriating!"
+  susamaru: {special: 'sounds/susamaru-special.mp3'},   // "Having fun? I know I sure am."
+  yahaba:   {special: 'sounds/yahaba-special.mp3'},     // "Stop stirring up so much dust! You're filthy!"
+   // "Dead Calm" (CK's YouTube pick, 0:18.2-0:22.9; covers Giyu ✦)
 };
 // What each moment is called (shown on the clip box)
 const CLIP_ACTS = {use:'Back pocket', poison:'Poisoned', special:'', unblock:'', attack:'Attack', regen:'Regenerates', heal:'Heals', defend:'Guards', ko:'Knockout', fall:'Falls', revive:'Rises again', split:'Splits'};
