@@ -262,9 +262,9 @@ const MAIN_STAGES = [
       ['yoriichi_old',"Brother. How sad. I'm here to cut you down."]]},
   {id:'kokushibo', arc:'castle', title:'Upper Moon One', place:'Infinity Castle, deep', foe:'Kokushibo', mine:['muichiro','genya','kiriya'], enemy:['kokushibo'], level:'hard',
     stars:{standing:2, rounds:7},
-    boosts:[{side:1, hp:2.2, pow:5, label:'Kokushibo: +120% HP, +5 PWR'}],   // was +90% until Mark Muichiro got 40 HP (Nov 10, 2026); +65% before Nov 5, 2026: retuned Nov 5, 2026 when Sanemi and Gyomei started arriving with their synergies
+    boosts:[{side:1, hp:2.35, pow:5, label:'Kokushibo: +135% HP, +5 PWR'}],   // +120% until he got three specials (Nov 11, 2026); was +90% until Mark Muichiro got 40 HP (Nov 10, 2026); +65% before Nov 5, 2026: retuned Nov 5, 2026 when Sanemi and Gyomei started arriving with their synergies
     beats:[{when:'round', round:3, id:'sanemi', text:'Hands off my brother!'}, {when:'round', round:4, id:'gyomei', text:'Namu Amida Butsu. It ends here.'}],
-    phases:[{id:'kokushibo', at:.5, pow:2, spd:1, ready:true, label:'+2 PWR, +1 SPD, special ready', line:'My blade grows. Moon Breathing, Sixteenth Form.'}],
+    phases:[{id:'kokushibo', at:.5, pow:2, spd:1, ready:true, second:true, label:'+2 PWR, +1 SPD, Moonbow ready', line:'My blade grows. Moon Breathing, Sixteenth Form.'}],
     outro:[['kokushibo','What is this… monster I’ve become?'],['','Kokushibo crumbles. The Hashira who fought him gave everything.'],['sanemi','Genya… hang on.']],
     twist:{reinforce:[{id:'sanemi', round:3},{id:'gyomei', round:4}]},
     awaken:[{id:'muichiro', round:1, lines:[['muichiro_mark','My Mark is back. You won’t lay a finger on Genya.',{awaken:true}]]},
@@ -341,6 +341,7 @@ const DREAM_STAGES = [
     scene:[['tanjiro','Rengoku, why are we on this train?'],['rengoku',"A demon's been sighted! An ordinary mission!"],['tanjiro',"Please. Don't fight him alone."],['rengoku','Him? Who, Kamado?'],['akaza','Good evening, Kyojuro. Become a demon, and we can fight forever.']],
     outro:[['rengoku','Well fought! Upper Moon Three, defeated at last!'],['tanjiro',"You did it, Rengoku! You're all right!"],['rengoku','…Tanjiro. Why are you crying?'],['tanjiro',"I don't know. I just feel like I already said goodbye to you."],['rengoku','Strange. I remember a train. A sunrise. And then… nothing at all.']]},
   {id:'dr_flowers', pockets:['aoi'], arc:'dream2', title:'Flowers Together', place:'The Butterfly Estate', foe:'Doma', mine:['kanae','shinobu'], enemy:['doma'], level:'normal',
+    boosts:[{side:1, hp:1.25, label:'Doma: +25% HP'}],   // added Nov 11, 2026 when Shinobu's poison went to 8 (was 85/90/70% with no boost)
     blurb:'Two sisters, and the demon they share.',
     scene:[['kanae',"Shinobu, you've grown so serious. Smile for me."],['shinobu',"Sister, I… I can't remember why I stopped."],['doma','What a lovely pair of sisters! Shall I save you both?'],['shinobu','You. I know that voice. I have hated that voice for a very long time.'],['kanae',"Then let's end it together."]],
     outro:[['kanae',"There. It's over."],['shinobu','It was never this easy. Why was it this easy?'],['kanae',"Maybe because this time, you weren't alone."]]},
@@ -418,7 +419,7 @@ const DREAM_FINALE = [
 ];
 const SIX_STAGES = [
   {id:'six', arc:'six', title:'Yoriichi vs the Six', place:'A road at the end of the night', foe:'The Upper Moons', mine:['yoriichi'], enemy:['kokushibo','doma','akaza','hantengu','gyokko','gyutaro'], level:'hard',
-    boosts:[{side:0, hp:2.6, pow:3, label:'Yoriichi: +160% HP, +3 PWR'}],
+    boosts:[{side:0, hp:2.7, pow:3, label:'Yoriichi: +170% HP, +3 PWR'}],   // +160% until Kokushibo and Doma got more specials (Nov 11, 2026)
     blurb:'For the ones who earned every star.',
     scene:[['yoriichi','Six moons, and no sun among them.'],['kokushibo','Brother.'],['yoriichi','You look tired, Michikatsu. Let me end this.']],
     outro:[['yoriichi',"It's done. Rest, all of you."]]},

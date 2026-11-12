@@ -3032,7 +3032,7 @@ body.ctlmode .topbtns .ctlpill{margin-left:auto}
 .sfx-sundragon .sdr-ring.r2{border-width:3px;animation-delay:1.3s}
 @keyframes sdrring{0%{opacity:1;transform:scale(.3)}100%{opacity:0;transform:scale(7)}}
 .sfx-sundragon .sdr-ember{position:absolute;left:50%;top:42%;width:8px;height:8px;margin:-4px;border-radius:50%;background:#fff1b0;box-shadow:0 0 10px #ff8a00;opacity:0;animation:sdrember .9s var(--d) ease-out both}
-@keyframes sdrember{0%{opacity:1;transform:rotate(var(--a)) translateX(0)}100%{opacity:0;transform:rotate(var(--a)) translateX(var(--l)) scale(.4)}}
+@keyframes sdrember{0%{opacity:0;transform:rotate(var(--a)) translateX(0)}1%{opacity:1;transform:rotate(var(--a)) translateX(0)}100%{opacity:0;transform:rotate(var(--a)) translateX(var(--l)) scale(.4)}}
 .sfx-sundragon .sdr-k{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);font-family:var(--display);font-size:5rem;color:#fff;text-shadow:0 0 30px #ff9a00,0 0 8px #ff5a00,0 2px 0 #6a1a00;opacity:0;animation:sdrk 1.1s 1.15s both}
 @keyframes sdrk{0%{opacity:0;transform:translate(-50%,-50%) scale(2.6)}18%{opacity:1;transform:translate(-50%,-50%) scale(.9)}30%{transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scale(1.1)}}
 /* Tengen's Musical Score: staff lines sweep across and the notes explode on the beat */
@@ -3063,3 +3063,205 @@ body.ctlmode .topbtns .ctlpill{margin-left:auto}
 .mbanner.foil .foilsheen{position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(115deg,transparent 30%,rgba(255,120,200,.35) 40%,rgba(120,220,255,.4) 47%,rgba(255,240,140,.4) 54%,transparent 64%);background-size:250% 100%;mix-blend-mode:color-dodge;animation:foil 3.2s ease-in-out infinite}
 @keyframes foil{0%{background-position:120% 0}100%{background-position:-120% 0}}
 @media (prefers-reduced-motion:reduce){.sfx-thunderdragon *,.sfx-sundragon *,.sfx-mscore *,.sfx-hanagoromo *,.ashfall i,.fallenrow span,.foilsheen{animation:none!important}}
+
+/* Dead Calm as a still lake; Nakime drops a fighter into the castle (Nov 11, 2026) */
+.stage.calm2{height:190px;overflow:hidden;border-radius:14px;display:block}
+.calm2 .c2-sky{position:absolute;inset:0;background:linear-gradient(to bottom,#071423,#0d2a44 58%,#123a5c 60%,#081a2c);opacity:0;animation:c2in .5s ease-out both}
+@keyframes c2in{to{opacity:1}}
+.calm2 .c2-lake{position:absolute;left:0;right:0;top:60%;bottom:0;overflow:hidden}
+.calm2 .c2-wave{position:absolute;inset:0;background:repeating-linear-gradient(175deg,rgba(150,210,255,.0) 0 7px,rgba(150,210,255,.22) 7px 9px);animation:c2waves .6s linear infinite,c2still .9s 1.1s ease-out forwards}
+@keyframes c2waves{to{background-position:0 9px}}
+@keyframes c2still{to{opacity:0}}
+.calm2 .c2-rip{position:absolute;left:50%;top:8%;width:30px;height:7px;margin-left:-15px;border-radius:50%;border:2px solid rgba(190,232,255,.9);box-shadow:0 0 10px rgba(120,200,255,.7);opacity:0;animation:c2rip 1.6s var(--d) cubic-bezier(.2,.6,.3,1) both}
+@keyframes c2rip{0%{opacity:1;transform:scale(.2)}100%{opacity:0;transform:scale(16,9)}}
+.calm2 .c2-glint{position:absolute;top:10%;left:-30%;width:30%;height:2px;background:linear-gradient(90deg,transparent,#e6f6ff,transparent);opacity:0;animation:c2glint 1.4s 1.5s ease-in-out both}
+@keyframes c2glint{0%{opacity:0;left:-30%}20%{opacity:1}100%{opacity:0;left:110%}}
+.calm2 .c2-drop{position:absolute;left:50%;top:-12px;width:9px;height:13px;margin-left:-4.5px;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;background:radial-gradient(circle at 40% 35%,#fff,#8fd0ff);box-shadow:0 0 10px #8fd0ff;animation:c2drop .5s .2s cubic-bezier(.5,0,1,1) both}
+@keyframes c2drop{0%{transform:translateY(0);opacity:0}15%{opacity:1}100%{transform:translateY(126px);opacity:1}}
+.calm2 .c2-drop{animation:c2drop .5s .2s cubic-bezier(.5,0,1,1) both,c2still .05s .7s forwards}
+.calm2 .c2-k{position:absolute;left:50%;top:36%;transform:translate(-50%,-50%);font-family:var(--display);font-size:5.2rem;color:rgba(200,236,255,.16);text-shadow:0 0 30px rgba(120,200,255,.35);opacity:0;animation:c2k 1.4s 1.2s ease-out both}
+@keyframes c2k{from{opacity:0;letter-spacing:.4em}to{opacity:1;letter-spacing:0}}
+.calm2 .c2-team{position:absolute;left:0;right:0;top:22%;display:flex;justify-content:center;gap:12px;z-index:2}
+.calm2 .c2-f{position:relative;animation:c2glow .8s calc(.75s + var(--i)*.22s) ease-out both}
+.calm2 .c2-f>.gl{box-shadow:0 0 0 2px rgba(150,215,255,.5)}
+@keyframes c2glow{0%{filter:none}40%{filter:drop-shadow(0 0 12px #8fd0ff) brightness(1.25)}100%{filter:drop-shadow(0 0 5px rgba(143,208,255,.6))}}
+.calm2 .c2-refl{position:absolute;left:0;right:0;top:100%;margin-top:4px;transform:scaleY(-1);transform-origin:top;opacity:.18;filter:blur(3px);-webkit-mask:linear-gradient(to top,#000,transparent 75%);mask:linear-gradient(to top,#000,transparent 75%);animation:c2refl 1s 1.2s ease-out forwards}
+@keyframes c2refl{to{opacity:.45;filter:blur(.4px) hue-rotate(10deg)}}
+.calm2 .gl.stg{width:58px;height:70px}
+
+.stage.castle2{height:200px;overflow:hidden;border-radius:14px;display:block;background:#0b0710}
+.castle2 .cs-shaft{position:absolute;left:50%;top:50%;width:0;height:0;opacity:0;animation:c2in .3s .55s both}
+.cs-room{position:absolute;left:calc(var(--w) / -2);top:calc(var(--w) / -2.4);width:var(--w);height:calc(var(--w) / 1.2);--w:calc(560px * pow(.62, var(--i)));border:3px solid #6b3f1f;background:repeating-linear-gradient(90deg,rgba(58,36,20,.9) 0 2px,transparent 2px 25%),repeating-linear-gradient(0deg,rgba(58,36,20,.9) 0 2px,rgba(240,226,196,.1) 2px 33%);box-shadow:inset 0 0 30px #000;animation:csshift 2.6s calc(var(--i) * -.18s) ease-in-out infinite alternate}
+@keyframes csshift{0%{transform:rotate(calc(var(--i) * 9deg))}100%{transform:rotate(calc(var(--i) * -9deg))}}
+.castle2 .cs-shaft::after{content:"";position:absolute;left:-40px;top:-30px;width:80px;height:60px;background:radial-gradient(#000,transparent 70%)}
+.castle2 .cs-by{position:absolute;left:8%;top:22%;z-index:3;animation:csby .4s 1.1s ease-in forwards}
+@keyframes csby{to{opacity:0;transform:translateX(-20px)}}
+.castle2 .cs-string{position:absolute;left:100%;top:10%;width:3px;height:80%;margin-left:10px;background:#f1d9ff;box-shadow:0 0 8px #c08aff;animation:csstring .5s .1s ease-out both}
+@keyframes csstring{0%{transform:scaleX(1)}10%{transform:translateX(-4px) scaleY(1.02)}20%{transform:translateX(4px)}30%{transform:translateX(-3px)}45%{transform:translateX(2px)}60%{transform:none;opacity:1}100%{opacity:0}}
+.castle2 .cs-t{position:absolute;left:50%;top:18%;width:84px;margin-left:-42px;height:120px;z-index:4}
+.castle2 .cs-floor{position:absolute;top:84px;width:70px;height:16px;background:repeating-linear-gradient(90deg,#3a2414 0 3px,#a07040 3px 18px);box-shadow:0 2px 0 #1a0e06;animation:csfloorl .35s .45s ease-in both}
+.castle2 .cs-floor.l{right:50%}.castle2 .cs-floor.r{left:50%;animation-name:csfloorr}
+@keyframes csfloorl{to{transform:translateX(-60px) rotate(-8deg);opacity:.0}}
+@keyframes csfloorr{to{transform:translateX(60px) rotate(8deg);opacity:0}}
+.castle2 .cs-fall{position:absolute;left:12px;top:0;animation:csfall 1.4s .55s cubic-bezier(.45,0,.9,.6) both}
+.castle2 .cs-fall .gl.stg{width:58px;height:70px}
+@keyframes csfall{0%{transform:none}15%{transform:translateY(-8px) rotate(-6deg)}100%{transform:translateY(62px) scale(.12) rotate(540deg);opacity:.2}}
+.castle2 .cs-door{position:absolute;top:0;bottom:0;width:51%;z-index:6;background:repeating-linear-gradient(90deg,#3a2a1c 0 3px,transparent 3px 33%),repeating-linear-gradient(0deg,#3a2a1c 0 3px,#efe6d2 3px 25%);animation:csdoorl .25s 1.95s cubic-bezier(.6,0,1,1) both}
+.castle2 .cs-door.l{left:0}.castle2 .cs-door.r{right:0;animation-name:csdoorr}
+@keyframes csdoorl{0%{transform:translateX(-102%)}100%{transform:none}}
+@keyframes csdoorr{0%{transform:translateX(102%)}100%{transform:none}}
+.castle2 .cs-k{position:absolute;left:50%;top:42%;z-index:7;transform:translate(-50%,-50%);font-family:var(--display);font-size:3.6rem;color:#2a1608;text-shadow:0 0 14px rgba(200,140,255,.7);opacity:0;animation:csk .5s 2.2s ease-out both}
+@keyframes csk{from{opacity:0;transform:translate(-50%,-50%) scale(1.8)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+@media (prefers-reduced-motion:reduce){.calm2 *,.castle2 *{animation:none!important}.castle2 .cs-fall{opacity:0}}
+
+/* Dead Calm block: the blow hits a dome of still water (Nov 11, 2026) */
+.stage.calmblk{gap:44px}
+.calmblk .cb-by,.calmblk .cb-on{position:relative;display:flex;flex-direction:column;align-items:center}
+.calmblk .cb-by{--dir:1;animation:cbby 1.3s .1s cubic-bezier(.4,0,.3,1) both}
+.calmblk.rev .cb-by{--dir:-1}
+@keyframes cbby{0%{transform:none}30%{transform:translateX(calc(var(--dir)*34px))}38%{transform:translateX(calc(var(--dir)*30px)) rotate(calc(var(--dir)*-4deg))}62%{transform:translateX(calc(var(--dir)*-14px)) rotate(calc(var(--dir)*-8deg))}100%{transform:none}}
+.cb-dome{position:absolute;left:50%;top:38%;width:112px;height:112px;margin:-56px;border-radius:50%;pointer-events:none;z-index:3;background:radial-gradient(circle at 50% 40%,rgba(160,220,255,.08),rgba(90,170,240,.28) 62%,rgba(190,235,255,.75) 70%,rgba(90,170,240,0) 74%);opacity:0;animation:cbdome 1.6s .2s ease-out both}
+@keyframes cbdome{0%{opacity:0;transform:scale(.7)}18%{opacity:1;transform:scale(1)}30%{transform:scale(1.07,.95)}42%{transform:scale(.97,1.03)}55%{transform:none;opacity:1}100%{opacity:.25}}
+.cb-rip{position:absolute;top:50%;left:calc(50% - var(--side,1)*50px);width:16px;height:16px;margin:-8px;border-radius:50%;border:2px solid #dff4ff;box-shadow:0 0 10px #7fc8ff;opacity:0;animation:cbrip .9s .4s ease-out both}
+.calmblk:not(.rev) .cb-rip{--side:1}.calmblk.rev .cb-rip{--side:-1}
+.cb-rip.r2{animation-delay:.55s}.cb-rip.r3{animation-delay:.7s}
+@keyframes cbrip{0%{opacity:0;transform:scale(.3)}1%{opacity:1;transform:scale(.3)}100%{opacity:0;transform:scale(6)}}
+.cb-drop{position:absolute;top:50%;left:calc(50% - var(--side,1)*50px);width:5px;height:8px;margin:-4px -2.5px;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;background:#d6f1ff;box-shadow:0 0 6px #7fc8ff;opacity:0;--side:1;animation:cbdrop .7s var(--d) ease-out both}
+.calmblk.rev .cb-drop{--side:-1}
+@keyframes cbdrop{0%{opacity:0;transform:rotate(calc(var(--a) * var(--side))) translateX(0)}1%{opacity:1;transform:rotate(calc(var(--a) * var(--side))) translateX(0)}100%{opacity:0;transform:rotate(calc(var(--a) * var(--side))) translateX(calc(var(--l) * -1)) translateY(18px)}}
+.calmblk .cb-pop{position:absolute;top:-6px;color:#cfeeff;font-weight:800;text-shadow:0 0 8px #3a8fd0;animation:floatup 1.5s .45s ease-out both}
+.calmblk .cb-k{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-family:var(--display);font-size:3rem;color:rgba(200,236,255,.22);pointer-events:none;opacity:0;animation:c2k 1.2s .5s ease-out both}
+.st-on .cb-dome{top:38%}
+.acard .cb-dome{top:40%;width:100%;height:auto;aspect-ratio:1;margin:0;left:0;transform:translateY(-50%)}
+
+/* Lost in the castle: they wander, the doors slam, a seal stamps down (Nov 11, 2026) */
+.stage.castlelost{height:190px;overflow:hidden;border-radius:14px;display:block;background:#0b0710}
+.castlelost .cl-rooms{position:absolute;left:50%;top:50%;width:0;height:0;opacity:.55}
+.castlelost .cs-room{animation-duration:4s}
+.castlelost .cl-k{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);font-family:var(--display);font-size:6rem;color:rgba(200,150,255,.12);z-index:1}
+.castlelost .cl-u{position:absolute;left:50%;top:22%;width:90px;margin-left:-45px;display:flex;flex-direction:column;align-items:center;z-index:3;animation:clwander 2.2s ease-in-out both}
+.castlelost .cl-u .gl.stg{width:52px;height:62px;filter:grayscale(.3) brightness(.85)}
+@keyframes clwander{0%{transform:scale(.9)}18%{transform:translateX(-46px) rotate(-4deg)}26%{transform:translateX(-40px)}46%{transform:translateX(46px) rotate(4deg)}54%{transform:translateX(40px)}70%{transform:translateY(-18px) rotate(180deg) scale(.85)}86%,100%{transform:rotate(360deg) scale(.82)}}
+.castlelost .cl-door{position:absolute;z-index:4;background:repeating-linear-gradient(90deg,#3a2a1c 0 3px,transparent 3px 50%),repeating-linear-gradient(0deg,#3a2a1c 0 3px,#efe6d2 3px 25%);box-shadow:0 0 0 3px #3a2a1c}
+.castlelost .cl-door.l{left:calc(50% - 112px);top:18%;width:36px;height:62%;animation:cldoorl .18s .3s cubic-bezier(.6,0,1,1) both}
+.castlelost .cl-door.r{left:calc(50% + 76px);top:18%;width:36px;height:62%;animation:cldoorr .18s .95s cubic-bezier(.6,0,1,1) both}
+.castlelost .cl-door.t{left:calc(50% - 60px);top:4%;width:120px;height:22px;animation:cldoort .18s 1.45s cubic-bezier(.6,0,1,1) both}
+@keyframes cldoorl{from{transform:translateX(-160px)}to{transform:none}}
+@keyframes cldoorr{from{transform:translateX(160px)}to{transform:none}}
+@keyframes cldoort{from{transform:translateY(-80px)}to{transform:none}}
+.castlelost .cl-seal{position:absolute;left:50%;top:44%;z-index:6;width:58px;height:58px;margin:-29px;display:grid;place-items:center;font-family:var(--display);font-size:2.2rem;color:#fff3ee;background:#b3121e;border-radius:8px;box-shadow:0 0 0 3px #fff3ee inset,0 0 18px rgba(179,18,30,.7);opacity:0;animation:clseal .45s 1.9s cubic-bezier(.3,1.6,.5,1) both}
+@keyframes clseal{from{opacity:0;transform:scale(2.4) rotate(-20deg)}to{opacity:.95;transform:rotate(-8deg)}}
+
+/* Doma's Frozen Lotus (Nov 11, 2026): frost over the screen, a great lotus, drifting ice petals; on each target frost and an ice lotus that shatters */
+.sfx-frostbloom .fb-frost{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 45%,rgba(170,225,255,.35) 75%,rgba(220,245,255,.7));opacity:0;animation:fbfrost 2.2s ease-out both}
+@keyframes fbfrost{0%{opacity:0}25%{opacity:1}75%{opacity:1}100%{opacity:0}}
+.sfx-frostbloom .fb-lotus{inset:auto;left:50%;top:30%;width:min(80vw,380px);height:auto;aspect-ratio:200/120;transform:translateX(-50%);filter:drop-shadow(0 0 14px rgba(140,210,255,.9));opacity:.85}
+.sfx-frostbloom .fb-lotus path{fill:rgba(225,246,255,.55);stroke:#fff;stroke-width:1.2;transform-box:view-box;transform-origin:100px 112px;opacity:0;animation:fbpetal 2s var(--d) ease-out both}
+@keyframes fbpetal{0%{opacity:0;transform:scale(.2)}35%{opacity:1;transform:none}75%{opacity:1}100%{opacity:0;transform:scale(1.1)}}
+.sfx-frostbloom .fb-petal{position:absolute;top:-20px;left:var(--x);width:14px;height:9px;border-radius:60% 0 60% 0;background:linear-gradient(135deg,#f2fbff,#8fd0ff);box-shadow:0 0 6px #bfe8ff;opacity:0;transform:scale(var(--s)) rotate(var(--r));animation:fbfall 2.2s var(--d) linear both}
+@keyframes fbfall{0%{opacity:0;transform:translate(0,0) scale(var(--s)) rotate(var(--r))}15%{opacity:1}100%{opacity:0;transform:translate(-30px,70vh) scale(var(--s)) rotate(calc(var(--r) + 260deg))}}
+.sfx-frostbloom .fb-k,.sfx-buddha .bd-k,.sfx-moonbow .mb-k,.sfx-crescents .mb-k{position:absolute;left:50%;top:70%;transform:translateX(-50%);font-family:var(--display);font-size:2.3rem;color:#e8f8ff;text-shadow:0 0 18px #6fc4ff,0 1px 0 #0a2a44;white-space:nowrap;opacity:0;animation:tdrk 1.4s .7s both}
+.frostcard{position:absolute;inset:0 0 auto;height:calc(100% - 18px);z-index:3;pointer-events:none;border-radius:10px;background:linear-gradient(160deg,rgba(235,250,255,.65),rgba(140,210,255,.25) 50%,rgba(220,245,255,.55));box-shadow:inset 0 0 14px rgba(255,255,255,.9);opacity:0;animation:frostcard 2s .25s ease-out both}
+.frostcard svg{position:absolute;inset:0;width:100%;height:100%}
+.frostcard path{fill:none;stroke:#fff;stroke-width:1.2;opacity:.9}
+@keyframes frostcard{0%{opacity:0;clip-path:inset(100% 0 0 0)}30%{opacity:1;clip-path:inset(0)}70%{opacity:1}80%{opacity:0}100%{opacity:0}}
+.lotusfx .lp0,.lotusfx .lp1{transform-box:view-box;transform-origin:50px 92px}
+.lotusfx .lp1{fill:rgba(170,225,255,.9)}
+.lotusfx .lcore{fill:#fff;filter:drop-shadow(0 0 4px #7fd0ff);opacity:0;animation:lotusopen 1.7s .3s ease-out both}
+.iceshards{position:absolute;left:50%;top:40%;width:0;height:0;z-index:4;pointer-events:none}
+.iceshards i{position:absolute;width:6px;height:12px;margin:-6px -3px;background:linear-gradient(#fff,#8fd0ff);clip-path:polygon(50% 0,100% 40%,60% 100%,0 60%);opacity:0;animation:iceshard .6s 1.3s ease-out both}
+@keyframes iceshard{0%{opacity:0;transform:rotate(var(--a)) translateX(4px)}1%{opacity:1;transform:rotate(var(--a)) translateX(4px)}100%{opacity:0;transform:rotate(var(--a)) translateX(var(--l)) rotate(200deg)}}
+
+/* Doma's Water Lily Bodhisattva (Nov 11, 2026) */
+.sfx-buddha .bd-cold{position:absolute;inset:0;background:linear-gradient(to top,rgba(10,40,70,.75),rgba(10,30,55,.35) 60%,rgba(10,30,55,.1));opacity:0;animation:fbfrost 2.8s ease-out both}
+.sfx-buddha .bud{inset:auto;left:50%;bottom:4%;width:min(84vw,400px);height:auto;aspect-ratio:200/230;transform:translateX(-50%);overflow:visible;filter:drop-shadow(0 0 22px rgba(140,210,255,.85));opacity:0;animation:budrise 2.8s cubic-bezier(.3,.7,.3,1) both}
+@keyframes budrise{0%{opacity:0;transform:translate(-50%,40%) scale(.85)}30%{opacity:.95;transform:translate(-50%,0) scale(1)}80%{opacity:.95;transform:translate(-50%,0) scale(1.02)}100%{opacity:0;transform:translate(-50%,-4%) scale(1.06)}}
+.sfx-buddha .bud-halo{transform-box:fill-box;transform-origin:center;animation:calmspin 9s linear infinite}
+.sfx-buddha .bud-ring{transform-box:fill-box;transform-origin:center;animation:calmspin 14s linear infinite reverse}
+.sfx-buddha .bud-eyes{opacity:0;animation:budeyes .5s .95s ease-out both}
+@keyframes budeyes{0%{opacity:0}50%{opacity:1;filter:drop-shadow(0 0 6px #ff3d6e)}100%{opacity:.9}}
+.sfx-buddha .bud-face path:nth-child(-n+2){animation:budopen .2s .95s both}
+@keyframes budopen{to{opacity:0}}
+.sfx-buddha .bd-breath{position:absolute;left:50%;top:22%;width:90vw;height:46vh;margin-left:-45vw;border-radius:50%;transform-origin:50% 100%;background:radial-gradient(ellipse at 50% 100%,rgba(245,253,255,.95),rgba(180,228,255,.65) 35%,rgba(170,225,255,0) 70%);filter:blur(10px);opacity:0;animation:budbreath 1.4s 1.15s ease-out both}
+@keyframes budbreath{0%{opacity:0;transform:translateY(30%) scale(.15,.3)}30%{opacity:1}100%{opacity:0;transform:translateY(-10%) scale(1.2,1.1)}}
+.sfx-buddha .bd-ice{position:absolute;left:50%;top:var(--y);width:16px;height:4px;border-radius:3px;background:#f4fcff;box-shadow:0 0 8px #8fd0ff;opacity:0;animation:budice .7s var(--d) ease-out both}
+@keyframes budice{0%{opacity:0;transform:translateX(0) scale(var(--s))}1%{opacity:1;transform:translateX(0) scale(var(--s))}100%{opacity:0;transform:translateX(55vw) scale(var(--s))}}
+.sfx-buddha.fromright .bd-ice{animation-name:budicel}
+@keyframes budicel{0%{opacity:0;transform:translateX(0) scale(var(--s))}1%{opacity:1;transform:translateX(0) scale(var(--s))}100%{opacity:0;transform:translateX(-55vw) scale(var(--s))}}
+.sfx-buddha .bd-k{top:47%;font-size:2rem;animation-delay:1s}
+
+/* Kokushibo's Moonbow and Catastrophe (Nov 11, 2026) */
+.sfx-moonbow .mb-dark,.sfx-crescents .mb-dark{position:absolute;inset:0;background:rgba(18,4,20,.55);opacity:0;animation:fbfrost 1.8s ease-out both}
+.sfx-moonbow .mb-arc{position:absolute;left:0;top:28%;width:100%;height:36%}
+.sfx-moonbow .mb-arc path{fill:#f6e9ff;filter:drop-shadow(0 0 10px #c060ff) drop-shadow(0 0 3px #ff4060);clip-path:inset(0 100% 0 0);animation:mbcut .45s .25s cubic-bezier(.6,0,.2,1) forwards,tdrfade .4s 1.2s forwards}
+@keyframes mbcut{to{clip-path:inset(0 0 0 0)}}
+.sfx-moonbow.fromright .mb-arc{transform:scaleX(-1)}
+.sfx-moonbow .mb-moon,.sfx-crescents .cr-storm i{position:absolute;width:26px;height:26px;border-radius:50%;box-shadow:inset -6px 3px 0 0 #f0dcff;filter:drop-shadow(0 0 6px #c060ff)}
+.sfx-moonbow .mb-moon{left:var(--x);top:var(--y);opacity:0;transform:scale(var(--s));animation:mbmoon .9s var(--d) ease-out both}
+@keyframes mbmoon{0%{opacity:0;transform:scale(0) rotate(0)}40%{opacity:1;transform:scale(var(--s)) rotate(120deg)}100%{opacity:0;transform:scale(calc(var(--s)*1.4)) rotate(260deg)}}
+.sfx-crescents .cr-storm{position:absolute;left:50%;top:40%;width:0;height:0;animation:calmspin 1.6s linear}
+.sfx-crescents .cr-storm i{left:-13px;top:-13px;width:44px;height:44px;opacity:0;animation:crout 1.4s var(--d) cubic-bezier(.2,.7,.3,1) both}
+@keyframes crout{0%{opacity:0;transform:rotate(var(--a)) translateX(0) scale(.3)}20%{opacity:1}80%{opacity:1}100%{opacity:0;transform:rotate(calc(var(--a) + 200deg)) translateX(var(--r)) scale(1.2)}}
+@media (prefers-reduced-motion:reduce){.calmblk *,.castlelost *,.sfx-frostbloom *,.sfx-buddha *,.sfx-moonbow *,.sfx-crescents *,.frostcard,.iceshards i{animation:none!important}.iceshards,.frostcard{display:none}}
+
+/* Dead Calm block, v2 (Nov 11, 2026): the lake from Dead Calm; the blow hits a rising wall of still water, its slash dissolves
+   into droplets, ripples run out under the teammate, Giyu's silhouette stands behind them, and the attacker is pushed back */
+.stage.calmblk2{height:190px;overflow:hidden;border-radius:14px;display:block}
+.calmblk2 .c2-sky{animation-duration:.3s}
+.cb2-lake{position:absolute;left:0;right:0;top:62%;bottom:0;overflow:hidden}
+.cb2-rip{position:absolute;top:10%;left:calc(50% + var(--wx,28px));width:30px;height:7px;margin-left:-15px;border-radius:50%;border:2px solid rgba(200,236,255,.9);box-shadow:0 0 10px rgba(120,200,255,.7);opacity:0;animation:cb2rip 1.4s var(--d) cubic-bezier(.2,.6,.3,1) both}
+.calmblk2.rev .cb2-rip{--wx:-28px}
+@keyframes cb2rip{0%{opacity:0;transform:scale(.2)}1%{opacity:1;transform:scale(.2)}100%{opacity:0;transform:scale(12,7)}}
+.cb2-row{position:absolute;left:0;right:0;top:16%;display:flex;justify-content:center;gap:56px;z-index:2}
+.cb2-by,.cb2-on{position:relative;display:flex;flex-direction:column;align-items:center}
+.cb2-by .gl.stg,.cb2-on .gl.stg{width:58px;height:70px}
+.cb2-by{--dir:1;animation:cb2by 1.5s .05s cubic-bezier(.4,0,.3,1) both}
+.calmblk2.rev .cb2-by{--dir:-1}
+@keyframes cb2by{0%{transform:none}28%{transform:translateX(calc(var(--dir)*26px))}34%{transform:translateX(calc(var(--dir)*24px)) skewX(calc(var(--dir)*-6deg))}60%{transform:translateX(calc(var(--dir)*-16px)) rotate(calc(var(--dir)*-6deg));filter:brightness(.8) saturate(.6)}100%{transform:none;filter:none}}
+.cb2-on{animation:cb2on 1.6s .35s ease-out both}
+@keyframes cb2on{0%{filter:none}30%{filter:drop-shadow(0 0 14px #8fd0ff) brightness(1.15)}100%{filter:drop-shadow(0 0 5px rgba(143,208,255,.6))}}
+.cb2-ghost{position:absolute;left:50%;top:-6px;transform:translateX(-50%) scale(1.25);opacity:0;filter:grayscale(1) brightness(1.6) sepia(1) hue-rotate(170deg) saturate(3) blur(.5px);mix-blend-mode:screen;animation:cb2ghost 1.6s .3s ease-out both;z-index:-1}
+@keyframes cb2ghost{0%{opacity:0;transform:translateX(-50%) scale(1.1)}35%{opacity:.5;transform:translateX(-50%) scale(1.3)}100%{opacity:.22;transform:translateX(-50%) scale(1.32)}}
+.cb2-refl{position:absolute;left:0;right:0;top:70px;transform:scaleY(-1);transform-origin:top;opacity:.3;filter:blur(1px);-webkit-mask:linear-gradient(to top,#000,transparent 75%);mask:linear-gradient(to top,#000,transparent 75%)}
+.cb2-wall{position:absolute;left:calc(50% - 14px + var(--wx,0px));top:8%;width:28px;height:62%;z-index:3;opacity:0;animation:cb2wall 1.5s .3s ease-out both}
+.calmblk2 .cb2-wall{--wx:0px}
+.cb2-wall svg{width:100%;height:100%;overflow:visible}
+.cb2-wall path{fill:none;stroke:rgba(210,240,255,.95);stroke-width:3;filter:drop-shadow(0 0 6px #8fd0ff);animation:cb2wave .5s ease-in-out infinite alternate}
+.cb2-wall path.w2{stroke:rgba(120,200,255,.6);stroke-width:2;animation-direction:alternate-reverse}
+@keyframes cb2wave{to{transform:scaleX(.4)}}
+.cb2-wall::before{content:"";position:absolute;inset:0 -6px;border-radius:40%;background:linear-gradient(90deg,transparent,rgba(160,220,255,.35),transparent)}
+@keyframes cb2wall{0%{opacity:0;transform:scaleY(0)}18%{opacity:1;transform:scaleY(1.05)}30%{transform:scaleY(1) scaleX(1.6)}45%{transform:none}80%{opacity:1}100%{opacity:0;transform:scaleY(.9)}}
+.cb2-slash{position:absolute;left:calc(50% - 70px);top:36%;width:70px;height:3px;z-index:4;background:linear-gradient(90deg,transparent,#fff);box-shadow:0 0 8px #fff;transform-origin:100% 50%;opacity:0;animation:cb2slash .5s .22s ease-out both}
+.calmblk2.rev .cb2-slash{left:50%;transform-origin:0 50%;background:linear-gradient(270deg,transparent,#fff)}
+@keyframes cb2slash{0%{opacity:0;transform:scaleX(0)}1%{opacity:1;transform:scaleX(0)}40%{opacity:1;transform:scaleX(1)}100%{opacity:0;transform:scaleX(1) translateY(10px);filter:blur(2px)}}
+.cb2-drop{position:absolute;left:50%;top:36%;width:5px;height:8px;margin:-4px -2.5px;z-index:4;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;background:#e2f5ff;box-shadow:0 0 6px #7fc8ff;opacity:0;animation:cb2drop 1s var(--d) cubic-bezier(.3,.2,.5,1) both}
+@keyframes cb2drop{0%{opacity:0;transform:translate(var(--x),0)}1%{opacity:1;transform:translate(var(--x),0)}40%{transform:translate(calc(var(--x)*2.4),var(--y))}100%{opacity:0;transform:translate(calc(var(--x)*3),var(--l))}}
+.calmblk2 .cb2-k{top:40%;font-size:4.2rem;animation-delay:.6s}
+.cb2-pop{position:absolute;left:50%;top:4%;transform:translateX(-50%);z-index:5;font-weight:800;color:#d6f1ff;text-shadow:0 0 10px #3a8fd0;animation:floatup 1.5s .45s ease-out both}
+/* Shinobu can't cut a demon's head */
+.nocut{position:absolute;left:50%;top:34%;z-index:5;width:44px;height:44px;margin:-22px;display:grid;place-items:center;pointer-events:none;animation:nocut .9s .35s cubic-bezier(.3,1.6,.5,1) both}
+.nocut em{font:normal 800 1.6rem/1 var(--display);color:#f3e6ff;text-shadow:0 0 10px #8a4fd0,0 1px 0 #000}
+.nocut::after{content:"";position:absolute;left:4px;right:4px;top:50%;height:3px;background:#ff4f6a;box-shadow:0 0 6px #ff4f6a;transform:rotate(-35deg) scaleX(0);animation:nocutx .25s .65s ease-out forwards}
+.nocut i{position:absolute;left:-30px;top:50%;width:34px;height:2px;background:linear-gradient(90deg,transparent,#e9d5ff);box-shadow:0 0 6px #b48ae6;animation:nocutn .3s .2s ease-out both}
+.stage.rev .nocut i{left:auto;right:-30px;transform:scaleX(-1)}
+@keyframes nocut{0%{opacity:0;transform:scale(1.6)}100%{opacity:1;transform:none}}
+@keyframes nocutx{to{transform:rotate(-35deg) scaleX(1)}}
+@keyframes nocutn{0%{opacity:0;transform:translateX(-14px)}1%{opacity:1}100%{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.calmblk2 *,.nocut,.nocut *{animation:none!important}}
+
+/* Hantengu's Flee: shrink, sweat, scurry off (Nov 11, 2026) */
+.stage.fleestage{height:150px;overflow:hidden;display:block}
+.fleestage .fl-u{position:absolute;left:50%;top:14%;width:58px;margin-left:-29px;animation:flrun 2.2s cubic-bezier(.5,0,.6,1) both;z-index:2}
+.fleestage .fl-u .gl.stg{width:58px;height:70px}
+.fleestage .fl-u{--dir:1}
+.fleestage.rev .fl-u{--dir:-1}
+@keyframes flrun{0%{transform:none}14%{transform:scale(1.08) rotate(-3deg)}30%{transform:translateY(34px) scale(.45)}38%{transform:translate(calc(var(--dir)*-6px),30px) scale(.42) rotate(-8deg)}46%{transform:translate(calc(var(--dir)*-30px),40px) scale(.42) rotate(6deg)}54%{transform:translate(calc(var(--dir)*-56px),30px) scale(.42) rotate(-8deg)}62%{transform:translate(calc(var(--dir)*-84px),40px) scale(.42) rotate(6deg)}70%{transform:translate(calc(var(--dir)*-112px),30px) scale(.42) rotate(-8deg)}78%{transform:translate(calc(var(--dir)*-140px),40px) scale(.42) rotate(6deg)}100%{transform:translate(calc(var(--dir)*-260px),34px) scale(.4);opacity:0}}
+.fleestage .fl-sweat{position:absolute;right:-8px;top:2px;width:9px;height:13px;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;background:#bfe6ff;box-shadow:0 0 4px #8fd0ff;opacity:0;animation:flsweat .5s .25s ease-out both}
+.fleestage .fl-sweat.b{right:auto;left:-8px;top:12px;animation-delay:.4s}
+@keyframes flsweat{0%{opacity:0;transform:translateY(-4px)}1%{opacity:1}100%{opacity:0;transform:translateY(14px)}}
+.fleestage .fl-dust{position:absolute;left:calc(50% - var(--x) - 10px);top:62%;width:20px;height:14px;border-radius:50%;background:radial-gradient(rgba(200,180,150,.7),transparent 70%);opacity:0;animation:fldust .8s var(--d) ease-out both}
+.fleestage.rev .fl-dust{left:calc(50% + var(--x) - 10px)}
+@keyframes fldust{0%{opacity:0;transform:scale(.3)}1%{opacity:1;transform:scale(.3)}100%{opacity:0;transform:scale(2) translateY(-8px)}}
+.fleestage .fl-k{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);font-family:var(--display);font-size:3.6rem;color:rgba(255,255,255,.14);opacity:0;animation:c2in .5s 1.1s both}
+.fleestage .fl-nm{position:absolute;left:0;right:0;bottom:4px;text-align:center;font-size:.8rem;font-weight:700;opacity:.8}
+@media (prefers-reduced-motion:reduce){.fleestage *{animation:none!important}}

@@ -64,6 +64,13 @@ function steel(at, vol){ const j=.94+Math.random()*.12;
 function shing(at, vol){ steel(at, vol); }   // older callers: now the short steel scrape, not a ring
 function taikoHit(at, vol=.4, out=SFX_OUT){ tone('sine',95,48,.45,vol,at,out); hiss('lowpass',600,90,.18,vol*.45,at,out); }
 const SFX = {
+  // Dead Calm (Nov 11, 2026, CK: the drop sound should land with the animation): a still pause, then one drop hits the
+  // lake 0.7 s in, when the drawn drop does, and the ripple rings out
+  calmdrop(){ const a=.68; tone('sine',650,1900,.07,.24,a); tone('sine',1900,1350,.22,.09,a+.06); hiss('bandpass',3200,1400,.12,.05,a+.02); tone('sine',1100,1000,.6,.04,a+.12); },
+  // a blow landing on Dead Calm's water: a splash when it strikes (0.3 s in), droplets falling after
+  calmhit(){ const a=.28; hiss('bandpass',2600,700,.35,.2,a,SFX_OUT,1.5); tone('sine',560,1500,.06,.12,a+.02); [.2,.3,.42].forEach((d,i)=>tone('sine',1700-i*180,1250-i*150,.08,.07,a+d)); },
+  // Hantengu running away: a squeak, then tiny scurrying steps
+  scurry(){ tone('sine',1300,2300,.14,.1,0); for(let i=0;i<9;i++) tone('square',2100-(i%2)*300,1900-(i%2)*300,.025,.04,.15+i*.075); },
   // the opening sting (Kwow Media Productions): a taiko hit, a quick koto run up the miyako scale, then a second hit
   // under a bright chime that rings out
   intro(){ const t0=AC.currentTime; taikoHit(0,.55); tone('sine',73.4,55,1.4,.22,0);
@@ -167,6 +174,9 @@ function sfxForLine(line){
   if(line.fx==='awaken') return sfx('unlock');
   const big=/\[-(\d+)%\]/.exec(line.t), hard=big && +big[1]>=30, by=line.by && typeof findU==='function' && findU(line.by);
   const style = by && typeof styleOf==='function' ? styleOf(by, line.move) : null;
+  if(line.calm) return sfx('calmdrop');
+  if(line.calmblock) return sfx('calmhit');
+  if(line.flee) return sfx('scurry');
   if(line.fx==='special'){ sfx('cutin'); if(style) setTimeout(()=>styleSfx(style, 1), 250); return; }
   // a basic attack: the fighter's own weapon, their breathing style on top
   if(line.fx==='hit' && by && line.move==='attack' && sfxOn() && !document.hidden){

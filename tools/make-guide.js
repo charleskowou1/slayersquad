@@ -164,7 +164,7 @@ for (const c of fighters) {
   const s = c.sig, prio = PRIO[s.prio] ? ` · ${PRIO[s.prio]}` : '';
   out(`\n${c.name}  [id: ${c.id}]  — ${c.type}${tags(c)?' · '+tags(c):''}
   ${c.spawn?'—':c.cost+' pts'} | HP ${c.hp} | PWR ${c.pow} | SPD ${c.spd} | DEF ${c.def} | regen ${c.regen||0}${c.strikes>1?` | strikes ×${c.strikes} per Attack, damage cap ${c.cap}/round`:''}
-  Special: ${s.name} (cooldown ${s.cd}${prio}) — ${s.desc}${c.sig2?`\n  Then: ${c.sig2.name} (cooldown ${c.sig2.cd}) — ${c.sig2.desc} The two specials take turns.`:''}${c.passive?`\n  Passive: ${c.passive}`:''}${c.mark?'\n  Mark ✦: boosted stats; special recharges 1 round faster.':''}${c.splits?`\n  Splits into: ${c.splits.map(id=>BYID[id].short).join(', ')} when knocked out.`:''}`);
+  Special: ${s.name} (cooldown ${s.cd}${prio}) — ${s.desc}${c.sig2?`\n  Then: ${c.sig2.name} (cooldown ${c.sig2.cd}) — ${c.sig2.desc}${c.sig3?'':' The two specials take turns.'}`:''}${c.sig3?`\n  Then: ${c.sig3.name} (cooldown ${c.sig3.cd}) — ${c.sig3.desc} The three specials take turns.`:''}${c.passive?`\n  Passive: ${c.passive}`:''}${c.mark?'\n  Mark ✦: boosted stats; special recharges 1 round faster.':''}${c.splits?`\n  Splits into: ${c.splits.map(id=>BYID[id].short).join(', ')} when knocked out.`:''}`);
 }
 
 hr('6. VERSIONS (only one per match)');

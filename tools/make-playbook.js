@@ -115,7 +115,8 @@ function cardBlock(id) {
   if (d.role) out.push(para([run('Role: ', { bold: true }), run(d.role)], { after: 40 }));
   out.push(para([run(`HP ${c.hp} · PWR ${c.pow}${(c.strikes || 1) > 1 ? ` ×${c.strikes}` : ''} · SPD ${c.spd} · DEF ${c.def}${c.regen ? ` · regenerates ${c.regen} a round` : ''}`, { color: MUTED, size: 19 })], { after: 40 }));
   if (c.sig) out.push(para([run('Special: ', { bold: true }), run(`${c.sig.name}. `, { italics: true }), run(c.sig.desc + (c.sig.cd ? ` Recharges in ${c.sig.cd} rounds.` : ''))], { after: 40 }));
-  if (c.sig2) out.push(para([run('Second special: ', { bold: true }), run(`${c.sig2.name}. `, { italics: true }), run((c.sig2.desc || '') + ' Alternates with the first after each use.')], { after: 40 }));
+  if (c.sig2) out.push(para([run('Second special: ', { bold: true }), run(`${c.sig2.name}. `, { italics: true }), run((c.sig2.desc || '') + (c.sig3 ? '' : ' Alternates with the first after each use.'))], { after: 40 }));
+  if (c.sig3) out.push(para([run('Third special: ', { bold: true }), run(`${c.sig3.name}. `, { italics: true }), run((c.sig3.desc || '') + ' The three take turns, in this order.')], { after: 40 }));
   if (c.passive) out.push(para([run('Passive: ', { bold: true }), run(c.passive)], { after: 40 }));
   const { s, v } = synergiesOf(c);
   if (s.length) { out.push(label('Synergies', INK)); s.forEach(x => out.push(bullet(x))); }

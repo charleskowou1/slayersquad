@@ -10,6 +10,7 @@ const CLIPS = {
     special: 'https://media.giphy.com/media/6r4H65jNdyZGk18xNl/giphy.mp4',                    // Frozen Lotus (CK, Giphy; was a Tenor fan clip)
     regen:   'https://media.tenor.com/-sCN02pzMS8AAAPo/douma-demon-slayer.mp4',              // face healing
     poison:  'https://media.giphy.com/media/NuhxMSbSUqnNQfQBsA/giphy.mp4',                    // poisoned (Shinobu's wisteria)
+    bodhisattva: 'clips/doma-bodhisattva.jpg',   // Rime Ice: Water Lily Bodhisattva (CK's manga page, Nov 11, 2026)
   },
   giyu: {
     special: 'https://media.tenor.com/xHYvGutUP_kAAAPo/giyuu-tamioka.mp4',                   // Dead Calm
@@ -31,7 +32,9 @@ const CLIPS = {
                  regen:   'https://media.tenor.com/cEpW6MV9Z_YAAAPo/akaza-gif-headless.mp4'},  // head growing back
   inosuke:      {special: 'https://media.tenor.com/J08tCPlL6dIAAAPo/inosuke-demon-slayer.mp4'},   // Fang Frenzy
   nezuko:       {special: 'https://media.tenor.com/MuLdehLf5WcAAAPo/demon-slayer-kimetsu-no-yaiba.mp4'},   // Exploding Blood
-  kokushibo:    {special: 'https://media.tenor.com/HL0GFe-7zPkAAAPo/kokushibo-aura.mp4'},     // Moon Breathing (aura)
+  kokushibo:    {special: 'https://media.tenor.com/HL0GFe-7zPkAAAPo/kokushibo-aura.mp4',      // Moon Breathing (aura)
+                 moonbow: 'clips/kokushibo-moonbow.jpg',                                       // Sixteenth Form: Moonbow, Half Moon (CK's manga panel, Nov 11, 2026)
+                 catastrophe: 'clips/kokushibo-catastrophe.jpg'},                             // Fourteenth Form: the crescent storm (CK's manga panel, Nov 11, 2026)
   yoriichi:     {special: 'https://media.tenor.com/yncZvQ9iX6MAAAPo/yoriichi-tsugikuni.mp4'}, // Sun Breathing (aura)
   muichiro:     {special: 'https://media.tenor.com/ynS0sUD6YbEAAAPo/tokito.mp4'},             // Obscuring Clouds
   gyomei:       {special: 'https://media.tenor.com/-XFLrcBj-lUAAAPo/gyomei-gyomei-himejima.mp4'},   // Volcanic Rock
@@ -140,7 +143,7 @@ function clipMoment(line){
 const specialKOs = u => { const a=S.play.steps[S.play.k][0]; for(let i=a+1;i<S.log.length && S.log[i].fx!=='special';i++) if(S.log[i].ko && S.log[i].by===u.uid) return true; return false; };
 // The clip for one playback step (first line of the step), or null. Records repeat moments in S.clipSeen.
 function clipStep(line){
-  if(S.clipsOn===false || !line || line.dodge || line.guard) return null;   // a dodge or a guard shows its own animation, not the attacker's clip
+  if(S.clipsOn===false || !line || line.dodge || line.guard || line.calmblock || line.nocut) return null;   // a dodge or a guard shows its own animation, not the attacker's clip
   const m=clipMoment(line); if(!m || !m.u) return null;
   const src=(clipSet(CLIPS,m.u)||{})[m.act]; if(!src) return null;
   const seen=S.clipSeen=S.clipSeen||{}, key=m.u.uid+':'+m.act;

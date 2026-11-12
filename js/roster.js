@@ -30,9 +30,12 @@ add({id:'muzan_final',fam:'muzan',sk:'muzan_final',name:'Muzan Kibutsuji (Final 
   passive:'Seven Hearts: the first time he falls, he gets back up with 35% health. If he hasn’t used it by sunrise, he burns his hearts to heal 35% at once instead; after sunrise he never gets back up.',
   sig:{name:'Thorned Flesh Whips',desc:'Every enemy takes PWR−6, ignores DEF, and he heals 3 for each enemy hit.',cd:3,kind:'all'}});
 add({id:'kokushibo',name:'Kokushibo',short:'Kokushibo',g:'月',type:'Upper Moon 1',demon:true,upper:true,cost:15,hp:50,pow:17,spd:11,def:8,regen:3,
-  sig:{name:'Moon Breathing',desc:'Every enemy takes PWR−4, ignores DEF.',cd:3,kind:'all'}});
+  sig:{name:'Moon Breathing',desc:'Every enemy takes PWR−4, ignores DEF.',cd:3,kind:'all'},
+  sig2:{id:'moonbow',name:'Sixteenth Form: Moonbow, Half Moon',desc:'One enemy takes PWR+8, ignoring DEF and Defend.',cd:3,kind:'single',tag:'huge hit, unblockable',quote:'Sixteenth Form. Moonbow, Half Moon.'},
+  sig3:{id:'catastrophe',name:'Fourteenth Form: Catastrophe, Tenman Crescent Moon',desc:'Every enemy takes PWR−6, through Defend.',cd:3,kind:'all',tag:'hit all, through Defend',quote:'Fourteenth Form. Catastrophe, Tenman Crescent Moon.'}});
 add({id:'doma',name:'Doma',short:'Doma',g:'氷',type:'Upper Moon 2',demon:true,upper:true,cost:11,hp:44,pow:14,spd:11,def:6,regen:3,
-  sig:{name:'Frozen Lotus',desc:'Every enemy takes PWR−4, ignores DEF.',cd:3,kind:'all'}});
+  sig:{name:'Frozen Lotus',desc:'Every enemy takes PWR−4, ignores DEF.',cd:3,kind:'all'},
+  sig2:{id:'bodhisattva',name:'Rime Ice: Water Lily Bodhisattva',desc:'A giant ice Buddha rises: every enemy takes PWR−4, ignoring DEF, and its frozen breath makes slayers wait a round longer for their specials.',cd:3,kind:'all',tag:'hit all, slows slayer specials',quote:'Let me show you something beautiful.'}});
 add({id:'akaza',name:'Akaza',short:'Akaza',g:'拳',type:'Upper Moon 3',demon:true,upper:true,cost:10,hp:43,pow:15,spd:10,def:5,regen:2,
   sig:{name:'Destructive Death: Compass Needle',desc:'Strike for PWR+6.',cd:3,kind:'single'},
   sig2:{id:'annihilation',name:'Destructive Death: Annihilation Type',desc:'Every enemy takes PWR−4, ignoring DEF.',cd:3,kind:'all',tag:'hit all, ignores DEF',quote:'Destructive Death: Annihilation Type!'}});
@@ -62,7 +65,7 @@ let HT_SPOTS = 3, HT_RISE = 1/3;
 add({id:'hantengu',name:'Hantengu',short:'Hantengu',g:'怯',type:'Upper Moon 4',demon:true,upper:true,cost:9,hp:16,pow:0,spd:9,def:4,regen:1,noDefend:true,
   basic:{name:'Cower',tag:'takes half damage',k:'怯',kind:'self',cower:true,desc:'Instead of attacking: he cowers and takes half damage this round.'},
   splitOnHit:['sekido','karaku'],
-  passive:'Cut him and it gets worse. The first hit cuts his head off and Sekido and Karaku burst out; the first of them to fall brings Aizetsu and Urogi. When the last emotion falls they merge into Zohakuten, and the real Hantengu hides. Hunt him (guess where he is; a wrong guess leaves that fighter wide open), or knock Zohakuten down to expose him for a round (if the real one survives it, Zohakuten gets back up). Cut down the real one to win.',
+  passive:'Cut him and it gets worse. The first hit cuts his head off and Sekido and Karaku burst out; the first of them to fall brings Aizetsu and Urogi. When the last emotion falls they merge into Zohakuten, and the real Hantengu hides. Hunt him (guess where he is; a wrong guess leaves that fighter wide open), or knock Zohakuten down to expose him for a round (if the real one survives it, Zohakuten gets back up, +2 PWR stronger each time). Cut down the real one to win.',
   sig:{name:'Cowering Hide',desc:'Moves first. Hides: attacks miss him this round, and he heals 6.',cd:3,kind:'self',prio:3}});
 // His forms (never dealt). Sekido and Karaku come from the head cut, Aizetsu and Urogi from the first emotion to fall.
 add({id:'sekido',spawn:true,name:'Sekido (Anger)',short:'Sekido',g:'怒',type:'Hantengu · Anger',demon:true,cost:0,hp:8,pow:8,spd:8,def:4,regen:1,emo:true,
@@ -78,7 +81,7 @@ add({id:'urogi',spawn:true,name:'Urogi (Pleasure)',short:'Urogi',g:'喜',type:'H
   passive:'Pleasure: when the last emotion falls, they merge into Zohakuten.',
   sig:{name:'Sky Dive',desc:'Moves first. One enemy takes PWR+2.',cd:3,kind:'single',prio:1}});
 add({id:'zohakuten',spawn:true,name:'Zohakuten (Hatred)',short:'Zohakuten',g:'憎',type:'Hantengu merged · Hatred',demon:true,cost:0,hp:20,pow:10,spd:8,def:6,regen:1,noDefend:true,drums:true,kin:'hantengu_true',
-  passive:'Hatred: the four emotions in one body. No Defend: Drums of Hatred gives him +2 PWR for good instead. The real Hantengu hides while he fights. Knock Zohakuten down and the real one is exposed for a round; if he survives it, Zohakuten gets back up (a third of his health) and the real one hides again. Cut down the real one and Zohakuten crumbles.',
+  passive:'Hatred: the four emotions in one body. No Defend: Drums of Hatred gives him +2 PWR for good instead. The real Hantengu hides while he fights. Knock Zohakuten down and the real one is exposed for a round; if he survives it, Zohakuten gets back up (a third of his health, +2 PWR each time) and the real one hides again. Cut down the real one and Zohakuten crumbles.',
   sig:{name:'Wood Dragons',desc:'Every enemy takes PWR, even through Defend.',cd:3,kind:'all'}});
 add({id:'hantengu_true',fam:'hantengu',spawn:true,name:'Hantengu (the real one)',short:'Real Hantengu',g:'怯',type:'Hantengu · the real one',demon:true,cost:0,hp:12,pow:0,spd:12,def:4,regen:1,noDefend:true,
   basic:{name:'Tremble',tag:'half damage',k:'怯',kind:'self',cower:true,desc:'Instead of attacking: he trembles and takes half damage.'},
@@ -133,8 +136,8 @@ add({id:'tengen_retired',fam:'tengen',sk:'tengen_retired',name:'Tengen Uzui (Ret
   passive:'Retired: lost a hand and an eye, so he no longer counts as a Hashira.',
   sig:{name:'Bodyguard',desc:'Moves first. Shields an ally (or himself): they count as Defending this round and take half damage.',cd:2,kind:'ally',prio:3}});
 add({id:'shinobu',name:'Shinobu Kocho',short:'Shinobu',g:'蟲',type:'Insect Hashira',hashira:true,cost:5,hp:24,pow:6,spd:10,def:3,
-  passive:'Wisteria Body: if a demon lands the blow that knocks her out, it devours her and loses 5 HP every round for the rest of the match. (Not Akaza: he never eats women.)',
-  sig:{name:'Wisteria Poison',desc:'Poison a target for 3 rounds: 6/round to demons, 3/round to humans.',cd:3,kind:'single'}});
+  passive:'Too small to cut a demon’s head: her blade leaves a demon on 1 HP, and poison or a teammate has to finish it. Wisteria Body: if a demon lands the blow that knocks her out, it devours her and loses 5 HP every round for the rest of the match. (Not Akaza: he never eats women.)',
+  sig:{name:'Wisteria Poison',desc:'Poison a target for 3 rounds: 8/round to demons, 3/round to humans.',cd:3,kind:'single'}});
 
 // Main cast (+ Marks)
 add({id:'kanae',name:'Kanae Kocho',short:'Kanae',g:'蝶',type:'Former Flower Hashira',cost:5,hp:28,pow:9,spd:9,def:4,
@@ -352,7 +355,7 @@ const LORE = {
 };
 const loreOf = c => LORE[c.id] || LORE[c.fam] || null;
 // One short line under each draft card: what the special does at a glance (the full text is on the card's details)
-const SIG_CAPTION = {yoriichi:'Hits all · stops regen', yoriichi_old:'Huge single hit', muzan:'Hits all · heals him', muzan_final:'Hits all · heals him', kokushibo:'Hits all · ignores DEF', doma:'Hits all · ignores DEF',
+const SIG_CAPTION = {yoriichi:'Hits all · stops regen', yoriichi_old:'Huge single hit', muzan:'Hits all · heals him', muzan_final:'Hits all · heals him', kokushibo:'Three moon forms in turn', doma:'Hits all · then the ice Buddha',
   akaza:'Big single hit', gyutaro:'Hits all · poison', daki:'Hits all · through Defend', nakime:'Banishes one enemy', gyokko:'Hit + stun', hantengu:'Splits when cut · hunt the real one', kaigaku:'Hits two', enmu:'Delays all specials',
   rui:'Hit + stun', kyogai:'Stuns one enemy', susamaru:'Hits two', yahaba:'Enemy\'s hits miss', hand:'Big single hit', swamp:'Dodges + hits', giyu:'Team takes no damage', gyomei:'Hits all · ignores DEF',
   sanemi:'Hits two', muichiro:'Dodges + hits', mitsuri:'Hits all · through Defend', obanai:'Big hit · through Defend', rengoku:'Big single hit', tengen:'Hits all', tengen_retired:'Guards an ally', shinobu:'Poisons one enemy',

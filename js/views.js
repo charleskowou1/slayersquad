@@ -237,7 +237,8 @@ function codexSheet(){
     ${c.helper?'':statCells(c)}
     <div class="sig"><div class="sname">${esc(c.sig.name)}${c.helper?'':` <span class="muted">· special, cooldown ${c.sig.cd}</span>`}</div>${esc(c.sig.desc)}</div>
     ${c.selfless?`<div class="pas"><b>Then: ${esc(SELFLESS.name)}</b>: ${esc(SELFLESS.desc)}${selflessOpen()?'':' <span class="muted">🔒 Unlocks when you win Destructive Death in the story.</span>'}</div>`:''}
-    ${c.sig2?`<div class="pas"><b>Then: ${esc(c.sig2.name)}</b>: ${esc(c.sig2.desc)} <span class="muted">After it, back to ${esc(c.sig.name)}: the two take turns.${sig2Open(c)?'':` 🔒 Unlocks when you win ${esc((STAGES.find(s=>s.id===c.sig2.lock)||{}).title||'its story battle')}.`}</span></div>`:''}
+    ${c.sig2?`<div class="pas"><b>Then: ${esc(c.sig2.name)}</b>: ${esc(c.sig2.desc)}${c.sig3?'':` <span class="muted">After it, back to ${esc(c.sig.name)}: the two take turns.${sig2Open(c)?'':` 🔒 Unlocks when you win ${esc((STAGES.find(s=>s.id===c.sig2.lock)||{}).title||'its story battle')}.`}</span>`}</div>`:''}
+    ${c.sig3?`<div class="pas"><b>Then: ${esc(c.sig3.name)}</b>: ${esc(c.sig3.desc)} <span class="muted">After it, back to ${esc(c.sig.name)}: the three take turns.</span></div>`:''}
     ${c.basic?`<div class="pas"><b>${esc(c.basic.name)}</b> (instead of Attack): ${esc(c.basic.desc)}</div>`:''}
     ${c.regen?`<div class="pas">Regenerates ${c.regen} HP every round.</div>`:''}
     ${pas.map(x=>`<div class="pas">${esc(x)}</div>`).join('')}
@@ -640,7 +641,7 @@ function vInfo(){
     <div class="ihp"><span class="tlabel">Health</span>${health(u,{simple:true})}</div>
     <span class="stats"><span><i>PWR</i>${u.pow}</span><span><i>DEF</i>${u.def}</span><span><i>SPD</i>${u.spd}</span><span><i>REGEN</i>${u.regen?pct(u,u.regen)+'%':'–'}</span></span>
     <div class="sig"><div class="sname">${esc(u.sig.name)} <span class="muted">· ${!u.alive?'knocked out':u.cd>0?`ready in ${plural(u.cd,'round')}`:'ready now'}</span></div>${esc(u.sig.desc)}</div>
-    ${BYID[u.id].sig2?`<div class="pas">Specials take turns: ${esc(BYID[u.id].sig.name)}, then ${esc(BYID[u.id].sig2.name)}. Next up: <b>${esc(u.sig.name)}</b>.</div>`:''}
+    ${BYID[u.id].sig2?`<div class="pas">Specials take turns: ${sigCycle(BYID[u.id]).map(x=>esc(x.name)).join(', then ')}. Next up: <b>${esc(u.sig.name)}</b>.</div>`:''}
     ${BYID[u.id].selfless?`<div class="pas"><b>${esc(SELFLESS.name)}</b>: ${u.selfless?'active now. He can\'t be touched until Hinokami Kagura is ready.':u.selflessUsed?'used this match.':u.sig.id==='selfless'?'his special now.':selflessOpen()?'his next special after Hinokami Kagura (once per match).':'🔒 unlocks when you win Destructive Death in the story.'} ${esc(SELFLESS.desc)}</div>`:''}
     ${u.legend?`<div class="pas">Strikes ×${u.strikes} per Attack · takes at most ${pct(u,u.cap)}% a round.</div>`:''}
     ${pas.map(x=>`<div class="pas">${esc(x)}</div>`).join('')}
@@ -767,7 +768,8 @@ function vSheet(){
     ${statCells(c)}
     <div class="sig"><div class="sname">${esc(c.sig.name)} <span class="muted">· special, cooldown ${c.sig.cd}</span></div>${esc(c.sig.desc)}</div>
     ${c.selfless?`<div class="pas"><b>Then: ${esc(SELFLESS.name)}</b>: ${esc(SELFLESS.desc)}${selflessOpen()?'':' <span class="muted">🔒 Unlocks when you win Destructive Death in the story.</span>'}</div>`:''}
-    ${c.sig2?`<div class="pas"><b>Then: ${esc(c.sig2.name)}</b>: ${esc(c.sig2.desc)} <span class="muted">After it, back to ${esc(c.sig.name)}: the two take turns.${sig2Open(c)?'':` 🔒 Unlocks when you win ${esc((STAGES.find(s=>s.id===c.sig2.lock)||{}).title||'its story battle')}.`}</span></div>`:''}
+    ${c.sig2?`<div class="pas"><b>Then: ${esc(c.sig2.name)}</b>: ${esc(c.sig2.desc)}${c.sig3?'':` <span class="muted">After it, back to ${esc(c.sig.name)}: the two take turns.${sig2Open(c)?'':` 🔒 Unlocks when you win ${esc((STAGES.find(s=>s.id===c.sig2.lock)||{}).title||'its story battle')}.`}</span>`}</div>`:''}
+    ${c.sig3?`<div class="pas"><b>Then: ${esc(c.sig3.name)}</b>: ${esc(c.sig3.desc)} <span class="muted">After it, back to ${esc(c.sig.name)}: the three take turns.</span></div>`:''}
     ${c.regen?`<div class="pas">Regenerates ${c.regen} HP every round.</div>`:''}
     ${pas.map(x=>`<div class="pas">${esc(x)}</div>`).join('')}
     ${c.splitOnHit?splitTree(c):''}
@@ -873,12 +875,16 @@ function stage(line){
   const dmg=dmgOf(line), impact=['hit','ko'].includes(type)&&dmg>=40, guarded=type==='hit'&&/\(guarded\)/.test(line.t);   // impact frame, blade clash
   const fast=duo&&by&&by.spd>=FAST&&['hit','ko','miss','block'].includes(type);
   const muz=type==='ko' && on && on.fam==='muzan', fell=type==='ko' && on && !dust && !cut && !muz && PETAL_FAMS.includes(on.fam);
-  const who=(u,role)=>`<div class="st-${role}">${role==='on'&&muz?muzanPic(seal(u,'stg')):role==='on'&&dust?crumblePic(dust,seal(u,'stg')):role==='on'&&cut?slicePic(u,seal(u,'stg'),cutStyle(line)):role==='on'&&fell?fallPic(u,seal(u,'stg')):seal(u,'stg')}${ring(u,role)}${role==='on'&&line.gone?kDoors:''}${role==='by'?byFx(line):''}${role==='on'?art+pop+targetFx(line):''}${role==='by'&&fast?`<span class="afterimg" aria-hidden="true">${seal(u,'stg')}${seal(u,'stg')}</span>`:''}${role==='by'&&type==='special'&&style?fxArt(style,'aura'):''}<span class="st-nm" style="color:${pc(u.p)}">${esc(u.name)}</span></div>`;
+  const who=(u,role)=>`<div class="st-${role}">${role==='on'&&muz?muzanPic(seal(u,'stg')):role==='on'&&dust?crumblePic(dust,seal(u,'stg')):role==='on'&&cut?slicePic(u,seal(u,'stg'),cutStyle(line)):role==='on'&&fell?fallPic(u,seal(u,'stg')):seal(u,'stg')}${ring(u,role)}${role==='on'&&line.nocut?NOCUT:''}${role==='on'&&line.gone?kDoors:''}${role==='by'?byFx(line):''}${role==='on'?art+pop+targetFx(line):''}${role==='by'&&fast?`<span class="afterimg" aria-hidden="true">${seal(u,'stg')}${seal(u,'stg')}</span>`:''}${role==='by'&&type==='special'&&style?fxArt(style,'aura'):''}<span class="st-nm" style="color:${pc(u.p)}">${esc(u.name)}</span></div>`;
   if(line.helper){ const h=BYID[line.helper];   // a back-pocket helper acting
     return `<div class="stage fx-${type} solo helperfx" aria-hidden="true"><span class="st-mark">${FX_MARK[type]||''}</span><div class="st-on">${seal(h,'stg')}<span class="st-nm">${esc(h.short)}</span></div></div>`; }
   const mark=`<span class="st-mark">${style&&(type==='hit'||type==='special')?STYLE_KANJI[style]:FX_MARK[type]||''}</span>`;
   const solo=on||by;
-  if(line.calm && by) return stageCalm(by);
+  if(line.calm && by) return stageCalm2(by);
+  if(line.gone && by && on) return stageCastle(by,on);
+  if(line.inCastle && on) return stageLost(on);
+  if(line.flee && on) return stageFlee(on);
+  if(line.calmblock && by && on) return stageCalmBlock(by,on);
   const dart=(line.dodge||line.guard) && by && on ? dodgeArt(line,on) : '';
   if(dart){ const rev=by.p!==leftSide(), att=`<div class="st-by">${seal(by,'stg')}<span class="st-nm" style="color:${pc(by.p)}">${esc(by.name)}</span></div>`, tgt=`<div class="st-on">${dart}<span class="st-nm" style="color:${pc(on.p)}">${esc(on.name)}</span></div>`;
       return `<div class="stage duo dodgestage fx-${type}${rev?' rev':''}" aria-hidden="true">${rev?tgt+att:att+tgt}</div>`; }
@@ -976,8 +982,8 @@ function fxName(lines, from){
   const l=lines.find(x=>x.by && x.move==='special' && (SPECIAL_HITS.includes(x.fx) || (x.fx==='stun' && !x.on) || (x.fx==='poison' && (findU(x.by)||{}).sk==='shinobu'))), by=l&&findU(l.by); let name=by&&SPECIAL_FX[by.sk];
   if(!name) return null;
   if(name==='annihil' && sigFor(l)!=='annihilation') return null;
-  if(name!=='drum' && name!=='mscore') for(let i=from-1;i>=0;i--){ const m=S.log[i]; if(m.by!==l.by) continue; if(m.fx==='special'){ const SIGFX={ninth:'ninth', seventh:'thunderdragon', unblock:'sundragon'}; if(SIGFX[m.sig]) name=SIGFX[m.sig]; break; } if(m.move==='special' && SPECIAL_HITS.includes(m.fx)) return null; }
-  return name;
+  if(name!=='drum' && name!=='mscore') for(let i=from-1;i>=0;i--){ const m=S.log[i]; if(m.by!==l.by) continue; if(m.fx==='special'){ const SIGFX={ninth:'ninth', seventh:'thunderdragon', unblock:'sundragon', bodhisattva:'buddha', moonbow:'moonbow', catastrophe:'crescents'}; if(SIGFX[m.sig]) name=SIGFX[m.sig]; break; } if(m.move==='special' && SPECIAL_HITS.includes(m.fx)) return null; }
+  return name==='kmoon' ? null : name;   // kmoon: Kokushibo's first form keeps his blade, only the other two get an overlay
 }
 const beatFx = (lines, from) => { const name=fxName(lines,from); if(!name) return ''; const l=lines.find(x=>x.by), by=l&&findU(l.by), right=by && by.p!==leftSide();   // which side the attacker is on (Yoriichi's glow comes from there)
   return `<div class="sfx sfx-${name}${right?' fromright':''}" aria-hidden="true">${SFX_ART[name]()}</div>`; };
@@ -1034,9 +1040,48 @@ function calmSides(){
 const kDoors = '<span class="kdoor l"></span><span class="kdoor r"></span>';   // Nakime's Castle Shift: doors close over the one fighter
 // Dead Calm: a ring of still water closes around Giyu and everyone on his side
 const waterRing = () => `<span class="waterring" aria-hidden="true"><i></i><i></i><i></i></span>`;
-function stageCalm(by){
+// Dead Calm as a still lake (CK picked it over the old ring, Nov 11, 2026). A drop falls, the ripples run out under his team,
+// the water goes flat as a mirror (their reflections sharpen) and 凪 settles behind them.
+function stageCalm2(by){
   const team=players().filter(q=>sameSide(q,by.p)).flatMap(q=>alive(q));
-  return `<div class="stage calmstage" aria-hidden="true">${waterRing()}<div class="calmteam">${team.map(u=>seal(u,'stg')).join('')}</div></div>`;
+  return `<div class="stage calm2" aria-hidden="true"><span class="c2-sky"></span><span class="c2-lake"><i class="c2-wave"></i>${rep(4,i=>`<i class="c2-rip" style="--d:${(.7+i*.28).toFixed(2)}s"></i>`)}<i class="c2-glint"></i></span><b class="c2-k">凪</b><span class="c2-drop"></span>
+    <div class="c2-team">${team.map((u,i)=>`<span class="c2-f" style="--i:${Math.abs(i-(team.length-1)/2)}">${seal(u,'stg')}<span class="c2-refl">${seal(u,'stg')}</span></span>`).join('')}</div></div>`;
+}
+// A Dead Calm block (CK, Nov 11, 2026): the blow lands on a dome of still water around the teammate, ripples spread
+// from the point it struck, water splashes, and the attacker is pushed back
+const calmDome = () => `<span class="cb-dome" aria-hidden="true"><i class="cb-rip"></i><i class="cb-rip r2"></i><i class="cb-rip r3"></i>${rep(8,i=>`<i class="cb-drop" style="--a:${-150+i*17}deg;--l:${30+(i%3)*12}px;--d:${(.42+(i%4)*.03).toFixed(2)}s"></i>`)}</span>`;
+// Who cast the Dead Calm protecting this team this round (for his silhouette behind a blocked teammate)
+const calmCaster = p => { const l=S.log.find(x=>x.calm && x.by && sameSide(findU(x.by).p,p)); return l ? findU(l.by) : null; };
+// Shinobu's blade stops at a demon's neck: a thin needle mark and a crossed-out 首 (head)
+const NOCUT = '<b class="nocut" aria-hidden="true"><i></i><em>首</em></b>';
+function stageCalmBlock(by,on){
+  const rev=by.p!==leftSide(), g=calmCaster(on.p);
+  const att=`<div class="cb2-by">${seal(by,'stg')}<span class="cb2-trail"></span><span class="st-nm" style="color:${pc(by.p)}">${esc(by.name)}</span></div>`;
+  const tgt=`<div class="cb2-on">${g&&g!==on?`<span class="cb2-ghost">${seal(g,'stg')}</span>`:''}${seal(on,'stg')}<span class="cb2-refl">${seal(on,'stg')}</span><span class="st-nm" style="color:${pc(on.p)}">${esc(on.name)}</span></div>`;
+  return `<div class="stage calm2 calmblk2${rev?' rev':''}" aria-hidden="true"><span class="c2-sky"></span><span class="cb2-lake">${rep(4,i=>`<i class="cb2-rip" style="--d:${(.5+i*.2).toFixed(2)}s"></i>`)}</span>
+    <div class="cb2-row">${rev?tgt+att:att+tgt}</div>
+    <span class="cb2-wall"><svg viewBox="0 0 40 200" preserveAspectRatio="none"><path d="M20 0 C34 30 6 60 20 100 C34 140 6 170 20 200"/><path class="w2" d="M20 0 C6 34 34 66 20 100 C6 134 34 166 20 200"/></svg></span>
+    <span class="cb2-slash"></span>${rep(10,i=>`<i class="cb2-drop" style="--x:${((i*13)%26)-13}px;--y:${-30+((i*17)%50)}px;--d:${(.5+(i%5)*.04).toFixed(2)}s;--l:${40+(i%4)*14}px"></i>`)}<b class="c2-k cb2-k">凪</b><span class="cb2-pop">blocked</span></div>`;
+}
+// Lost in the castle (CK, Nov 11, 2026): the round they can't act. They wander the shifting rooms, doors slam on every
+// side, and a seal stamps down: no move this round.
+// Hantengu's Flee (CK, Nov 11, 2026): he shrinks to almost nothing, sweats, and scurries off the stage in little hops,
+// leaving puffs of dust; 逃 is all that's left where he stood
+function stageFlee(u){   // runs off toward his own edge of the screen
+  return `<div class="stage fleestage${u.p===leftSide()?'':' rev'}" aria-hidden="true"><b class="fl-k">逃</b><div class="fl-u">${seal(u,'stg')}<i class="fl-sweat"></i><i class="fl-sweat b"></i></div>${rep(6,i=>`<i class="fl-dust" style="--x:${12+i*15}%;--d:${(.7+i*.12).toFixed(2)}s"></i>`)}<span class="fl-nm" style="color:${pc(u.p)}">${esc(u.name)}</span></div>`;
+}
+function stageLost(u){
+  return `<div class="stage castlelost" aria-hidden="true"><span class="cs-shaft cl-rooms">${rep(6,i=>`<i class="cs-room" style="--i:${i}"></i>`)}</span><b class="cl-k">迷</b>
+    <div class="cl-u">${seal(u,'stg')}<span class="st-nm" style="color:${pc(u.p)}">${esc(u.name)}</span></div>
+    <span class="cl-door l"></span><span class="cl-door r"></span><span class="cl-door t"></span><b class="cl-seal">封</b></div>`;
+}
+// Nakime drops a fighter into the Infinity Castle (CK, Nov 11, 2026). The biwa string snaps, the floor
+// opens under them, they tumble down an endless shaft of shifting rooms, and the doors slam shut: they can't act this round.
+function stageCastle(by,t){
+  return `<div class="stage castle2" aria-hidden="true"><span class="cs-shaft">${rep(7,i=>`<i class="cs-room" style="--i:${i}"></i>`)}</span>
+    <div class="cs-by">${seal(by,'stg')}<span class="cs-string"></span></div>
+    <div class="cs-t"><span class="cs-floor l"></span><span class="cs-floor r"></span><span class="cs-fall">${seal(t,'stg')}</span></div>
+    <span class="cs-door l"></span><span class="cs-door r"></span><b class="cs-k">落</b></div>`;
 }
 // Kagaya's Final Resolve: one beat for everyone who awakens, the old picture burning away into the Mark
 function awakenBeat(line){
@@ -1087,7 +1132,7 @@ function stageGroup(lines){
   const target=l=>{ const t=findU(l.on), amt=l.t.match(/\[([+-])(\d+%)\]/), ko=lines.some(m=>m.fx==='ko'&&m.on===l.on);
     const koL=lines.find(m=>m.fx==='ko'&&m.on===l.on), cut=ko && slicedBy(koL,t), dust=crumbleKind(koL), muz=ko && t.fam==='muzan', fell=ko && !cut && !dust && !muz && PETAL_FAMS.includes(t.fam);
     const dga=dodgeArt(l,t), pic=dga?dga:muz?muzanPic(seal(t,'stg')):dust?crumblePic(dust,seal(t,'stg')):cut?slicePic(t,seal(t,'stg'),cutStyle(koL)):fell?fallPic(t,seal(t,'stg')):seal(t,'stg');
-    return `<div class="st-on${ko?(cut||dust||muz||fell?' sliced':' koed'):''}${l.fx!=='hit'?' missed':''}">${ko&&pic.startsWith('<span')?`<span class="kolater">${pic}</span>`:pic}${calmSides().has(t.p)?waterRing():''}${targetFx(l)}${l.fx==='hit'?fxArt(style):''}${ko?'':amt?`<span class="pop dmg">−${amt[2]}</span>`:l.fx!=='hit'?`<span class="pop">${l.fx==='miss'?'miss':'blocked'}</span>`:''}<span class="st-nm" style="color:${pc(t.p)}">${esc(t.name)}</span></div>`; };
+    return `<div class="st-on${ko?(cut||dust||muz||fell?' sliced':' koed'):''}${l.fx!=='hit'?' missed':''}">${ko&&pic.startsWith('<span')?`<span class="kolater">${pic}</span>`:pic}${l.calmblock?calmDome():calmSides().has(t.p)?waterRing():''}${targetFx(l)}${l.fx==='hit'?fxArt(style):''}${ko?'':amt?`<span class="pop dmg">−${amt[2]}</span>`:l.fx!=='hit'?`<span class="pop">${l.fx==='miss'?'miss':'blocked'}</span>`:''}<span class="st-nm" style="color:${pc(t.p)}">${esc(t.name)}</span></div>`; };
   const attacker=`<div class="st-by">${seal(by,'stg')}${by.sk==='kokushibo'?kokuBlade():''}<span class="st-nm" style="color:${pc(by.p)}">${esc(by.name)}</span></div>`;
   const row=`<div class="st-targets">${hits.map(target).join('')}</div>`, mark=`<span class="st-mark">${STYLE_KANJI[style]}</span>`;
   const muzko=lines.some(m=>m.fx==='ko' && (findU(m.on)||{}).fam==='muzan');
@@ -1108,7 +1153,7 @@ function groupSummary(lines){
   if(n===1 && ko===1){ const k=lines.find(l=>l.fx==='ko'), t=findU(k.on), sig=(sigOfLine(by,{sig:sigFor(lines[0])})||by.sig).name.split(':')[0];
     const verb=t.fam==='muzan'?'destroys':slicedBy(k,t)?'cuts down':'strikes down';
     return `${seal(by,'ls')}<b>${esc(by.name)}’s ${esc(sig)}</b> ${verb} <b class="dmg">${esc(t.name)}</b>!`; }
-  return `${seal(by,'ls')}<b>${esc(by.sig.name.split(':')[0])}</b> hits ${plural(n,'enemy').replace('enemys','enemies')}${ko?` · <b class="dmg">${ko} knocked out</b>`:''}`;
+  return `${seal(by,'ls')}<b>${esc((sigOfLine(by,{sig:sigFor(lines[0])})||by.sig).name.split(':')[0])}</b> hits ${plural(n,'enemy').replace('enemys','enemies')}${ko?` · <b class="dmg">${ko} knocked out</b>`:''}`;
 }
 // Knockouts and hits of 30%+ shake the stage
 const bigHit = line => line.fx==='ko' || (/\[-(\d+)%\]/.exec(line.t)||[])[1] >= 30;

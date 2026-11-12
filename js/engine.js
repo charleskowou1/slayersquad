@@ -379,7 +379,9 @@ const foes = p => enemiesOf(p).flatMap(q=>alive(q));
 const friends = p => players().filter(q=>sameSide(p,q)).flatMap(q=>alive(q));
 
 // The special a "Name: Special!" log line was for (line.sig = its id; none = the card's first special)
-function sigOfLine(u, line){ const c=BYID[u.id]||{}, id=line&&line.sig; return !id || id==='unblock' ? c.sig||u.sig : id==='selfless' ? SELFLESS : c.sig2&&c.sig2.id===id ? c.sig2 : u.sig; }
+function sigOfLine(u, line){ const c=BYID[u.id]||{}, id=line&&line.sig; return !id || id==='unblock' ? c.sig||u.sig : id==='selfless' ? SELFLESS : c.sig2&&c.sig2.id===id ? c.sig2 : c.sig3&&c.sig3.id===id ? c.sig3 : u.sig; }
+// The order a card's specials take turns in: the first, the second, then a third if it has one (Kokushibo, Nov 11, 2026)
+const sigCycle = c => [c.sig, c.sig2, c.sig3].filter(Boolean);
 // Mark Tanjiro's Selfless State is open once Destructive Death is won (story.js decides; simulations always have it)
 const selflessOpen = () => !!S.unlockAll || typeof selflessUnlocked!=='function' || selflessUnlocked();
 const canSelfless = u => BYID[u.id] && BYID[u.id].selfless && !u.selflessUsed && selflessOpen();
@@ -436,6 +438,9 @@ const SIG_EST = {
   obanai: u=>({base:u.pow+4}),
   rengoku: u=>({base:u.pow+4}),
   seventh: u=>({base:u.pow*3, o:{ignoreDef:true}}),
+  bodhisattva: u=>({all:true, base:u.pow-2, o:{ignoreDef:true}}),
+  moonbow: u=>({base:u.pow+8, o:{ignoreDef:true}}),
+  catastrophe: u=>({all:true, base:u.pow-5}),
   annihilation: u=>({all:true, base:u.pow-4, o:{ignoreDef:true}}),
   ninth: u=>({base:u.pow+10, o:{ignoreDef:true}}),
   tengen: u=>({all:true, base:u.pow-2}),
@@ -611,7 +616,7 @@ function hit(a,t,base,o={}){
   if(a && a.revenge && t.fam===a.revenge){ base+=4; o={...o, ignoreDef:true}; }   // Revenge on Doma
   const ub=!!o.unblockable;   // Hinokami Kagura out of the Selfless State: nothing blocks it
   if(!ub){
-    if(S.shield[t.p]){ L(`${t.name} is untouched. Dead Calm blocks it.`,'x',fx('block',a,t)); return 0; }
+    if(S.shield[t.p]){ L(`${t.name} is untouched. Dead Calm blocks it.`,'x',{...fx('block',a,t), calmblock:true}); return 0; }
     if(hidden(t)){ L(`${a.name} strikes at ${t.name}, but he's in the Selfless State. Nothing touches him.`,'x',{...fx('miss',a,t), dodge:'selfless'}); return 0; }
     if(t.saved){ L(`${t.name} is untouched. ${t.saved} stands guard over them.`,'x',{...fx('block',a,t), dodge:'save', guard:t.savedBy}); return 0; }
     if(t.evade){ L(`${a.name} strikes at ${t.name}, but hits nothing.`,'x',{...fx('miss',a,t), dodge:t.evadeBy||'evade'}); return 0; }
@@ -626,8 +631,11 @@ function hit(a,t,base,o={}){
   if(t.cap){ const room=t.cap-t.taken; if(room<=0){ L(`${t.name} sees it coming in the Transparent World. No damage.`,'x',fx('block',a,t)); return 0; } if(d>room){ d=room; note+=' (capped)'; } t.taken+=d; }
   if(t.exposed){ d=Math.ceil(d*1.5); note+=' (wide open)'; }
   d=Math.max(0,d); const before=t.hp; t.hp = Math.max(0, t.hp - d);
+  // Shinobu is too small to cut a demon's head (CK, Nov 11, 2026): her blade leaves a demon on 1 HP; poison or a teammate finishes it
+  const nocut = a && a.fam==='shinobu' && t.demon && t.hp<=0 && !t.splitOnHit; if(nocut){ t.hp=1; d=before-1; }   // never below 1, even when he's already on 1
   if(d>0 && t.splitOnHit){ htSplit(t,a); return d; }
-  L(`${a.name} hits ${t.name} ${lost(t,Math.min(d,before))}${note}.`,'',{...fx('hit',a,t), ...(guardLine||{})});
+  if(nocut) L(d>0 ? `${a.name} hits ${t.name} ${lost(t,d)}${note}, but she can't cut off a demon's head. ${t.name} hangs on.` : `${a.name} can't cut off ${t.name}'s head. ${t.name} hangs on.`,'x',{...fx(d>0?'hit':'block',a,t), nocut:true, ...(guardLine||{})});
+  else L(`${a.name} hits ${t.name} ${lost(t,Math.min(d,before))}${note}.`,'',{...fx('hit',a,t), ...(guardLine||{})});
   if(o.sun && t.demon && t.regen && !t.sunproof){ t.regen=0; t.sunburn=true; L(`${t.name} is burned by the sun. No more regeneration.`,'h',fx('burn',a,t)); }
   fall(t,a);
   // Kiriya's Ambush Orders: each enemy that hits the trapped fighter this round takes AMBUSH_DMG back (once each)
@@ -661,9 +669,9 @@ function htDown(z,a){
 function htRise(){
   players().forEach(p=>S.teams[p].filter(z=>z.down!=null && z.down<=S.round).forEach(z=>{
     const real=S.teams[p].find(u=>u.alive && u.id==='hantengu_true'); z.down=null; if(!real) return;
-    z.alive=true; z.hp=Math.ceil(z.max*HT_RISE); z.stun=false; z.cd=Math.min(z.cd,1);
+    z.alive=true; z.hp=Math.ceil(z.max*HT_RISE); z.stun=false; z.cd=Math.min(z.cd,1); z.pow+=2;   // angrier every time (CK, Nov 11, 2026)
     S.teams[p].splice(S.teams[p].indexOf(real),1); S.htHide[p]={spot:Math.floor(Math.random()*HT_SPOTS), u:real};
-    L(`Zohakuten gets back up, furious! The real Hantengu scurries back into hiding.`,'x',{...fx('spawn',null,z), htrise:true, real:real.uid}); }));
+    L(`Zohakuten gets back up, furious and stronger (+2 PWR)! The real Hantengu scurries back into hiding.`,'x',{...fx('spawn',null,z), htrise:true, real:real.uid}); }));
 }
 const HUNT_ODDS = .3;   // how often the computer gambles on a hiding place (Hard; Normal a bit less, Easy never)
 function hunt(u,spot){
@@ -720,7 +728,7 @@ function special(u,pl){
     case 'hakuji': hit(u,target(u,pl.t),u.pow+3); break;
     case 'dojo_fighter': hit(u,target(u,pl.t),u.pow+2); break;
     case 'tanjuro': { const healed=alive(u.p).map(m=>{ const h=Math.min(3,m.max-m.hp); m.hp+=h; return h?`${m.name} ${gained(m,h)}`:''; }).filter(Boolean); L(`Tanjuro dances the Hinokami Kagura.${healed.length?' '+healed.join(', ')+'.':''}`,'h',fx('heal',u,null)); break; }
-    case 'shinobu': { const t=target(u,pl.t); if(t&&t.alive){ if(S.shield[t.p]||t.evade||hidden(t)){L(`The poison misses.`,'x',fx('miss',u,t));break;} if(t.noPoison){L(`The poison does nothing to ${t.name}. It's only a puppet.`,'x',fx('miss',u,t));break;} t.poison={dmg:t.demon?6:3,turns:u.poisonTurns||3,src:'shinobu'}; L(`${t.name} is poisoned.`,'h',fx('poison',u,t)); } break; }
+    case 'shinobu': { const t=target(u,pl.t); if(t&&t.alive){ if(S.shield[t.p]||t.evade||hidden(t)){L(`The poison misses.`,'x',fx('miss',u,t));break;} if(t.noPoison){L(`The poison does nothing to ${t.name}. It's only a puppet.`,'x',fx('miss',u,t));break;} t.poison={dmg:t.demon?8:3,turns:u.poisonTurns||3,src:'shinobu'}; L(`${t.name} is poisoned.`,'h',fx('poison',u,t)); } break; }
     case 'tengen': en().forEach(e=>hit(u,e,u.pow-2,{counter:false})); break;
     case 'rui': { const t=target(u,pl.t); hit(u,t,u.pow); stunT(t,'thread'); break; }
     case 'kyogai': stunT(target(u,pl.t),'drum'); break;
@@ -738,9 +746,12 @@ function special(u,pl){
     case 'nezuko_awakened': { en().forEach(e=>hit(u,e,10,{ignoreDef:true,counter:false})); const sick=alive(u.p).filter(m=>m.poison); sick.forEach(m=>{ m.poison=null; }); if(sick.length) L(`Nezuko's blood burns the poison off ${sick.map(m=>m.name).join(', ')}.`,'h',fx('heal',u,null)); break; }
     case 'typezero': { let t=findU(pl.t); if(!t||!t.alive||!sameSide(t.p,u.p)) t=u; t.spd+=2; L(`Type Zero drills ${t===u?'itself':t.name}: +2 SPD for the rest of the match.`,'h',fx('buff',u,t)); break; }
     case 'doma': en().forEach(e=>hit(u,e,u.pow-4,{ignoreDef:true,counter:false})); break;
+    case 'bodhisattva': en().forEach(e=>{ hit(u,e,u.pow-4,{ignoreDef:true,counter:false}); if(e.alive && !e.demon && !S.shield[e.p]) e.cd+=1; }); L(`The Bodhisattva's frozen breath fills their lungs. The slayers' specials take a round longer.`,'k',{...fx('stun',u,null), frost:true}); break;
+    case 'moonbow': { const t=target(u,pl.t); if(t) hit(u,t,u.pow+8,{ignoreDef:true,pierce:true}); break; }
+    case 'catastrophe': en().forEach(e=>hit(u,e,u.pow-6,{pierce:true,counter:false})); break;
     case 'kokushibo': en().forEach(e=>hit(u,e,u.pow-4,{ignoreDef:true,counter:false})); break;
     case 'sekido': en().forEach(e=>hit(u,e,5,{ignoreDef:true,counter:false})); break;
-    case 'flee': u.evade=true; u.evadeBy='hantengu'; L(`The real Hantengu scurries away and hides.`,'h',{...fx('guard',null,u), shrink:true}); break;
+    case 'flee': u.evade=true; u.evadeBy='hantengu'; L(`The real Hantengu scurries away and hides.`,'h',{...fx('guard',null,u), flee:true}); break;
     case 'karaku': en().forEach(e=>hit(u,e,Math.max(1,u.pow-6),{counter:false})); break;
     case 'aizetsu': hit(u,target(u,pl.t),u.pow+4,{pierce:true}); break;
     case 'urogi': hit(u,target(u,pl.t),u.pow+2); break;
@@ -758,7 +769,7 @@ function special(u,pl){
   }
   u.cd = s.cd + 1;
   if(u.sk==='tanjiro' && canSelfless(u)) u.sig=SELFLESS;   // after Hinokami Kagura, the next special ready is the Selfless State
-  const card=BYID[u.id]; if(sig2Open(card)) u.sig = s.id===card.sig2.id ? card.sig : card.sig2;   // second specials alternate with the first
+  const card=BYID[u.id]; if(sig2Open(card)){ const cyc=sigCycle(card), i=Math.max(0,cyc.findIndex(x=>x===s||(s.id&&x.id===s.id))); u.sig=cyc[(i+1)%cyc.length]; }   // specials take turns (two, or Kokushibo's three)
   // story chain (stage.chain, e.g. Senior Brother): after this fighter's first special, a cutscene, then the second one at once
   const ch=S.mode==='story' && S.chain; if(ch && !S.chainDone && u.p===0 && u.fam===ch.id && !s.id && card.sig2) S.chainPending=u.uid;
 }
@@ -907,7 +918,7 @@ function resolve(){
     const u=x.u; if(!u.alive || x.done) continue;
     S.curMove=x.pl.type;
     if(x.pl.type==='stunned'){ L(`${u.name} can't move.`,'',fx('stun',null,u)); continue; }
-    if(u.away){ L(u.carried ? `${u.name} is being carried to safety.` : `${u.name} is lost in the Infinity Castle and can't act.`,'',fx('stun',null,u)); continue; }
+    if(u.away){ L(u.carried ? `${u.name} is being carried to safety.` : `${u.name} is lost in the Infinity Castle and can't act.`,'',{...fx('stun',null,u), inCastle:!u.carried}); continue; }
     if(x.pl.type==='attack' && u.basic && u.basic.cower){ L(`${u.name} cowers.`,'',fx('guard',null,u)); continue; }   // Hantengu never attacks
     if(x.pl.type==='attack' && u.basic && u.basic.kind==='self'){   // Kagaya's Words of Resolve
       const healed=alive(u.p).map(m=>{ const h=Math.min(2,m.max-m.hp); m.hp+=h; return h?`${m.name} ${gained(m,h)}`:''; }).filter(Boolean);

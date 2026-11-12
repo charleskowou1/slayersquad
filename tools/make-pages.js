@@ -120,7 +120,7 @@ ${depth ? `<p><b>Role:</b> ${esc(depth.role)}</p>` : ''}
 ${c.helper ? '' : `<div class="stats">${stat(c.hp, 'HP')}${stat(c.pow, 'PWR')}${stat(c.spd, 'SPD')}${stat(c.def, 'DEF')}${c.regen ? stat(c.regen, 'Regen / round') : ''}${c.strikes > 1 ? stat('×' + c.strikes, 'Strikes') : ''}${c.cap ? stat(c.cap, 'Max damage taken / round') : ''}</div>`}
 ${c.basic ? `<div class="box"><h3>Basic move: ${esc(c.basic.name)}</h3><p>${esc(c.basic.desc)}</p></div>` : ''}
 ${special(c.sig, c.helper ? 'When used' : 'Special')}
-${sig2 ? special(sig2, 'Second special') : ''}
+${sig2 ? special(sig2, 'Second special') : ''}${c.sig3 ? special(c.sig3, 'Third special') : ''}
 ${passives.length ? `<h2>Passive</h2>${passives.map(p => `<p>${esc(p)}</p>`).join('')}` : ''}
 ${depth ? list('How to draft', depth.draft) + list('Game plan', depth.plan) : ''}
 ${tips ? list('Win with it', tips.win) + list('How to beat it', tips.beat) : ''}
