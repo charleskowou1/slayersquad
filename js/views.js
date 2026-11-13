@@ -752,6 +752,7 @@ function vSheet(){
   if(S.quitAsk) return quitAsk();
   if(S.settings) return vSettings();
   if(S.phase==='codex') return codexSheet();
+  if(S.phase==='tour' && S.codexSel){ const k=S.unlockAll; S.unlockAll=true; try{ return codexSheet(); } finally{ S.unlockAll=k; } }   // a card's Info in the tournament draft
   if(S.info) return vInfo();
   if(S.phase!=='draft' || !S.sel) return '';
   const c=BYID[S.sel], p=isOnline()?S.me:turn(), ok=(S.banning?canBan(p,c.id):canPick(p,c.id)) && (!isOnline() || turn()===S.me), verbBtn=S.banning?'Ban':'Confirm';
@@ -992,7 +993,7 @@ function fxName(lines, from){
   if(!name) return null;
   if(name!=='drum' && name!=='mscore') for(let i=from-1;i>=0;i--){ const m=S.log[i]; if(m.by!==l.by) continue; if(m.fx==='special'){ const SIGFX={annihilation:'annihilx', claws:'windclaws', ninth:'ninth', seventh:'thunderdragon', unblock:'leapsun', bodhisattva:'buddha', moonbow:'moonbow', catastrophe:'crescents'}; if(SIGFX[m.sig]) name=SIGFX[m.sig]; break; } if(m.move==='special' && SPECIAL_HITS.includes(m.fx)) return null; }
   if(name==='firering' && by.mark) name='yfirering';
-  if((name==='yfirering'||name==='leapsun') && l.fx==='hit' && by.p!==(findU(l.on)||{}).p) return null;   // drawn inside the stage (stageYori / stageLeap)   // Mark Tanjiro's regular Hinokami: Yoriichi stands behind him (CK)
+  if((name==='yfirering'||name==='leapsun') && markHino(lines)) return null;   // drawn inside the stage (stageYori / stageLeap), knockouts too   // Mark Tanjiro's regular Hinokami: Yoriichi stands behind him (CK)
   return name==='kmoon' ? null : name;   // kmoon: Kokushibo's first form keeps his blade, only the other two get an overlay
 }
 const beatFx = (lines, from) => { const name=fxName(lines,from); if(!name) return ''; const l=lines.find(x=>x.by), by=l&&findU(l.by), right=by && by.p!==leftSide();   // which side the attacker is on (Yoriichi's glow comes from there)
@@ -1089,9 +1090,9 @@ function stageCalmBlock(by,on){
 const stagePop = line => { const amt=line.t.match(/\[([+-])(\d+%)\]/); return amt?`<span class="pop dmg">−${amt[2]}</span>`:''; };
 // Unblockable, out of the Selfless State: he crouches, leaps over the target, hangs upside down in front of a setting sun,
 // dives and cuts a circle of fire down through them, and lands behind them. 斜陽転身 = Setting Sun Transformation.
-function stageLeap(by,on,line){
+function stageLeap(by,on,line,ko){
   const rev=by.p!==leftSide(), pic=ART.tanjiro_selfless?`<img decoding="sync" src="${ART.tanjiro_selfless}" alt="">`:'';
-  return `<div class="stage lxstage${rev?' rev':''}" aria-hidden="true"><span class="lx-sky"></span><span class="lx-sun"></span><span class="lx-heat"></span>
+  return `<div class="stage lxstage${rev?' rev':''}${ko?' hinoko':''}" aria-hidden="true"><span class="lx-sky"></span><span class="lx-sun"></span><span class="lx-heat"></span>
     <svg class="lx-trail" viewBox="0 0 400 190"><path d="M130 112 Q 150 20 200 22 Q 262 24 270 70"/><path class="t2" d="M130 112 Q 150 20 200 22 Q 262 24 270 70"/></svg>
     <div class="lx-on">${seal(on,'stg')}<span class="st-nm" style="color:${pc(on.p)}">${esc(on.name)}</span>${stagePop(line)}</div>
     <svg class="lx-cut" viewBox="0 0 400 190"><path d="M270 40 A 46 46 0 1 1 226 88"/></svg>
@@ -1102,9 +1103,9 @@ function stageLeap(by,on,line){
 // His regular Hinokami, "Shadow of the Sun" (CK, Nov 12, 2026, third try; he didn't want the X of the second): Yoriichi's
 // large faded card forms behind Tanjiro like his shadow, a sun ring draws round them, they dash as one, two long cuts (red,
 // then gold) streak through the target, and Yoriichi passes beyond it and burns away.
-function stageYori(by,on,line){
+function stageYori(by,on,line,ko){
   const rev=by.p!==leftSide();
-  return `<div class="stage ysstage ybstage${rev?' rev':''}" aria-hidden="true"><span class="ys-sky"></span>
+  return `<div class="stage ysstage ybstage${rev?' rev':''}${ko?' hinoko':''}" aria-hidden="true"><span class="ys-sky"></span>
     <span class="yb-sun"><svg viewBox="0 0 112 112"><circle cx="56" cy="56" r="52"/></svg></span>
     <div class="ys-yori">${seal(BYID.yoriichi,'stg')}${rep(8,i=>`<i class="ys-mote" style="--x:${(i*9)%74}px;--d:${(2.1+(i%4)*.08).toFixed(2)}s"></i>`)}</div>
     <div class="ys-by">${seal(by,'stg')}<span class="st-nm" style="color:${pc(by.p)}">${esc(by.name)}</span></div>
@@ -1193,7 +1194,16 @@ function clipBeat(c, line){
 }
 // One beat for a special that hits several enemies: the attacker strikes once, every target recoils together with
 // its own damage number, and any it knocks out topple over
+// Mark Tanjiro's Hinokami that lands on one fighter (a knockout groups the hit and the fall into one step): the same
+// in-stage animations as a plain hit, with the target falling at the end (CK, Nov 13, 2026: knockouts lost them)
+function markHino(lines){
+  const l=lines[0], by=l&&l.by&&findU(l.by), on=l&&l.on&&findU(l.on);
+  if(!l || l.fx!=='hit' || l.move!=='special' || !by || !on || !by.mark || by.sk!=='tanjiro' || by.p===on.p) return null;
+  if(lines.some(x=>x.on!==l.on || !['hit','ko'].includes(x.fx))) return null;
+  const sg=sigFor(l); return sg==='unblock' ? {fn:stageLeap, by, on, l} : !sg ? {fn:stageYori, by, on, l} : null;
+}
 function stageGroup(lines){
+  const mh=markHino(lines); if(mh) return mh.fn(mh.by, mh.on, mh.l, lines.some(x=>x.fx==='ko'));
   const by=findU(lines[0].by), style=styleOf(by,'special'), rev=by.p!==leftSide();
   const hits=lines.filter(l=>GROUP_FX.includes(l.fx));
   const target=l=>{ const t=findU(l.on), amt=l.t.match(/\[([+-])(\d+%)\]/), ko=lines.some(m=>m.fx==='ko'&&m.on===l.on);

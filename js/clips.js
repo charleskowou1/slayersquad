@@ -163,6 +163,7 @@ function clipStep(line){
   const m=clipMoment(line); if(!m || !m.u) return null;
   const src=(clipSet(CLIPS,m.u)||{})[m.act]; if(!src) return null;
   const seen=S.clipSeen=S.clipSeen||{}, key=m.u.uid+':'+m.act;
+  if(line.fx==='special' && m.act==='special' && m.u.id==='tanjiro_mark' && seen[m.u.uid+':unblock']!==undefined && S.clipRepeat!=='every'){ S.play.quick=true; return null; }   // after the Setting Sun strike his regular Hinokami doesn't replay the Yoriichi clip (CK, Nov 13, 2026)
   // A special plays its full clip and voice the first time in a match, and again only when it knocks someone out or a Mark flares
   const every=S.clipRepeat==='every';   // Settings: Repeat clips, Every round
   if(line.fx==='special'){ S.play.quick=!every && seen[key]!==undefined && !line.flare && !specialKOs(m.u); if(S.play.quick) return null; seen[key]=S.round; }
