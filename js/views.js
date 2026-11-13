@@ -898,6 +898,7 @@ function stage(line){
       return `<div class="stage duo dodgestage fx-${type}${rev?' rev':''}" aria-hidden="true">${rev?tgt+att:att+tgt}</div>`; }
   if(line.htcut||line.htmore||line.hunt||line.htbare||line.htmerge||line.htdown||line.htrise) return htStage(line);
   if(line.ate) return genyaStage(line);
+  if(type==='hit' && line.move==='special' && by && on && by.mark && by.sk==='tanjiro' && by.p!==on.p){ const sg=sigFor(line); if(sg==='unblock') return stageLeap(by,on,line); if(!sg) return stageYori(by,on,line); }
   if(line.sunrise) return `<div class="stage sunstage" aria-hidden="true"><span class="sunrays"></span><span class="sundisc"></span><span class="sunland"></span><b class="sunkj">日の出</b></div>`;   // nobody acts at sunrise, so it gets its own picture
   if(line.frenzy){ const foe=players().find(p=>alive(p).some(u=>u.demon)); return `<div class="stage frenzystage" aria-hidden="true"><div class="calmteam">${(foe===undefined?[]:alive(foe)).slice(0,6).map(u=>seal(u,'stg')).join('')}</div><b class="sunkj">狂</b></div>`; }
   return `<div class="stage fx-${type||'none'}${cut||dust||muz||fell?' sliced':''}${muz?' muzko':''}${dust==='resolve'?' kresstage':''}${impact?' impactframe':''}${guarded?' clash':''}${fast?' fastlunge':''}${line.gone?' goneaway':''}${line.shrink?' shrinking':''}${line.cover?' covering':''}${act} ${duo?'duo':'solo'}${rev?' rev':''}${style?' sty sty-'+style:''}" aria-hidden="true">
@@ -989,7 +990,9 @@ function fxName(lines, from){
   const sup=lines.find(x=>x.by && x.move==='special' && ['heal','buff'].includes(x.fx) && ['tanjuro','sabito'].includes((findU(x.by)||{}).sk)); if(sup) return SPECIAL_FX[findU(sup.by).sk];   // support specials that don't hit
   const l=lines.find(x=>x.by && x.move==='special' && (SPECIAL_HITS.includes(x.fx) || (x.fx==='stun' && !x.on) || (x.fx==='poison' && (findU(x.by)||{}).sk==='shinobu'))), by=l&&findU(l.by); let name=by&&SPECIAL_FX[by.sk];
   if(!name) return null;
-  if(name!=='drum' && name!=='mscore') for(let i=from-1;i>=0;i--){ const m=S.log[i]; if(m.by!==l.by) continue; if(m.fx==='special'){ const SIGFX={annihilation:'annihilx', claws:'windclaws', ninth:'ninth', seventh:'thunderdragon', unblock:'sundragon', bodhisattva:'buddha', moonbow:'moonbow', catastrophe:'crescents'}; if(SIGFX[m.sig]) name=SIGFX[m.sig]; break; } if(m.move==='special' && SPECIAL_HITS.includes(m.fx)) return null; }
+  if(name!=='drum' && name!=='mscore') for(let i=from-1;i>=0;i--){ const m=S.log[i]; if(m.by!==l.by) continue; if(m.fx==='special'){ const SIGFX={annihilation:'annihilx', claws:'windclaws', ninth:'ninth', seventh:'thunderdragon', unblock:'leapsun', bodhisattva:'buddha', moonbow:'moonbow', catastrophe:'crescents'}; if(SIGFX[m.sig]) name=SIGFX[m.sig]; break; } if(m.move==='special' && SPECIAL_HITS.includes(m.fx)) return null; }
+  if(name==='firering' && by.mark) name='yfirering';
+  if((name==='yfirering'||name==='leapsun') && l.fx==='hit' && by.p!==(findU(l.on)||{}).p) return null;   // drawn inside the stage (stageYori / stageLeap)   // Mark Tanjiro's regular Hinokami: Yoriichi stands behind him (CK)
   return name==='kmoon' ? null : name;   // kmoon: Kokushibo's first form keeps his blade, only the other two get an overlay
 }
 const beatFx = (lines, from) => { const name=fxName(lines,from); if(!name) return ''; const l=lines.find(x=>x.by), by=l&&findU(l.by), right=by && by.p!==leftSide();   // which side the attacker is on (Yoriichi's glow comes from there)
@@ -1080,6 +1083,33 @@ function stageCalmBlock(by,on){
     <div class="cb2-row">${rev?tgt+giyu+att:att+giyu+tgt}</div>
     <span class="cb3-hit"><span class="cb3-slash"></span>${crescent}<span class="cb3-burst"></span>${shards}</span>
     <span class="cb3-flash"></span><b class="c2-k cb2-k">凪</b><span class="cb2-pop">Blocked</span></div>`;
+}
+// Mark Tanjiro's two Hinokami Kaguras, drawn inside the stage so they line up with the real cards (CK, Nov 12, 2026).
+// Positions: attacker at centre −70px, target at centre +70px (mirrored with --dir when the attacker is on the right).
+const stagePop = line => { const amt=line.t.match(/\[([+-])(\d+%)\]/); return amt?`<span class="pop dmg">−${amt[2]}</span>`:''; };
+// Unblockable, out of the Selfless State: he crouches, leaps over the target, hangs upside down in front of a setting sun,
+// dives and cuts a circle of fire down through them, and lands behind them. 斜陽転身 = Setting Sun Transformation.
+function stageLeap(by,on,line){
+  const rev=by.p!==leftSide(), pic=ART.tanjiro_selfless?`<img decoding="sync" src="${ART.tanjiro_selfless}" alt="">`:'';
+  return `<div class="stage lxstage${rev?' rev':''}" aria-hidden="true"><span class="lx-sky"></span><span class="lx-sun"></span><span class="lx-heat"></span>
+    <svg class="lx-trail" viewBox="0 0 400 190"><path d="M130 112 Q 150 20 200 22 Q 262 24 270 70"/><path class="t2" d="M130 112 Q 150 20 200 22 Q 262 24 270 70"/></svg>
+    <div class="lx-on">${seal(on,'stg')}<span class="st-nm" style="color:${pc(on.p)}">${esc(on.name)}</span>${stagePop(line)}</div>
+    <svg class="lx-cut" viewBox="0 0 400 190"><path d="M270 40 A 46 46 0 1 1 226 88"/></svg>
+    <div class="lx-by">${pic?`<span class="lx-self">${pic}</span>`:''}${seal(by,'stg')}</div>
+    <span class="lx-flash"></span><span class="lx-ring"></span><span class="lx-ring r2"></span>${rep(16,i=>`<i class="lx-ember" style="--a:${i*22.5}deg;--l:${40+(i%4)*18}px;--d:${(.82+(i%5)*.03).toFixed(2)}s"></i>`)}
+    <b class="lx-k">斜陽転身</b></div>`;
+}
+// His regular Hinokami, "Shadow of the Sun" (CK, Nov 12, 2026, third try; he didn't want the X of the second): Yoriichi's
+// large faded card forms behind Tanjiro like his shadow, a sun ring draws round them, they dash as one, two long cuts (red,
+// then gold) streak through the target, and Yoriichi passes beyond it and burns away.
+function stageYori(by,on,line){
+  const rev=by.p!==leftSide();
+  return `<div class="stage ysstage ybstage${rev?' rev':''}" aria-hidden="true"><span class="ys-sky"></span>
+    <span class="yb-sun"><svg viewBox="0 0 112 112"><circle cx="56" cy="56" r="52"/></svg></span>
+    <div class="ys-yori">${seal(BYID.yoriichi,'stg')}${rep(8,i=>`<i class="ys-mote" style="--x:${(i*9)%74}px;--d:${(2.1+(i%4)*.08).toFixed(2)}s"></i>`)}</div>
+    <div class="ys-by">${seal(by,'stg')}<span class="st-nm" style="color:${pc(by.p)}">${esc(by.name)}</span></div>
+    <div class="ys-on">${seal(on,'stg')}<span class="st-nm" style="color:${pc(on.p)}">${esc(on.name)}</span>${stagePop(line)}</div>
+    <span class="yb-cut t"></span><span class="yb-cut y"></span><span class="ys-flash"></span>${rep(14,i=>`<i class="ys-ember" style="--a:${i*25.7}deg;--l:${30+(i%4)*14}px;--d:${(1.66+(i%5)*.03).toFixed(2)}s"></i>`)}</div>`;
 }
 // Lost in the castle (CK, Nov 11, 2026): the round they can't act. They wander the shifting rooms, doors slam on every
 // side, and a seal stamps down: no move this round.

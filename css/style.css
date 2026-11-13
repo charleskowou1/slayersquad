@@ -3559,3 +3559,121 @@ body.ctlmode .topbtns .ctlpill{margin-left:auto}
 .sfx-windclaws .wc-k{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);font-family:var(--display);font-size:30vmin;line-height:1;color:rgba(225,255,236,.9);text-shadow:0 0 26px rgba(70,230,150,.9),0 0 6px #04150c;opacity:0;animation:wck 1.3s .55s ease-out both}
 @keyframes wck{0%{opacity:0;transform:translate(-50%,-50%) scale(1.5)}25%{opacity:.95;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.05)}}
 @media (prefers-reduced-motion:reduce){.sfx-windclaws *{animation:none!important;opacity:0}}
+
+/* Mark Tanjiro's regular Hinokami (Nov 12, 2026, CK): Yoriichi's silhouette behind the fire ring */
+.sfx-yfirering .yf-ghost{position:absolute;left:30%;top:40%;width:46vmin;height:60vmin;margin:-30vmin 0 0 -23vmin;border-radius:46% 46% 30% 30%;overflow:hidden;opacity:0;
+  -webkit-mask:radial-gradient(ellipse 50% 55% at 50% 45%,#000 55%,transparent 100%);mask:radial-gradient(ellipse 50% 55% at 50% 45%,#000 55%,transparent 100%);
+  filter:sepia(.55) saturate(1.6) brightness(1.15) drop-shadow(0 0 28px rgba(255,170,60,.95));mix-blend-mode:screen;animation:yfghost 2.4s .05s ease-out both}
+.sfx-yfirering.fromright .yf-ghost{left:70%}
+.sfx-yfirering .yf-ghost img{width:100%;height:100%;object-fit:cover;object-position:50% 18%}
+.sfx-yfirering .yf-ghost b{display:grid;place-items:center;height:100%;font:800 20vmin/1 var(--display);color:#ffd27a}
+@keyframes yfghost{0%{opacity:0;transform:translateY(6vmin) scale(.92)}22%{opacity:.95}65%{opacity:.85;transform:translateY(-1vmin) scale(1.04)}100%{opacity:0;transform:translateY(-3vmin) scale(1.08)}}
+.sfx-yfirering .yf-blade{position:absolute;left:40%;top:8%;width:3px;height:70%;background:linear-gradient(#fff6d8,#ffb347 60%,transparent);box-shadow:0 0 10px #ffb347;transform-origin:50% 100%;transform:rotate(-40deg);opacity:0;animation:yfblade 1.4s .45s ease-out both}
+@keyframes yfblade{0%{opacity:0;transform:rotate(-40deg)}30%{opacity:1;transform:rotate(-8deg)}100%{opacity:0;transform:rotate(30deg)}}
+/* The unblockable Hinokami (Nov 12, 2026, CK): leap over the target, upside down at the top, cut straight down */
+.sfx-leapsun .ls-dark{position:absolute;inset:0;background:radial-gradient(ellipse at 62% 46%,rgba(40,10,0,.2),rgba(4,2,0,.82));animation:lsdark 2.6s ease-out both}
+@keyframes lsdark{0%{opacity:0}10%,75%{opacity:1}100%{opacity:0}}
+.sfx-leapsun .ls-sun{position:absolute;left:62%;top:46%;width:46vmin;height:46vmin;margin:-23vmin;border-radius:50%;background:radial-gradient(circle,rgba(255,236,170,.95),rgba(255,140,30,.55) 40%,transparent 70%);opacity:0;animation:lssun 1.8s 1s ease-out both}
+@keyframes lssun{0%{opacity:0;transform:scale(.3)}25%{opacity:1;transform:scale(1.1)}100%{opacity:0;transform:scale(1.5)}}
+.sfx-leapsun .ls-path{position:absolute;inset:0}
+.sfx-leapsun.fromright .ls-path,.sfx-leapsun.fromright .ls-cut,.sfx-leapsun.fromright .ls-sun,.sfx-leapsun.fromright .ls-ring,.sfx-leapsun.fromright .ls-ember{transform:scaleX(-1)}
+.sfx-leapsun.fromright .ls-path{transform-origin:50% 50%}
+.sfx-leapsun .ls-jump,.sfx-leapsun .ls-echo{position:absolute;left:24%;top:52%;width:20vmin;height:26vmin;margin:-13vmin 0 0 -10vmin;border-radius:12px;overflow:hidden;border:2px solid #ffd27a;box-shadow:0 0 18px rgba(255,150,40,.9);opacity:0;animation:lsjump 1.25s var(--d,0s) cubic-bezier(.35,0,.25,1) both}
+.sfx-leapsun .ls-echo{border-color:rgba(255,160,60,.6);filter:blur(1.5px) sepia(1) saturate(5) hue-rotate(-20deg) brightness(1.3);animation-name:lsecho}
+.sfx-leapsun .ls-jump img,.sfx-leapsun .ls-echo img{width:100%;height:100%;object-fit:cover;object-position:50% 18%}
+.sfx-leapsun .ls-jump b{display:grid;place-items:center;height:100%;background:#2a1208;color:#ffd27a;font:800 12vmin/1 var(--display)}
+@keyframes lsjump{0%{opacity:0;transform:translate(0,0) rotate(0)}8%{opacity:1;transform:translate(0,-2vh) rotate(-10deg)}45%{opacity:1;transform:translate(19vw,-20vh) rotate(-180deg) scale(1.05)}62%{transform:translate(38vw,-17vh) rotate(-180deg)}78%{opacity:1;transform:translate(38vw,-4vh) rotate(-180deg) scale(1.08)}90%{opacity:1;transform:translate(38vw,-6vh) rotate(-180deg)}100%{opacity:0;transform:translate(38vw,-8vh) rotate(-180deg) scale(.9)}}
+@keyframes lsecho{0%{opacity:0;transform:translate(0,0) rotate(0)}8%{opacity:var(--o);transform:translate(0,-2vh) rotate(-10deg)}45%{opacity:var(--o);transform:translate(19vw,-20vh) rotate(-180deg)}62%{opacity:var(--o);transform:translate(38vw,-17vh) rotate(-180deg)}78%{opacity:0;transform:translate(38vw,-4vh) rotate(-180deg)}100%{opacity:0}}
+.sfx-leapsun .ls-cut{position:absolute;left:62%;top:24%;width:8px;height:36%;margin-left:-4px;border-radius:4px;background:linear-gradient(#fff,#ffe6a0 30%,#ff7a1a 70%,transparent);box-shadow:0 0 16px #ffb347,0 0 40px rgba(255,90,0,.8);transform-origin:50% 0;opacity:0;animation:lscut .5s .82s cubic-bezier(.7,0,.3,1) both}
+@keyframes lscut{0%{opacity:1;transform:scaleY(0)}45%{opacity:1;transform:scaleY(1)}100%{opacity:0;transform:scaleY(1) scaleX(.3)}}
+.sfx-leapsun .ls-flash{position:absolute;inset:0;background:radial-gradient(circle at 62% 50%,#fff,rgba(255,220,150,.6) 30%,transparent 65%);opacity:0;animation:lsflash .55s 1s ease-out both}
+.sfx-leapsun.fromright .ls-flash{background:radial-gradient(circle at 38% 50%,#fff,rgba(255,220,150,.6) 30%,transparent 65%)}
+@keyframes lsflash{0%{opacity:0}15%{opacity:1}100%{opacity:0}}
+.sfx-leapsun .ls-ring{position:absolute;left:62%;top:50%;width:20px;height:20px;margin:-10px;border-radius:50%;border:3px solid #ffd27a;box-shadow:0 0 20px #ff9a2a;opacity:0;animation:lsring .8s 1.02s ease-out both}
+.sfx-leapsun .ls-ring.r2{animation-delay:1.16s;border-color:#ff7a1a}
+@keyframes lsring{0%{opacity:1;transform:scale(.4)}100%{opacity:0;transform:scale(14)}}
+.sfx-leapsun .ls-ember{position:absolute;left:62%;top:50%;width:5px;height:5px;border-radius:50%;background:#ffd27a;box-shadow:0 0 8px #ff8a1a;opacity:0;animation:lsember 1s var(--d) ease-out both}
+@keyframes lsember{0%{opacity:1;transform:rotate(var(--a)) translateX(0)}100%{opacity:0;transform:rotate(var(--a)) translateX(var(--l)) translateY(-10px)}}
+.sfx-leapsun .ls-k{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);font:800 34vmin/1 var(--display);color:#fff4d6;text-shadow:0 0 30px #ff8a1a,0 0 8px #3a1200;opacity:0;animation:lsk 1.3s 1.2s ease-out both}
+@keyframes lsk{0%{opacity:0;transform:translate(-50%,-50%) scale(1.6)}25%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.04)}}
+@media (prefers-reduced-motion:reduce){.sfx-yfirering *,.sfx-leapsun *{animation:none!important;opacity:0}}
+
+/* Mark Tanjiro's Hinokami stages (Nov 12, 2026, CK). Both are 190px tall, attacker at centre −70px, target at +70px;
+   .rev flips the x moves with --dir and mirrors the drawn layers. */
+.stage.lxstage,.stage.ysstage{display:block;height:190px;overflow:hidden;border-radius:14px;--dir:1}
+.stage.lxstage.rev,.stage.ysstage.rev{--dir:-1}
+.lxstage .gl.stg,.ysstage .gl.stg{width:58px;height:70px}
+.lx-sky,.ys-sky{position:absolute;inset:0;background:linear-gradient(to bottom,#1a0904,#3b1306 55%,#120603);opacity:0;animation:lxsky 2.6s ease-out both}
+.ys-sky{background:radial-gradient(ellipse at 50% 60%,#3a1607,#120603 75%)}
+@keyframes lxsky{0%{opacity:0}10%,82%{opacity:1}100%{opacity:.6}}
+.lx-sun{position:absolute;left:calc(50% - 46px);top:-14px;width:92px;height:92px;border-radius:50%;background:radial-gradient(circle,#ffe7a8 0,#ff9a2a 45%,#d4400c 70%,transparent 72%);box-shadow:0 0 50px 14px rgba(255,120,30,.55);opacity:0;animation:lxsun 2.4s .2s ease-out both}
+@keyframes lxsun{0%{opacity:0;transform:translateY(30px) scale(.7)}30%{opacity:1;transform:none}75%{opacity:1}100%{opacity:0;transform:translateY(14px)}}
+.lx-heat{position:absolute;left:0;right:0;top:22px;height:60px;background:repeating-linear-gradient(to bottom,transparent 0 9px,rgba(255,170,80,.18) 9px 11px);opacity:0;animation:lxsun 2.2s .3s ease-out both}
+.lx-trail,.lx-cut{position:absolute;left:50%;top:0;width:400px;height:190px;margin-left:-200px;overflow:visible;z-index:3;pointer-events:none}
+.rev .lx-trail,.rev .lx-cut{transform:scaleX(-1)}
+.lx-trail path{fill:none;stroke:#ff8a1a;stroke-width:9;stroke-linecap:round;filter:drop-shadow(0 0 8px #ff6a00);stroke-dasharray:330;stroke-dashoffset:330;opacity:.85;animation:lxtrail 1.2s .12s cubic-bezier(.35,0,.25,1) both}
+.lx-trail path.t2{stroke:#fff1c4;stroke-width:3;filter:none}
+@keyframes lxtrail{0%{stroke-dashoffset:330;opacity:.9}55%{stroke-dashoffset:0;opacity:.9}100%{stroke-dashoffset:-60;opacity:0}}
+.lx-by,.lx-on,.ys-by,.ys-on{position:absolute;top:82px;display:flex;flex-direction:column;align-items:center;z-index:2}
+.lx-by,.ys-by{left:calc(50% - 70px*var(--dir) - 29px)}
+.lx-on,.ys-on{left:calc(50% + 70px*var(--dir) - 29px)}
+.lx-by{z-index:4;animation:lxjump 1.5s cubic-bezier(.4,0,.3,1) both}
+@keyframes lxjump{0%{transform:none}10%{transform:translateY(6px) scaleY(.86)}20%{transform:translate(calc(var(--dir)*20px),-50px) rotate(calc(var(--dir)*-60deg))}36%{transform:translate(calc(var(--dir)*70px),-74px) rotate(calc(var(--dir)*-180deg)) scale(1.1)}50%{transform:translate(calc(var(--dir)*84px),-72px) rotate(calc(var(--dir)*-180deg)) scale(1.1)}62%{transform:translate(calc(var(--dir)*140px),-28px) rotate(calc(var(--dir)*-190deg)) scale(1.05)}74%{transform:translate(calc(var(--dir)*180px),-6px) rotate(calc(var(--dir)*-300deg))}86%,100%{transform:translate(calc(var(--dir)*198px),0) rotate(calc(var(--dir)*-360deg))}}
+.lx-self{position:absolute;inset:0;z-index:1;border-radius:inherit;overflow:hidden;opacity:0;animation:lxself 1.5s both}
+.lx-self img{width:100%;height:100%;object-fit:cover;object-position:50% 18%}
+@keyframes lxself{0%,15%{opacity:0}25%,90%{opacity:1}100%{opacity:1}}
+.lx-by .gl.stg{box-shadow:0 0 0 2px #ffd27a,0 0 22px 4px rgba(255,140,30,.9)}
+.lx-on{animation:lxhit 1.4s .55s ease-out both}
+@keyframes lxhit{0%,20%{transform:none;filter:none}26%{transform:translateY(8px) scale(.95);filter:brightness(2.2) sepia(1) saturate(4) hue-rotate(-20deg)}45%{transform:translateY(3px);filter:brightness(1.2)}100%{transform:none;filter:none}}
+.lx-cut path{fill:none;stroke:#fff6dc;stroke-width:6;stroke-linecap:round;filter:drop-shadow(0 0 6px #ffb347) drop-shadow(0 0 16px #ff6a00);stroke-dasharray:300;stroke-dashoffset:300;opacity:0;animation:lxcut .7s .72s cubic-bezier(.6,0,.2,1) both}
+@keyframes lxcut{0%{opacity:1;stroke-dashoffset:300}45%{opacity:1;stroke-dashoffset:0}100%{opacity:0;stroke-dashoffset:0;stroke-width:1}}
+.lx-flash{position:absolute;inset:0;z-index:5;background:radial-gradient(circle at calc(50% + 70px*var(--dir)) 118px,#fff,rgba(255,210,140,.6) 22%,transparent 55%);opacity:0;animation:lxflash .5s .86s ease-out both}
+@keyframes lxflash{0%{opacity:0}18%{opacity:1}100%{opacity:0}}
+.lx-ring,.lx-ember{position:absolute;left:calc(50% + 70px*var(--dir));top:118px;z-index:5}
+.lx-ring{width:16px;height:16px;margin:-8px;border-radius:50%;border:3px solid #ffd27a;box-shadow:0 0 16px #ff9a2a;opacity:0;animation:lxring .7s .88s ease-out both}
+.lx-ring.r2{animation-delay:1s;border-color:#ff7a1a}
+@keyframes lxring{0%{opacity:1;transform:scale(.4)}100%{opacity:0;transform:scale(9)}}
+.lx-ember,.ys-ember{width:5px;height:5px;margin:-2.5px;border-radius:50%;background:#ffd27a;box-shadow:0 0 8px #ff8a1a;opacity:0;animation:lxember .9s var(--d) ease-out both}
+@keyframes lxember{0%{opacity:1;transform:rotate(var(--a)) translateX(0)}100%{opacity:0;transform:rotate(var(--a)) translateX(var(--l)) translateY(-8px)}}
+.lx-k{position:absolute;left:50%;top:10px;transform:translateX(-50%);z-index:6;font:800 1.5rem/1 var(--display);letter-spacing:.18em;color:#fff4d6;text-shadow:0 0 16px #ff8a1a,0 0 4px #3a1200;opacity:0;animation:lxk 1.5s 1.05s ease-out both}
+@keyframes lxk{0%{opacity:0;letter-spacing:.6em}25%{opacity:1;letter-spacing:.18em}80%{opacity:1}100%{opacity:0}}
+.lxstage .pop,.ysstage .pop{animation-delay:.9s}
+/* regular Mark Hinokami v2: a faded Yoriichi card behind him, they strike together */
+.ys-yori{position:absolute;top:70px;left:calc(50% - 70px*var(--dir) - 29px - 22px*var(--dir));z-index:1;opacity:0;animation:ysyori 2.1s ease-in-out both}
+.ys-yori .gl.stg{box-shadow:0 0 0 2px rgba(255,214,140,.95),0 0 22px 6px rgba(255,160,50,.8);filter:sepia(.25) saturate(1.2) brightness(1.05)}
+@keyframes ysyori{0%{opacity:0;transform:translate(calc(var(--dir)*-10px),6px) scale(.92)}14%{opacity:.8;transform:none}18%{opacity:.8;transform:none}28%{opacity:.8;transform:translateX(calc(var(--dir)*-8px))}38%{opacity:.85;transform:translate(calc(var(--dir)*100px),-12px) rotate(calc(var(--dir)*8deg))}52%{opacity:.8;transform:translate(calc(var(--dir)*94px),-10px)}72%{opacity:.6;transform:none}100%{opacity:0;transform:translateY(-12px) scale(1.04)}}
+.ys-mote{position:absolute;left:var(--x);top:40px;width:4px;height:4px;border-radius:50%;background:#ffd88a;box-shadow:0 0 6px #ff9a2a;opacity:0;animation:ysmote .9s var(--d) ease-out both}
+@keyframes ysmote{0%{opacity:1;transform:none}100%{opacity:0;transform:translate(calc((var(--x) - 29px)*.6),-50px)}}
+.ys-by{z-index:3;animation:ysby 2.1s ease-in-out both}
+@keyframes ysby{0%,18%{transform:none}28%{transform:translateX(calc(var(--dir)*-8px))}38%{transform:translate(calc(var(--dir)*84px),6px) rotate(calc(var(--dir)*-6deg))}52%{transform:translate(calc(var(--dir)*78px),4px)}72%,100%{transform:none}}
+.ys-by .gl.stg{box-shadow:0 0 0 2px #ffb04a,0 0 16px 3px rgba(255,110,20,.8)}
+.ys-flash{position:absolute;inset:0;z-index:4;background:radial-gradient(circle at calc(50% + 70px*var(--dir)) 118px,#fff,rgba(255,200,120,.5) 20%,transparent 50%);opacity:0;animation:lxflash .5s .84s ease-out both}
+.ys-ember{position:absolute;left:calc(50% + 70px*var(--dir));top:118px;z-index:5}
+.ys-on{animation:yson 1.4s .82s ease-out both}
+@keyframes yson{0%{transform:none;filter:none}12%{transform:translateX(calc(var(--dir)*16px)) rotate(calc(var(--dir)*8deg));filter:brightness(2) sepia(1) saturate(4) hue-rotate(-20deg)}40%{transform:translateX(calc(var(--dir)*6px));filter:brightness(1.15)}100%{transform:none;filter:none}}
+.ysstage .pop{animation-delay:.86s}
+@media (prefers-reduced-motion:reduce){.lxstage *,.ysstage *{animation:none!important}.lx-trail,.lx-cut,.lx-flash,.ys-flash,.lx-ring,.lx-ember,.ys-ember,.lx-k,.ys-mote{display:none}.ys-yori,.lx-sky,.ys-sky,.lx-sun{opacity:.6}}
+
+/* Mark Hinokami, version B "Shadow of the Sun" (Nov 12, 2026, for CK to compare): slower. Yoriichi's large faded card
+   forms right behind Tanjiro like his shadow, a sun ring draws round them, they dash as one and two long cuts streak
+   through the target (red, then gold); Yoriichi lingers by the target and burns away. */
+.ybstage .yb-sun{position:absolute;left:calc(50% - 70px*var(--dir) - 56px);top:62px;width:112px;height:112px;z-index:2;opacity:0;animation:ybsun 1.4s .5s ease-out both}
+.ybstage .yb-sun svg{width:100%;height:100%;overflow:visible}
+.ybstage .yb-sun circle{fill:none;stroke:#ffcf6a;stroke-width:3;stroke-dasharray:340;stroke-dashoffset:340;filter:drop-shadow(0 0 8px #ff9a2a);animation:ybring .8s .55s ease-out both;transform-origin:center;transform:rotate(-90deg)}
+@keyframes ybsun{0%{opacity:0}15%,70%{opacity:1}100%{opacity:0;transform:scale(1.3)}}
+@keyframes ybring{to{stroke-dashoffset:0}}
+.ybstage .ys-yori{top:56px;left:calc(50% - 70px*var(--dir) - 37px - 10px*var(--dir));animation:ybyori 2.8s ease-in-out both}
+.ybstage .ys-yori .gl.stg{width:74px;height:90px}
+@keyframes ybyori{0%{opacity:0;transform:scale(.8);filter:blur(4px)}22%{opacity:.75;transform:none;filter:none}40%{opacity:.85;transform:translateY(-4px)}46%{opacity:.85;transform:translateX(calc(var(--dir)*-10px))}54%{opacity:.9;transform:translate(calc(var(--dir)*170px),-6px)}78%{opacity:.8;transform:translate(calc(var(--dir)*170px),-6px)}100%{opacity:0;transform:translate(calc(var(--dir)*170px),-30px) scale(1.06);filter:blur(3px) brightness(2)}}
+.ybstage .ys-mote{top:46px}
+.ybstage .ys-by{animation:ybby 2.8s ease-in-out both}
+@keyframes ybby{0%,8%{transform:none}20%{transform:translateX(calc(var(--dir)*6px))}40%{transform:translateX(calc(var(--dir)*6px)) translateY(-3px)}46%{transform:translateX(calc(var(--dir)*-8px))}54%{transform:translate(calc(var(--dir)*104px),4px) rotate(calc(var(--dir)*-4deg))}66%{transform:translate(calc(var(--dir)*98px),2px)}86%,100%{transform:none}}
+.ybstage .yb-cut{position:absolute;top:116px;left:calc(50% - 90px);width:240px;height:7px;margin-top:-3.5px;border-radius:4px;z-index:5;transform-origin:calc(50% - 120px*var(--dir) + 120px) 50%;opacity:0;animation:ybcut .9s 1.5s cubic-bezier(.7,0,.2,1) both}
+.ybstage.rev .yb-cut{left:calc(50% - 150px)}
+.ybstage .yb-cut.t{background:linear-gradient(90deg,transparent,#ff6a1a 15%,#fff2d0 60%,#ff6a1a 85%,transparent);box-shadow:0 0 16px #ff5a00}
+.ybstage .yb-cut.y{top:126px;background:linear-gradient(90deg,transparent,#ffcf6a 15%,#fffbe8 60%,#ffcf6a 85%,transparent);box-shadow:0 0 16px #ffc040;animation-delay:1.64s}
+@keyframes ybcut{0%{opacity:1;transform:scaleX(0)}30%{opacity:1;transform:scaleX(1)}70%{opacity:1;transform:scaleX(1) scaleY(.7)}100%{opacity:0;transform:scaleX(1.05) scaleY(.2)}}
+.ybstage .ys-flash{animation:lxflash .55s 1.62s ease-out both}
+.ybstage .ys-on{animation:yson 1.4s 1.6s ease-out both}
+.ybstage .pop{animation-delay:1.64s}
+@media (prefers-reduced-motion:reduce){.ybstage *{animation:none!important}.yb-cut,.yb-sun{display:none}}

@@ -170,6 +170,14 @@ const SFX_ART = {
   h_goto: m => { const u=m&&m.on&&findU(m.on); return `<img class="hrun haul" src="${ART.goto||''}" alt="">${u&&ART[u.id]?`<img class="hrun hauled" src="${ART[u.id]}" alt="">`:''}`; },
   h_aoi: () => `<svg class="hcup tea" viewBox="0 0 100 80"><path class="steam" d="M38 22 C30 12 46 8 38 -2 M60 22 C52 12 68 8 60 -2" fill="none" stroke="#d7efdc" stroke-width="3" stroke-linecap="round"/><path d="M16 28 H84 C84 56 70 70 50 70 C30 70 16 56 16 28 Z" fill="#e9e2d0" stroke="#3b2a1c" stroke-width="2"/><ellipse cx="50" cy="28" rx="34" ry="8" fill="#7fbf6a" stroke="#3b2a1c" stroke-width="2"/><ellipse cx="50" cy="74" rx="26" ry="4" fill="#8a6a44"/></svg><span class="hwash"></span>`,
   redbolt: () => rep(3, i=>`<svg class="rb r${i}" viewBox="0 0 40 100" preserveAspectRatio="none"><polyline class="b1" points="20,-4 12,22 26,38 14,58 28,74 18,104"/><polyline class="b2" points="20,-4 12,22 26,38 14,58 28,74 18,104"/></svg>`),
+  // Mark Tanjiro's regular Hinokami Kagura (CK, Nov 12, 2026): Yoriichi's silhouette rises behind the fire ring, raises
+  // his sword with him, and fades as the strike lands
+  yfirering: () => `<span class="yf-ghost">${ART.yoriichi?`<img decoding="sync" src="${ART.yoriichi}" alt="">`:'<b>日</b>'}<i class="yf-blade"></i></span>${SFX_ART.firering()}`,
+  // The unblockable Hinokami out of the Selfless State (CK): Tanjiro leaps over his target, turns upside down at the top
+  // of the arc and cuts straight down onto them (Setting Sun Transformation), trailing fire; the sun flares and 日 stamps
+  leapsun: () => { const pic=ART.tanjiro_selfless||ART.tanjiro_mark||ART.tanjiro, card=pic?`<img decoding="sync" src="${pic}" alt="">`:'<b>日</b>';
+    return `<span class="ls-dark"></span><span class="ls-sun"></span><span class="ls-path">${rep(5,j=>{ const i=4-j; return `<span class="ls-echo" style="--d:${(i*.045).toFixed(3)}s;--o:${(.5-i*.09).toFixed(2)}">${card}</span>`; })}<span class="ls-jump">${card}</span></span>
+      <span class="ls-cut"></span><span class="ls-flash"></span><span class="ls-ring"></span><span class="ls-ring r2"></span>${rep(18,i=>`<i class="ls-ember" style="--a:${i*20}deg;--l:${60+(i%4)*26}px;--d:${(1.12+(i%5)*.03).toFixed(2)}s"></i>`)}<b class="ls-k">日</b>`; },
   firering: () => `<span class="firering"><i></i><i></i><i></i></span>`,
 };
 const compassFx = () => `<svg class="compassfx" viewBox="0 0 100 100" aria-hidden="true"><g>${rep(8, i=>`<line x1="50" y1="50" x2="${50+48*Math.cos(i*Math.PI/4)}" y2="${50+48*Math.sin(i*Math.PI/4)}"/>`)}${rep(6, i=>`<polygon points="50,6 54,16 50,26 46,16" transform="rotate(${i*60} 50 50)"/>`)}<circle cx="50" cy="50" r="30"/><circle cx="50" cy="50" r="46"/></g></svg>`;

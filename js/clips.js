@@ -23,8 +23,8 @@ const CLIPS = {
   nakime:       {special: 'https://media.tenor.com/KcTOA0-I_8IAAAPo/%D0%B2%D1%8B%D1%81%D1%88%D0%B0%D1%8F%D0%BB%D1%83%D0%BD%D0%B04-%D0%BB%D1%83%D0%BD%D0%B04.mp4'},   // Castle Shift (biwa)
   rui:          {special: 'https://media.tenor.com/8F1cpYMAkQoAAAPo/demon-slayer-kimetsu-no-yaiba.mp4'},   // Cutting Thread Cage
   shinobu:      {special: 'https://media.tenor.com/ows-n9TDResAAAPo/shinobu-kocho-demon-slayer.mp4'},     // Wisteria Poison (butterfly sting)
-  tanjiro_mark: {special: 'https://media.giphy.com/media/7NXthOnRv4UQAyv34a/giphy.mp4',       // Hinokami Kagura, same as base Tanjiro (CK: so you can tell it from the one below)
-                 unblock: 'https://media.tenor.com/c24bU_rb8lQAAAPo/demon-slayer.mp4',        // Hinokami Kagura out of the Selfless State: Yoriichi behind him
+  tanjiro_mark: {special: 'https://media.tenor.com/c24bU_rb8lQAAAPo/demon-slayer.mp4',        // Hinokami Kagura with Yoriichi behind him (CK, Nov 12, 2026: Mark Tanjiro never uses the regular clip)
+                 unblock: 'clips/tanjiro_mark-setting-sun2.mp4',   // out of the Selfless State: the upside-down Setting Sun Transformation on Akaza (CK's video, 9.0-11.6 s only: just the flip, CK didn't want Akaza's full body)
                  selfless:'https://media.tenor.com/dwK2WAD5wJYAAAPo/tanjiro-infinity-castle.mp4'},   // Selfless State
   tanjiro_demon:{special: 'clips/tanjiro_demon-special.mp4'},   // Demon King's Rampage: CK's Tenor clip, first 4 s
   akaza:        {special: 'https://media.tenor.com/bcnPa1vZe3cAAAPo/akaza-demon-slayer.mp4',  // Destructive Death: Compass Needle
