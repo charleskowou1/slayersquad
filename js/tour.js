@@ -8,7 +8,7 @@
      already have is allowed); each win adds TOUR_SPOILS points of room. Computers take the best upgrade that fits.
    - The final is best of 3. The champion gets a screen and a tournament win on their phone.
    Data: rooms/<CODE>/tour. `s` is the bracket as JSON, written only by the host's phone. Each phone writes its own
-   joins/<phone>, squads/<phone>, spoils/<match> and results/<match>_<game>. The host's phone runs tourStep() on every change. */
+   joins/<phone>, dacts/<pick number> (draft picks), spoils/<match> and results/<match>_<game>. The host's phone runs tourStep() on every change. */
 const TOUR = {code:null, ref:null, raw:null, s:null, host:false, making:{}, offs:[], reported:{}};
 const TOUR_SPOILS = 3, TOUR_NOW = 'squad-draft-tour-now', TOUR_KEY = 'squad-draft-tour';
 const TOUR_CPU = ['Akaza AI','Doma AI','Kokushibo AI','Gyokko AI','Hantengu AI','Daki AI','Kaigaku AI'];
@@ -50,17 +50,54 @@ function tourAutoSpoil(s, m){
   }
   return {skip:true};
 }
-// A computer drafts like it does in Quickplay, alone, from every character within the points
-function tourDraftState(budget, names){
-  Object.assign(S,{mode:'tourdraft', n:2, duo:false, maxTeam:MAXTEAM, bansOn:false, banning:false, bans:[], budget, phase:'draft', first:0, lastPicker:null, history:[], k:0, sel:null,
-    picks:[[],[]], locked:[false,true], names, poolType:'all', unlockAll:true, sideWar:false, gm:undefined, coop:false, series:null});
-  S.pool=ROSTER.filter(c=>!c.spawn && !c.helper && c.cost<=budget).map(c=>c.id).sort((a,b)=>BYID[b].cost-BYID[a].cost || BYID[a].name.localeCompare(BYID[b].name)).concat(dealHelpers());
+// The draft (CK, Nov 12, 2026): everyone in the bracket, people and computers, picks one card at a time in snake order
+// from one shared pool, and every card can be taken only once in the whole tournament (one Mark Tanjiro at most).
+// Different versions of a character can be on different teams; on one team the usual rules hold (one version per
+// character, your points, at most MAXTEAM fighters, one helper).
+const tourPool = s => ROSTER.filter(c=>!c.spawn && c.cost<=s.budget).map(c=>c.id)
+  .sort((a,b)=>BYID[b].cost-BYID[a].cost || BYID[a].name.localeCompare(BYID[b].name));
+const tourSeatAt = (d, k) => { const N=d.order.length, r=Math.floor(k/N), i=k%N; return d.order[r%2 ? N-1-i : i]; };
+function tourCanTake(s, pi, id){
+  const d=s.draft, c=BYID[id], q=d.picks[pi]; if(!c || d.taken[id]!==undefined || tourCost(q)+c.cost>s.budget) return false;
+  if(c.helper) return !q.some(x=>BYID[x].helper);
+  const f=tourFighters(q); return f.length<MAXTEAM && !f.some(x=>BYID[x].fam===c.fam);
 }
-function tourCpuSquad(budget, level){
-  const keep=S; let out=[];
-  try{ S={names:['A','B'], unlockAll:true, trial:true}; tourDraftState(budget, ['A','B']); let k=0; while(S.phase==='draft' && !S.locked[0] && k++<80) cpuDraftStep(level); out=S.picks[0].slice(); }
-  finally{ S=keep; }
-  return out.length ? out : [ROSTER.find(c=>!c.spawn && !c.helper && c.cost<=budget).id];
+const tourCanAny = (s, pi) => tourPool(s).some(id=>!BYID[id].helper && tourCanTake(s,pi,id));
+function tourDraftInit(s){
+  const order=s.players.map((p,i)=>i); for(let i=order.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [order[i],order[j]]=[order[j],order[i]]; }
+  s.draft={order, k:0, picks:s.players.map(()=>[]), locked:s.players.map(()=>false), taken:{}, last:null};
+  s.phase='draft'; tourDraftSkip(s);
+}
+// Move past anyone who has locked or can't afford another fighter; when everyone is done, the bracket starts
+function tourDraftSkip(s){
+  const d=s.draft; let g=0;
+  while(g++<999){
+    if(d.locked.every(x=>x)){ s.players.forEach((p,i)=>{ p.squad=d.picks[i].slice(); p.pts=s.budget; }); s.phase='play'; s.round=0; s.matches=tourPair(s,0); return; }
+    const pi=tourSeatAt(d,d.k); if(d.locked[pi]){ d.k++; continue; }
+    if(!tourCanAny(s,pi)){ d.locked[pi]=true; d.k++; continue; }
+    return;
+  }
+}
+// One pick (or Lock team) by player pi; only on their turn
+function tourDraftAct(s, pi, act){
+  const d=s.draft; if(s.phase!=='draft' || tourSeatAt(d,d.k)!==pi || d.locked[pi]) return false;
+  if(act.lock){ if(!tourFighters(d.picks[pi]).length) return false; d.locked[pi]=true; }
+  else { if(!tourCanTake(s,pi,act.id)) return false; d.picks[pi].push(act.id); d.taken[act.id]=pi; d.last={pi, id:act.id}; }
+  d.k++; tourDraftSkip(s); return true;
+}
+// A computer's pick: the strongest card it can afford that still leaves room for a second fighter, with a little chance
+// (more on Easy); a partner it pairs well with counts extra; a helper once it's down to 1-2 points; then it locks
+function tourCpuPick(s, pi){
+  const d=s.draft, q=d.picks[pi], left=s.budget-tourCost(q), f=tourFighters(q), noise={easy:6, normal:3, hard:1.5}[s.level]||3;
+  const opts=tourPool(s).filter(id=>tourCanTake(s,pi,id) && !BYID[id].helper);
+  if(f.length>=2 && left<=2){ const h=tourPool(s).find(id=>BYID[id].helper && tourCanTake(s,pi,id)); return h && Math.random()<.6 ? {id:h} : {lock:true}; }
+  if(f.length>=4 || !opts.length) return {lock:true};
+  const cheapest=Math.min(...opts.map(id=>BYID[id].cost));
+  const score=id=>{ const c=BYID[id], rest=left-c.cost; let v=c.cost+Math.random()*noise;
+    if(f.length<1 && rest>0 && rest<cheapest) v-=8;   // leave room for a second fighter
+    if(typeof PAIRS!=='undefined' && PAIRS.some(([a,b])=>(a===c.fam||a===id) && f.some(x=>BYID[x].fam===b||x===b) || (b===c.fam||b===id) && f.some(x=>BYID[x].fam===a||x===a))) v+=3;
+    return v; };
+  return {id:opts.sort((a,b)=>score(b)-score(a))[0]};
 }
 // Computer vs computer: one real battle, played out at once (0 = side a won, 1 = side b, -1 = draw)
 function tourSim(a, b, level){
@@ -75,10 +112,6 @@ const tourKind = (s, m) => { const A=s.players[m.a].phone, B=s.players[m.b].phon
 // Returns the games to create (person vs person) as [match index]; the caller creates them.
 function tourAdvance(s, raw){
   raw=raw||{}; const make=[];
-  if(s.phase==='draft'){
-    s.players.forEach(p=>{ if(!p.squad && p.phone && raw.squads && raw.squads[p.phone]) { p.squad=raw.squads[p.phone]; p.pts=s.budget; } });
-    if(s.players.every(p=>p.squad)){ s.phase='play'; s.round=0; s.matches=tourPair(s,0); }
-  }
   if(s.phase!=='play') return make;
   let guard=0;
   while(guard++<20){
@@ -145,13 +178,25 @@ function tourListen(code){
     TOUR.ref.on('value', f); TOUR.offs.push(()=>TOUR.ref.off('value', f));
   }).catch(e=>{ S.tourMsg=netError(e); render(); });
 }
-function tourOff(){ TOUR.offs.forEach(f=>f()); TOUR.offs=[]; TOUR.s=null; TOUR.raw=null; TOUR.host=false; TOUR.making={}; }
+function tourOff(){ clearTimeout(TOUR.cpuT); TOUR.cpuT=null; TOUR.offs.forEach(f=>f()); TOUR.offs=[]; TOUR.s=null; TOUR.raw=null; TOUR.host=false; TOUR.making={}; }
 function tourHostStep(){
   const s=TOUR.s; if(!s) return;
   if(s.phase==='lobby'){   // the lobby's player list follows who has joined
     const humans=Object.entries(TOUR.raw.joins||{}).map(([phone,j])=>({phone, name:j.name, at:j.at||0})).sort((a,b)=>a.at-b.at);
     const names=JSON.stringify(humans.map(h=>[h.phone,h.name])); if(names!==JSON.stringify((s.humans||[]).map(h=>[h.phone,h.name]))){ s.humans=humans.slice(0,s.size); tourWriteS(); }
     return;
+  }
+  if(s.phase==='draft'){
+    const d=s.draft; let changed=false, g=0;
+    while(s.phase==='draft' && g++<60){ const a=(TOUR.raw.dacts||{})[d.k], pi=tourSeatAt(d,d.k), P=s.players[pi];
+      if(a && P.phone && a.phone===P.phone){ if(!tourDraftAct(s, pi, a)) d.k++; changed=true; continue; }   // a stale or invalid act can't block the draft
+      break; }
+    if(changed) tourWriteS();
+    if(s.phase==='draft'){ const pi=tourSeatAt(d,d.k);
+      if(!s.players[pi].phone && !TOUR.cpuT) TOUR.cpuT=setTimeout(()=>{ TOUR.cpuT=null; if(!TOUR.s || TOUR.s.phase!=='draft' || tourSeatAt(TOUR.s.draft,TOUR.s.draft.k)!==pi) return;
+        const ok=tourDraftAct(TOUR.s, pi, tourCpuPick(TOUR.s, pi)) || tourDraftAct(TOUR.s, pi, {lock:true}); if(!ok){ TOUR.s.draft.locked[pi]=true; TOUR.s.draft.k++; tourDraftSkip(TOUR.s); }
+        tourWriteS(); tourHostStep(); if(S.phase==='tour') render(); }, quickMotion() ? 120 : 900);
+      return; }
   }
   const before=JSON.stringify(s), make=tourAdvance(s, TOUR.raw);
   if(JSON.stringify(s)!==before) tourWriteS();
@@ -221,15 +266,6 @@ function tourFight(mi){
     tourMatch:{code:TOUR.code, mi, g:m.g, side}});
   startBattle(); window.scrollTo(0,0);
 }
-// Drafting your squad: the normal draft screen, you alone, from every character
-function tourDraft(){ const s=TOUR.s; ACTIONS.home(); tourDraftState(s.budget, [titled(s.players[tourMeIdx()].name), 'Your opponents']); S.tourDrafting=TOUR.code; window.scrollTo(0,0); }
-// The draft ends (Lock team, or nothing left to afford): send the squad instead of starting a battle
-const tourBaseStart = startBattle;
-startBattle = function(){
-  if(S.mode==='tourdraft'){ S.phase='drafted'; if(!S.trial){ const q=S.picks[0].slice(), code=S.tourDrafting; tourPut('squads/'+PHONE_ID, q); tourEnter(code); } return; }
-  return tourBaseStart.apply(this, arguments);
-};
-
 /* ---------- screens ---------- */
 const tourSquadRow = (q, sm) => `<span class="trsq">${(q||[]).map(id=>seal(BYID[id], sm||'xs')).join('')}</span>`;
 function tourMatchCard(s, m, mi, me){
@@ -241,7 +277,6 @@ function tourMatchCard(s, m, mi, me){
 function tourMyAction(s, me){
   if(me<0) return '';
   const p=s.players[me];
-  if(s.phase==='draft') return p.squad || (TOUR.raw.squads||{})[PHONE_ID] ? '<p class="hint">Squad locked in. Waiting for the others to draft…</p>' : `<button class="btn" data-a="tourdraft">Draft your squad (${s.budget} pts)</button>`;
   if(s.phase!=='play') return '';
   const mi=s.matches.findIndex(m=>m.r===s.round && (m.a===me || m.b===me));
   const m=s.matches[mi];
@@ -268,6 +303,22 @@ function tourSpoilPanel(s, m, mi, me){
     ${why?`<p class="hint warn">${esc(why)}</p>`:''}
     <div class="row"><button class="btn ghost" data-a="tourspoilgo" data-v="skip">Keep my squad</button><button class="btn" data-a="tourspoilgo" data-v="${mi}" ${ok?'':'disabled'}>Swap</button></div></div>`;
 }
+function tourDraftView(s, me){
+  const d=s.draft, cur=tourSeatAt(d,d.k), mine=cur===me && !d.locked[me], P=s.players;
+  const nm=i=>esc(P[i].name)+(i===me?' (you)':'');
+  const next=[]; for(let k=d.k, g=0; next.length<8 && g<80; k++, g++){ const pi=tourSeatAt(d,k); if(!d.locked[pi]) next.push(pi); }
+  const q=me>=0?d.picks[me]:[], left=s.budget-tourCost(q);
+  const card=id=>{ const c=BYID[id], who=d.taken[id], ok=mine && tourCanTake(s,me,id);
+    return `<button class="tdcard${who!==undefined?' gone':''}${ok?' can':''}${c.mark?' mk':''}${c.legend?' lg':''}" ${ok?`data-a="tourpick" data-v="${id}"`:'disabled'}>${seal(c,'sm')}<span class="tdt"><b>${esc(c.short)}</b><small>${c.helper?'Helper':`${c.hp} HP · ${c.pow} PWR · ${c.spd} SPD`}</small>${who!==undefined?`<small class="tdw">Taken by ${esc(P[who].name)}</small>`:`<small class="tds">${esc(sigCaption(c))}</small>`}</span><span class="tdc">${c.cost}</span></button>`; };
+  return `<div class="panel tdhead"><div class="tdturn">${mine?'<b>Your pick</b>':`<b>${nm(cur)}</b> is picking…`}</div>
+      <div class="tdorder">${next.map((pi,i)=>`<span class="${i===0?'tdnow':''}${pi===me?' tdme':''}">${esc(P[pi].name)}</span>`).join('<i>›</i>')}</div>
+      ${d.last?`<p class="muted small">Last pick: ${esc(P[d.last.pi].name)} took ${esc(BYID[d.last.id].short)}</p>`:''}
+      <p class="muted small">Every card can be taken once in the whole tournament.</p></div>
+    ${me>=0?`<div class="panel tdmine"><div class="tlabel">Your squad · ${left} of ${s.budget} pts left${d.locked[me]?' · locked':''}</div><div class="tdsq">${q.length?q.map(id=>seal(BYID[id],'sm')).join(''):'<span class="muted small">Nothing yet</span>'}</div>
+      ${mine && tourFighters(q).length?'<button class="btn ghost small" data-a="tourpick" data-v="lock">Lock team</button>':''}</div>`:''}
+    <div class="tdteams">${P.map((p,i)=>`<div class="tdteam${i===cur?' tdnow':''}${d.locked[i]?' tddone':''}"><b>${esc(p.name)}${p.phone?'':' <small>CPU</small>'}</b><span>${d.picks[i].map(id=>seal(BYID[id],'xs')).join('')||'<small class="muted">–</small>'}</span>${d.locked[i]?'<em>✓</em>':''}</div>`).join('')}</div>
+    <div class="tdgrid">${tourPool(s).sort((a,b)=>(d.taken[a]!==undefined)-(d.taken[b]!==undefined)).map(card).join('')}</div>`;
+}
 function vTour(){
   const s=TOUR.s, raw=TOUR.raw||{}, me=tourMeIdx();
   const top=`<header class="top"><div><div class="eyebrow">Tournament${TOUR.code===TOUR_SOLO?' · Solo':TOUR.code?` · ${TOUR.code}`:''}</div><div class="title">${!s?'Loading…':s.phase==='lobby'?'Lobby':s.phase==='draft'?'Draft':s.phase==='done'?'Champion':'The bracket'}</div></div><div class="topbtns"><button class="btn ghost small" data-a="tourleave">Leave</button></div></header>`;
@@ -279,10 +330,11 @@ function vTour(){
       <div class="trcfg"><span>Players</span>${opt('size',4,'4')}${opt('size',8,'8')}</div>
       <div class="trcfg"><span>Points</span>${opt('budget',10,'10')}${opt('budget',20,'20')}${opt('budget',30,'30')}</div>
       <div class="trcfg"><span>Computers</span>${opt('level','easy','Easy')}${opt('level','normal','Normal')}${opt('level','hard','Hard')}</div>
-      <p class="muted small">Draft from every character. After each win, take one fighter from the team you beat. The final is best of 3.</p></div>
+      <p class="muted small">Everyone drafts together in snake order from every character, and each card can be taken only once. After each win, take one fighter from the team you beat. The final is best of 3.</p></div>
       ${S.tourMsg?`<p class="hint warn">${esc(S.tourMsg)}</p>`:''}
       ${actionbar(TOUR.host ? `<button class="btn" data-a="tourstart" ${hs.length>=(s.solo?1:2)?'':'disabled'}>${hs.length>=(s.solo?1:2)?'Start the tournament':'Needs at least 2 people'}</button>` : '<button class="btn" disabled>Waiting for the host to start…</button>')}`;
   }
+  if(s.phase==='draft') return top+tourDraftView(s, me);
   const R=tourRounds(s), label=r=>r===R-1?'Final · best of 3':r===R-2?'Semi-finals':'Quarter-finals';
   const cols = s.phase==='draft' ? `<div class="panel"><div class="tlabel">Who’s drafted</div>${s.players.map(p=>`<div class="trside${p.squad||(raw.squads||{})[p.phone]?' won':''}"><b>${esc(p.name)}${p.phone?'':' <small>CPU</small>'}</b><span class="muted small">${p.squad||(raw.squads||{})[p.phone]?'Ready':'Drafting…'}</span></div>`).join('')}</div>`
     : `<div class="trbracket">${Array.from({length:R},(_,r)=>`<div class="trcol"><div class="tlabel">${label(r)}</div>${s.matches.map((m,mi)=>m.r===r?tourMatchCard(s,m,mi,me):'').join('')||'<p class="muted small">Waiting…</p>'}</div>`).join('')}</div>`;
@@ -302,10 +354,10 @@ Object.assign(ACTIONS, {
   tourcfg(v){ if(!TOUR.host || !TOUR.s || TOUR.s.phase!=='lobby') return; const [k,x]=v.split(':'); TOUR.s[k]= k==='level' ? x : +x; if(k==='size') TOUR.s.humans=(TOUR.s.humans||[]).slice(0,TOUR.s.size); tourWriteS(); render(); },
   tourstart(){
     const s=TOUR.s; if(!TOUR.host || !s || s.phase!=='lobby' || (s.humans||[]).length<(s.solo?1:2)) return;
-    s.players=tourPlayers(s.size, s.humans); s.players.forEach(p=>{ if(!p.phone){ p.squad=tourCpuSquad(s.budget, s.level); p.pts=s.budget; } });
-    s.phase='draft'; s.round=0; s.matches=[]; tourWriteS(); tourHostStep(); render();
+    s.players=tourPlayers(s.size, s.humans); s.round=0; s.matches=[]; tourDraftInit(s); tourWriteS(); tourHostStep(); render();
   },
-  tourdraft(){ tourDraft(); },
+  tourpick(v){ const s=TOUR.s; if(!s || s.phase!=='draft') return; const d=s.draft, me=tourMeIdx(); if(tourSeatAt(d,d.k)!==me) return;
+    tourPut('dacts/'+d.k, v==='lock' ? {phone:PHONE_ID, lock:true} : {phone:PHONE_ID, id:v}); sfx('pick'); },
   tourfight(v){ tourFight(+v); },
   tourplay(v){ const s=TOUR.s, m=s.matches[+v], me=tourMeIdx(); if(m && m.game) enterGame(m.game, m.a===me?0:1); },
   tourspoil(v){ const [k,id]=v.split(':'); S.tourSpoil=Object.assign({}, S.tourSpoil, {[k]:id}); render(); },
