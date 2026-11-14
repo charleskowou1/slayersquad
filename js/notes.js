@@ -103,9 +103,6 @@ function poolNotes(){
   const avengers=['kanao','inosuke'].filter(has);
   if(has('doma')&&avengers.length) add('vs', [...avengers,'doma'], 'Revenge on Doma', 'Facing Doma, Kanao and Inosuke get +2 SPD, and their hits on Doma do 4 more damage and ignore his DEF.', facing(avengers,['doma']));
   if(has('kaigaku')&&has('zenitsu')) add('vs', ['zenitsu','kaigaku'], 'Rivals', 'Facing Kaigaku, Zenitsu gets +2 PWR.', facing(['zenitsu'],['kaigaku']));
-  Object.entries(DESTINED).forEach(([f,foes])=>{ if(!has(f) || BYID[inPool[f]].mark) return; const fs=foes.filter(x=>has(x)); if(!fs.length) return;
-    const nm=[...new Set(fs.map(x=>BYID[inPool[x]].short))].join(' or ');
-    add('vs', [f,...fs], 'Destined foe', `Facing ${nm}, ${BYID[inPool[f]].short} may awaken the Demon Slayer Mark when down to ${Math.round(DESTINY_AT*100)}% (rare, once a match). Don't count on it.`, facing([f],fs)); });
   if(has('muichiro')&&has('gyokko')) add('vs', ['muichiro','gyokko'], 'Rival', 'Facing Gyokko, Muichiro gets +2 PWR.', facing(['muichiro'],['gyokko']));
   if(has('mitsuri')&&has('hantengu')) add('vs', ['mitsuri','hantengu'], 'Rival', 'Facing Hantengu, Mitsuri gets +2 PWR.', facing(['mitsuri'],['hantengu']));
   if(has('muzan')&&has('yoriichi')) add('vs', ['muzan','yoriichi'], 'Muzan fears the Sun', 'Facing Yoriichi, Muzan gets −3 PWR and −2 SPD.', facing(['muzan'],['yoriichi']));

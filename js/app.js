@@ -62,7 +62,7 @@ function entranceIntro(after){
   const me=myP(), them=enemiesOf(me); if(!them.length) return after&&after();
   const side=(us,cls,p,name)=>`<div class="en-side ${cls}" style="--tc:${pc(p)}"><span class="en-name">${esc(name)}</span><div class="en-cards">${us.map((u,i)=>`<span class="en-c" style="--i:${i}">${seal(u,'lg')}<b>${u.g}</b></span>`).join('')}</div></div>`;
   const el=document.createElement('div'); el.className='entrance'; el.setAttribute('role','status');
-  el.innerHTML=side(S.teams[me].filter(u=>!u.spawn),'l',me,soloView()?'You':titled(S.names[me]))+'<span class="en-slash"></span><b class="en-vs">VS</b>'+side(them.flatMap(q=>S.teams[q]).filter(u=>!u.spawn),'r',them[0],them.map(q=>titled(S.names[q])).join(' & '));
+  el.innerHTML=side(S.teams[me].filter(u=>!u.spawn),'l',me,soloView()?'You':titled(S.names[me]))+'<span class="en-slash"></span><b class="en-vs">VS</b>'+side(them.flatMap(q=>S.teams[q]).filter(u=>!u.spawn),'r',them[0],them.map(q=>titled(S.names[q])).join(nPlayers()>2&&!S.duo?' vs ':' & '));
   document.body.appendChild(el); sfx('vs');
   let gone=false; const done=()=>{ if(gone) return; gone=true; el.classList.add('out'); setTimeout(()=>{ el.remove(); after&&after(); },350); };
   el.addEventListener('click',done); setTimeout(done, quickMotion()?600:2800);
@@ -122,7 +122,6 @@ const KO_TESTS = {
   an7_wx_dawn: {you:['tanjiro'], foe:['hand'], keep:true, setup:()=>{ S.place='dawn'; S.teams[1].forEach(u=>{ u.pow=0; u.hp=u.max=200; }); }, note:'Weather: ash.'},
   an7_wx_tsuzumi: {you:['tanjiro'], foe:['hand'], keep:true, setup:()=>{ S.place='tsuzumi'; S.teams[1].forEach(u=>{ u.pow=0; u.hp=u.max=200; }); }, note:'Weather: dust.'},
   an6_kyogai: {you:['kyogai'], foe:['tanjiro','zenitsu'], keep:true, setup:()=>{ S.teams[1].forEach(u=>{ u.pow=0; u.cd=9; u.hp=u.max=200; }); const k=S.teams[0][0]; k.cd=0; k.spd=99; }, note:'Pick Drum Room Spin on Tanjiro and Fight.'},
-  an5_destiny:{you:['giyu'], foe:['akaza'], keep:true, setup:()=>{ DESTINY_ODDS=1; const g=S.teams[0][0]; g.hp=Math.round(g.max*.35); S.teams[1][0].pow=8; S.teams[1][0].cd=9; }, note:'Giyu is low against Akaza. Defend and Fight: when Akaza drops him under 30%, he awakens (always, for this test).'},
   an4_flee:   {you:['akaza'], foe:['hantengu_true','zohakuten'], keep:true, setup:()=>{ S.teams[1].forEach(u=>{ u.pow=0; u.hp=u.max=200; }); const h=S.teams[1].find(u=>u.id==='hantengu_true'); h.cd=0; h.spd=99; }, note:'Fight: the real Hantengu flees.'},
   an4_block:  {you:['giyu','tanjiro','zenitsu'], foe:['akaza'], keep:true, setup:()=>{ S.teams[1].forEach(u=>{ u.hp=u.max=300; u.cd=9; u.spd=1; }); const g=S.teams[0][0]; g.cd=0; g.spd=99; }, note:'Pick Giyu\'s Dead Calm, and Fight: Akaza\'s blow lands on the water.'},
   an4_lost:   {you:['nakime','akaza'], foe:['tanjiro','zenitsu'], keep:true, setup:()=>{ S.teams[1].forEach(u=>{ u.pow=0; u.cd=9; u.hp=u.max=300; }); const n=S.teams[0][0]; n.cd=0; n.spd=99; }, note:'Pick Nakime\'s special on Tanjiro and Fight: he falls into the castle, then can\'t act when his turn comes.'},
@@ -135,6 +134,8 @@ const KO_TESTS = {
   an4_castle_new: {you:['nakime','akaza'], foe:['tanjiro','zenitsu'], keep:true, setup:()=>{ S.teams[1].forEach(u=>{ u.pow=0; u.cd=9; u.hp=u.max=300; }); S.teams[0][0].cd=0; }, note:'New Castle Shift: pick Nakime\'s special on Tanjiro and Fight.'},
   // animation round 3 (Nov 11, 2026)
   an3_seventh: {you:['zenitsu'], foe:['akaza'], keep:true, setup:()=>{ S.teams[1].forEach(u=>{ u.pow=0; u.cd=9; u.hp=u.max=200; }); const z=S.teams[0][0]; z.sig=BYID.zenitsu.sig2; z.cd=0; }, note:'Seventh Form is ready: pick it and Fight.'},
+  ffa4: {custom:()=>{ Object.assign(S,{mode:'cpu', n:4, duo:false, names:[playerName()||'You','Mia','Doma AI','Akaza AI'], askName:null, unlockAll:true, budget:20, maxTeam:6, level:'normal', poolType:'all', picks:[['tanjiro','zenitsu','inosuke'],['giyu','shinobu','rengoku'],['doma','gyokko'],['akaza','kaigaku','daki']]}); startBattle(); }, note:'A 4-player free-for-all (the other three are computers): the standings, the compact opponent rows, and labelled teams in playback. Doma\'s Frozen Lotus now hits every team.'},
+  ffa3: {custom:()=>{ Object.assign(S,{mode:'cpu', n:3, duo:false, names:[playerName()||'You','Mia','Doma AI'], askName:null, unlockAll:true, budget:20, maxTeam:6, level:'normal', poolType:'all', picks:[['doma','zenitsu','inosuke'],['giyu','shinobu','rengoku'],['akaza','kaigaku','daki']]}); startBattle(); }, note:'A 3-player free-for-all where you have Doma: use Frozen Lotus and watch it hit both other teams.'},
   an11_markhino: {you:['tanjiro_mark'], foe:['akaza'], keep:true, setup:()=>{ S.teams[1].forEach(u=>{ u.pow=0; u.cd=9; u.hp=u.max=200; }); const t=S.teams[0][0]; t.cd=0; }, note:'Mark Tanjiro\'s regular Hinokami Kagura Shadow of the Sun: pick it and Fight.'},
   an3_sun:     {you:['tanjiro_mark'], foe:['akaza'], keep:true, setup:()=>{ S.teams[1].forEach(u=>{ u.pow=0; u.cd=9; u.hp=u.max=200; }); const t=S.teams[0][0]; t.sig=BYID.tanjiro_mark.sig; t.unblock=true; t.cd=0; }, note:'His unblockable Hinokami Kagura is ready (as if he just left the Selfless State): pick it and Fight.'},
   an3_tengen:  {you:['tengen'], foe:['akaza','doma','hand'], keep:true, setup:()=>{ S.teams[1].forEach(u=>{ u.pow=0; u.cd=9; u.hp=u.max=200; }); S.teams[0][0].cd=0; }, note:'Pick Tengen\'s special and Fight.'},
@@ -357,7 +358,7 @@ function replaySeq(kind){
   const rl=S.replayLog||[], seq=[];
   rl.forEach((rd,i)=>{ const steps=playSteps(rd.log); let after=false;
     steps.forEach((st,k)=>{ if(!k){ if(kind==='full') seq.push([i,0]); return; }
-      const ls=rd.log.slice(st[0],st[1]+1), big=ls.some(l=>HL_FX.includes(l.fx)||l.destiny);
+      const ls=rd.log.slice(st[0],st[1]+1), big=ls.some(l=>HL_FX.includes(l.fx));
       if(kind==='full' || big || after || (i===rl.length-1 && k===steps.length-1)) seq.push([i,k]);
       after = ls.some(l=>l.fx==='special'); }); });   // a special's announcement, then the hit it lands
   return seq;

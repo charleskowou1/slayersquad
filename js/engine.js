@@ -168,9 +168,22 @@ function buildPool(){
     while(f.length<Math.min(poolSize(),fams.length)) f.push(takeWeighted(left, x=>familyOdds(x,cards)));   // a new phone with few unlocks can have fewer characters than a 4-player deal
     const ids=f.map(fam=>takeWeighted(cards.filter(c=>c.fam===fam), versionOdds).id);
     addRivals(ids, cards);
+    ffaBigCard(ids, open);
     if(ids.filter(id=>BYID[id].cost<=4).length>=3+(nPlayers()-2)*2) return ids.sort((a,b)=>BYID[b].cost-BYID[a].cost).concat(dealHelpers());
   }
   return cards.slice(0,poolSize()).map(c=>c.id).concat(dealHelpers());
+}
+// Free-for-all (3–4 players): cards over FFA_MAX_COST are left out, except that a Random deal sometimes has one
+// (CK, Nov 14, 2026: rare, and the table will gang up on whoever takes it). FFA_BIG_ODDS of deals, one card at most,
+// swapped in for a mid-priced card (over 4 points, so the cheap-card guarantee holds) and given no rival.
+let FFA_BIG_ODDS = .16;
+function ffaBigCard(ids, open){
+  if(nPlayers()<3 || fullPool() || Math.random()>=FFA_BIG_ODDS) return;
+  const top=fullPool()||teamCap()<2 ? budget() : deal().maxCost, fams=new Set(ids.map(id=>BYID[id].fam));
+  const big=ROSTER.filter(c=>!c.spawn && !c.helper && c.cost>FFA_MAX_COST && c.cost<=Math.min(top,budget()) && open(c) && poolSide(c) && !fams.has(c.fam));
+  const out=ids.filter(id=>BYID[id].cost>4 && BYID[id].cost<=FFA_MAX_COST);
+  if(!big.length || !out.length) return;
+  ids[ids.indexOf(out[Math.floor(Math.random()*out.length)])] = takeWeighted(big, c=>familyOdds(c.fam,big)*versionOdds(c)).id;
 }
 // Big cards come with a rival (CK, Oct 28, 2026): a card of RIVAL_MIN+ points is always dealt with another character
 // within RIVAL_GAP points of it, so a lone Final Form Muzan isn't decided by who picks first. If the deal has none,
@@ -399,8 +412,10 @@ const hidden = t => !!(t && t.selfless && !t.reveal);
 const sig2Open = card => !!card.sig2 && (!card.sig2.lock || !!S.unlockAll || typeof storyReached!=='function' || storyReached(card.sig2.lock));
 /* ---------- move planning ---------- */
 const isAllyMove = (u,pl) => (pl.type==='special' && u.sig.kind==='ally') || pl.type==='save';   // save: Tanjiro's Selfless State
-// Free-for-all (3–4 players): a special that hits "every enemy" hits every fighter on the team you aim at, so you pick a target
-const aimsTeam = u => u.sig.kind==='all' && nPlayers()>2 && !S.coop;
+// Free-for-all (3–4 players): "hit every enemy" specials used to hit only the team you aimed at (Oct 26, 2026). CK
+// (Nov 14, 2026) wants them to hit ALL enemies, every team, like in a 1v1; kept as a switch so the sim can compare.
+let FFA_AIM_TEAM = false;
+const aimsTeam = u => FFA_AIM_TEAM && u.sig.kind==='all' && nPlayers()>2 && !S.coop;
 const needsTarget = (u,pl) => (pl.type==='attack' && !(u.basic && u.basic.kind==='self')) || pl.type==='save' || (pl.type==='special' && (u.sig.kind==='single'||u.sig.kind==='ally'||aimsTeam(u)));
 const targetOptions = (u,pl) => !needsTarget(u,pl) ? [] : isAllyMove(u,pl) ? friends(u.p).filter(f=>pl.type!=='save'||f!==u) : foes(u.p);
 function unitReady(u){ if(u.stun) return true; const pl=S.plans[u.p][u.uid]; if(!pl||!pl.type) return false; if(pl.type==='hunt') return pl.spot!=null; return !needsTarget(u,pl) || !!pl.t; }
@@ -643,7 +658,6 @@ function hit(a,t,base,o={}){
   // Shinobu is too small to cut a demon's head (CK, Nov 11, 2026): her blade leaves a demon on 1 HP; poison or a teammate finishes it
   const nocut = a && a.fam==='shinobu' && t.demon && t.hp<=0 && !t.splitOnHit; if(nocut){ t.hp=1; d=before-1; }   // never below 1, even when he's already on 1
   if(d>0 && t.splitOnHit){ htSplit(t,a); return d; }
-  if(d>0 && a && (DESTINED[t.fam]||[]).includes(a.fam)){ t.foeHit=S.round; t.foeBy=a.uid; }   // for destiny() at the end of the round
   if(nocut) L(d>0 ? `${a.name} hits ${t.name} ${lost(t,d)}${note}, but she can't cut off a demon's head. ${t.name} hangs on.` : `${a.name} can't cut off ${t.name}'s head. ${t.name} hangs on.`,'x',{...fx(d>0?'hit':'block',a,t), nocut:true, ...(guardLine||{})});
   else L(`${a.name} hits ${t.name} ${lost(t,Math.min(d,before))}${note}.`,'',{...fx('hit',a,t), ...(guardLine||{})});
   if(o.sun && t.demon && t.regen && !t.sunproof){ t.regen=0; t.sunburn=true; L(`${t.name} is burned by the sun. No more regeneration.`,'h',fx('burn',a,t)); }
@@ -955,7 +969,6 @@ function resolve(){
   // end of round: poison, Shinobu's devour damage, sunrise, regeneration, cooldowns
   const sun=sunUp();
   htRise();
-  destiny();
   perfectForm();
   Object.values(S.htHide||{}).forEach(h=>{ if(h) h.spot=Math.floor(Math.random()*HT_SPOTS); });   // the real Hantengu moves every round
   if(sun && S.round===sunRise()) L('The sun rises! From now on demons burn every round, hotter each time, and stop regenerating.','h',{...fx('burn',null,null), sunrise:true});
@@ -1053,28 +1066,12 @@ function storyBeats(when){
 // line ({awaken:true}), not before: S.pendingAwake holds them until then (applyAwakenings).
 // A fighter becomes their Mark card mid-battle (or, in story, another awakened card: Nezuko → Awakened Nezuko): that
 // card's extra HP, PWR, SPD, DEF and regen on top of what they have now, its special, and its name. Story Marks (ready) also get the special ready now; Kagaya's Final Resolve keeps the current wait.
-// Destined foes (CK, Nov 12, 2026): a base slayer whose Mark awoke against a particular demon in the show may awaken it
-// against that demon, rarely. It's printed on the card. Only once they're down to DESTINY_AT of their health, only at
-// the end of a round that foe hit them, DESTINY_ODDS each time, once per match. Not in story (it has its own awakenings).
-const HANTENGU_ALL = ['hantengu','sekido','karaku','aizetsu','urogi','zohakuten','hantengu_true'];
-const DESTINED = {tanjiro:['gyutaro','daki'], muichiro:['gyokko'], mitsuri:HANTENGU_ALL, giyu:['akaza'], sanemi:['kokushibo'], gyomei:['kokushibo']};
-let DESTINY_ODDS = .25, DESTINY_AT = .3;
-const destinedFoes = c => c && !c.mark && BYID[c.id+'_mark'] && DESTINED[c.fam] || null;
 // Gyokko's Perfect Form: at the end of the first round he ends at PERFECT_AT health or less, he sheds his shell (once)
 let PERFECT_AT = .5, PERFECT_READY = true;
 function perfectForm(){
   players().forEach(p=>alive(p).forEach(u=>{ if(u.id!=='gyokko' || u.awoke || u.hp>u.max*PERFECT_AT || !BYID.gyokko_perfect) return;
     const snap=[{uid:u.uid, id:u.id, name:u.name, g:u.g, sk:u.sk, mark:u.mark, max:u.max}]; awakenMark(u,PERFECT_READY,'gyokko_perfect',true);
     L(`Gyokko sheds his shell. Behold his Perfect Form! Scales harder than diamond, and far faster.`,'h',{...fx('awaken',null,u), act:'awaken', was:snap, perfect:true}); }));
-}
-function destiny(){
-  if(S.mode==='story' || !DESTINY_ODDS) return;
-  players().forEach(p=>alive(p).forEach(u=>{
-    if(u.foeHit!==S.round || u.mark || u.awoke || u.hp>u.max*DESTINY_AT || !destinedFoes(BYID[u.id])) return;
-    if(Math.random()>=DESTINY_ODDS) return;
-    const foe=findU(u.foeBy), was=u.name, snap=[{uid:u.uid, id:u.id, name:u.name, g:u.g, sk:u.sk, mark:u.mark, max:u.max}]; awakenMark(u,false,null,true);
-    L(`${was} won't fall to ${foe?foe.name:'this demon'}. ${was} awakens the Demon Slayer Mark!`,'h',{...fx('awaken',null,u), act:'awaken', was:snap, destiny:true});
-  }));
 }
 function awakenMark(u, ready, to, quiet){
   const b=BYID[u.id], m=BYID[to||u.id+'_mark'];

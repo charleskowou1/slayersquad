@@ -54,8 +54,9 @@ out(`- Two sides draft a squad of fighters on a points budget, then battle in ro
 - DAILY CHALLENGE: one preset battle per day with a goal (win / win within N rounds / keep X standing / no losses),
   the same on every phone. Doesn't count toward stats.
 - FREE-FOR-ALL (3 or 4 players): every team fights every other team; last team standing wins (places 1st–4th).
-  A special that hits "every enemy" hits every fighter on the ONE team you aim it at. Cards over 12 pts aren't dealt
-  (big single cards dominated: the first picker won ~60%; with the cap the pick order splits ~40/33/26%).
+  A special that hits "every enemy" hits every enemy fighter on every other team, and the second hit of a two-target special (Sanemi, Kaigaku, Susamaru) can land on any team. Cards over 12 pts are rare
+  in free-for-all: about 1 Random deal in 6 has one, never two (All / Slayers / Demons pools leave them out). Whoever takes it
+  is the team to gang up on: in simulated games the team with a big card wins 51–70% (a fair share is 25–33%).
   The computer gangs up on whichever team is ahead. Draft is snake order through all players (A B C C B A A B C…).`);
 
 hr('2. THE DRAFT');

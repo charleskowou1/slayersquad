@@ -1353,7 +1353,7 @@ body.tvmode.tvscene #tvbadge{opacity:.45;transition:opacity .3s} body.tvmode.tvs
 
 /* ---------- the TV battle board (vTvBoard in tv.js): opponent's cards on top, yours below ----------
    Sizes match BOARD in tv.js (card height --ch from sizeBoard, band 112, row gap 14): the attack flight is worked out from them. */
-.board{position:relative;display:flex;flex-direction:column;gap:14px;margin-top:8px}
+.board{position:relative;display:flex;flex-direction:column;gap:var(--rg,14px);margin-top:8px}
 .arow{display:flex;justify-content:center;gap:18px;height:var(--ch,186px)}
 .aband{height:112px;display:flex;align-items:center;justify-content:center;text-align:center}
 .acard{position:relative;flex:none;width:var(--w);height:var(--ch,186px);border-radius:14px;background:var(--surface);border:2px solid var(--tc);
@@ -1451,7 +1451,7 @@ body.tvmode.tvscene #tvbadge{opacity:.45;transition:opacity .3s} body.tvmode.tvs
 .tvjoin p{margin:0 0 8px;font-size:1.15rem;color:var(--ink-2)}
 .tvcode{font-family:var(--display);font-size:5.5rem;font-weight:800;letter-spacing:.22em;line-height:1;color:var(--gold);text-shadow:0 0 30px rgba(214,165,77,.35)}
 .tvslots{display:flex;gap:16px;flex-wrap:wrap;justify-content:center}
-.tvslot{width:300px;display:flex;flex-direction:column;gap:4px;padding:14px 18px;border-radius:16px;background:var(--surface);border:2px dashed var(--line-2);text-align:left}
+.tvslot{width:270px;display:flex;flex-direction:column;gap:4px;padding:14px 18px;border-radius:16px;background:var(--surface);border:2px dashed var(--line-2);text-align:left}
 .tvslot.on{border:2px solid var(--tc);box-shadow:0 0 24px color-mix(in srgb,var(--tc) 30%,transparent)}
 .tvslot .tvsn{font-size:.75rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--tc)}
 .tvslot b{font-size:1.25rem}
@@ -3534,9 +3534,9 @@ body.ctlmode .topbtns .ctlpill{margin-left:auto}
 .hlround b{font-family:var(--display);font-size:1.15rem;color:var(--fg)}
 .hlround small{color:var(--muted);font-size:.8rem}
 .hlround em{flex-basis:100%;text-align:center;font-style:normal;font-size:.75rem;color:var(--gold,#e8b84a);letter-spacing:.02em}
-.hlround.hlnew{animation:hlpop .6s cubic-bezier(.3,1.6,.5,1) both}
+.hlround.hlnew{animation:hlroundpop .6s cubic-bezier(.3,1.6,.5,1) both}
 .hlround.hlnew b{animation:hlglow 1.2s ease-out both}
-@keyframes hlpop{0%{transform:scale(.86)}100%{transform:none}}
+@keyframes hlroundpop{0%{transform:scale(.86)}100%{transform:none}}
 @keyframes hlglow{0%{color:var(--gold,#e8b84a);text-shadow:0 0 12px rgba(232,184,74,.8)}100%{color:var(--fg);text-shadow:none}}
 @media (prefers-reduced-motion:reduce){.hlround.pop,.hlround.hlnew b{animation:none}}
 
@@ -3824,3 +3824,54 @@ body.ctlmode .topbtns .ctlpill{margin-left:auto}
 .tbidlist>div.tdme b{color:var(--gold,#e8b84a)}
 .tbidlist small{font-size:.66rem;color:var(--muted)}
 .tdintro li small{color:var(--muted);font-size:.72rem}
+
+/* Free-for-all battle screens (Nov 14, 2026, CK: "make the battle UI better" for 3–4 players) */
+.ffastand{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.fstd{position:relative;display:grid;grid-template-columns:1fr auto;align-items:center;gap:2px 8px;padding:5px 9px 6px 11px;border-radius:10px;background:var(--surface);border:1px solid var(--line-2);overflow:hidden}
+.fstd::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--tc)}
+.fstd.me{border-color:color-mix(in srgb,var(--tc) 60%,var(--line-2))}
+.fstd .fsname{font-size:.8rem;font-weight:800;color:var(--tc);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fstd .fsstat{font-size:.72rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.fstd .fsstat b{color:var(--fg)}
+.fstd .fsbar{grid-column:1/-1;height:4px;border-radius:2px;background:rgba(255,255,255,.08);overflow:hidden}
+.fstd .fsbar i{display:block;height:100%;background:var(--tc);transition:width .5s}
+.fstd .fsbar i.drain{animation:drain .6s ease-out}
+.fstd.out{opacity:.45}
+.fstd.out .fsname{text-decoration:line-through}
+/* move screen: each opponent team is one compact row, so your own fighters stay on screen */
+.opps.many{gap:8px}
+.opps.many .ffaside{padding:6px 8px 8px;border-radius:12px;background:color-mix(in srgb,var(--tc) 7%,transparent);border:1px solid color-mix(in srgb,var(--tc) 30%,transparent)}
+.opps.many .ffaside .sidehead{display:flex;align-items:baseline;gap:8px;margin:0 0 5px;flex-wrap:wrap}
+.opps.many .ffaside .sidehead .tname{font-size:.95rem;font-family:var(--body);font-weight:800}
+.opps.many .tstat{font-size:.72rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.opps.many .taphint{margin-left:auto;font-size:.68rem}
+.opps.many .tiles.simple{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+.opps.many .tiles.simple .tile{position:relative;display:grid;grid-template-columns:34px minmax(0,1fr);align-items:center;gap:6px;padding:5px 6px;min-height:0;text-align:left}
+.opps.many .tiles .tile .gl{width:34px;height:40px;border-radius:6px}
+.opps.many .tiles.simple .tile .tb,.opps.many .tiles.simple .tile .tilebtn{min-width:0;display:grid;gap:3px;justify-items:stretch;text-align:left}
+.opps.many .tiles.simple .nm{font-size:.72rem;line-height:1.1;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.opps.many .tiles.simple .hprow{display:flex;align-items:center;gap:4px;width:100%}
+.opps.many .tiles.simple .hprow .bar{flex:1;height:4px;min-width:0}
+.opps.many .tiles.simple .hprow .hp{font-size:.62rem}
+.opps.many .tiles.simple .tile .tb,.opps.many .tiles.simple .tile .tilebtn{position:static}
+.opps.many .smarks{position:absolute;left:30px;top:30px;margin:0;gap:2px;z-index:2}
+.opps.many .smarks .sm{transform:scale(.85)}
+.opps.many .smarks .sm.txt{font-size:0;width:16px;height:16px;padding:0;border-radius:50%;display:inline-grid;place-items:center}
+.opps.many .smarks .sm.txt::after{content:"技";font-size:.62rem}
+.opps.many .tile .aimed{grid-column:1/-1}
+/* playback: each team's row is labelled */
+.mini.ffam{position:relative;justify-content:flex-start;align-items:center;gap:6px;padding:2px 4px;flex-wrap:nowrap}
+.mini.ffam .mlbl{flex:0 0 74px;font-size:.7rem;font-weight:800;color:var(--tc);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right;padding-right:4px}
+.mini.ffam .gl.mini{width:34px;height:34px}
+.mini.ffam .mb{width:34px}
+/* TV board, 3–4 teams (free-for-all): two teams side by side in each row, each in its own tinted frame */
+.arow.ffa{gap:var(--cg)}
+.board:has(.arow.ffa){margin-top:40px}
+.apanel{position:relative;flex:none;display:flex;justify-content:center;gap:18px;height:100%}
+.apanel::before{content:'';position:absolute;inset:-10px -12px;border-radius:20px;background:color-mix(in srgb,var(--tc) 9%,transparent);border:1.5px solid color-mix(in srgb,var(--tc) 38%,transparent);pointer-events:none}
+.aptag{position:absolute;left:-2px;right:-2px;top:-36px;display:flex;align-items:baseline;justify-content:space-between;gap:10px;font-size:1.05rem;white-space:nowrap}
+.aptag b{color:var(--tc);font-family:var(--serif,inherit);font-size:1.25rem;letter-spacing:.02em}
+.aptag i{font-style:normal;font-variant-numeric:tabular-nums;color:var(--ink-2,#cfc6b8);font-weight:700}
+.apanel.out::before{border-style:dashed;background:transparent}
+.apanel.out .aptag{opacity:.55}
+.apanel.out .aptag b{text-decoration:line-through}

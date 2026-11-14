@@ -59,6 +59,7 @@ function tvStop(){
   TV.offs.forEach(f=>f()); TV.offs=[]; if(TV.room) TV.room.child('host/on').set(false); TV.room=null; TV.last=null;
   S.tv=null; document.body.classList.remove('tvmode'); keepAwake(false);
 }
+const TV_SEATS = 4;   // up to 4 phones play on one TV (3 or 4 = free-for-all); more phones only watch
 // The connected phones changed: a new phone takes a free seat (or, between matches, the seat of a phone that's gone)
 function tvPhones(raw){
   if(!isTV()) return;
@@ -66,7 +67,7 @@ function tvPhones(raw){
   // each phone's name and story save, kept after it drops out so a battle in progress doesn't switch saves
   Object.entries(ph).forEach(([id,v])=>{ if(v.name) t.names[id]=v.name; if(v.story) t.saves[id]=JSON.parse(v.story); });
   Object.keys(ph).forEach(id=>{ if(t.seats.includes(id)) return;
-    if(t.seats.length<2) t.seats.push(id);
+    if(t.seats.length<TV_SEATS) t.seats.push(id);
     else { const free=t.seats.findIndex(s=>!ph[s]); if(free>=0 && !S.tvDuo) t.seats[free]=id; } });   // mid-match a seat waits for its own phone
   render();
 }
@@ -77,7 +78,7 @@ const tvSeatName = q => S.tv && S.tv.seats[q] && S.tv.names[S.tv.seats[q]] || ''
 function tvStoryData(){
   if(!isTV()) return null;
   const sv=q=>S.tv.seats[q] && S.tv.saves[S.tv.seats[q]];
-  if(S.tvDuo){ const a=sv(0), b=sv(1); return a&&b ? mergeStory(a,b) : a||b||null; }
+  if(S.tvDuo){ const all=players().map(sv).filter(Boolean); return all.length ? all.reduce((a,b)=>mergeStory(a,b)) : null; }
   return sv(0)||null;
 }
 function tvStorySave(st){
@@ -91,7 +92,7 @@ playerName = () => isTV() && tvSeatName(0) || thisPlayerName();
 const tvPhonesOn = () => !S.tv ? 0 : S.tv.seats.filter((id,q)=>tvSeatOn(q)).length;
 const tvAnyPhone = () => tvPhonesOn()>0;
 // Who picks moves on a phone: player 1 against the computer, both players in a 2-player TV match
-const tvChooser = q => S.tvDuo ? q<2 && alive(q).length>0 : q===0 && vsCpu();
+const tvChooser = q => S.tvDuo ? q<nPlayers() && alive(q).length>0 : q===0 && vsCpu();
 const tvLocked = q => !!(S.tvLocked && S.tvLocked[q]===S.round);
 // A message from a phone (m.from = its id): Continue, a choice, a draft pick, or its moves for this round
 function tvAct(m){
@@ -103,13 +104,13 @@ function tvAct(m){
   if(m.a==='stage'){ const i=m.i|0; if(m.draft ? stageCleared(i) : stageUnlocked(i)){ ACTIONS[m.draft?'stagedraft':'stage'](i); } render(); return; }
   if(seat<0) return;   // a third phone only watches
   if(m.a==='cfg' && ['budget','poolType','level'].includes(m.k)){ tvCfgSet(m.k,m.v); render(); return; }
-  const myDraft = S.phase==='draft' && turn()===seat && (S.tvDuo ? seat<2 : seat===0 && (S.mode==='cpu'||S.mode==='story'));
+  const myDraft = S.phase==='draft' && turn()===seat && (S.tvDuo ? seat<nPlayers() : seat===0 && (S.mode==='cpu'||S.mode==='story'));
   if(m.a==='pick' && myDraft){ S.sel=m.id; ACTIONS.confirmPick(); render(); return; }
   if(m.a==='lockteam' && myDraft){ ACTIONS.lock(); render(); return; }
   if(m.a==='undo' && S.phase==='draft'){ ACTIONS.undo(); render(); return; }
   if(m.a==='redeal' && S.phase==='draft'){ ACTIONS.redeal(); render(); return; }
-  if(m.a==='coin' && S.phase==='spin'){ if(guessCall(S.tvDuo?seat:0,m.v)) sfx('pick'); render(); return; }
-  if(m.a==='guess' && S.phase==='spin'){ if(S.tvDuo ? seat<2 && guessPick(seat,m.n) : seat===0) { if(!S.tvDuo) ACTIONS.guess(m.n); sfx('pick'); } render(); return; }
+  if(m.a==='coin' && S.phase==='spin'){ if((S.tvDuo ? seat<nPlayers() : seat===0) && guessCall(S.tvDuo?seat:0,m.v)) sfx('pick'); render(); return; }
+  if(m.a==='guess' && S.phase==='spin'){ if(S.tvDuo ? seat<nPlayers() && guessPick(seat,m.n) : seat===0) { if(!S.tvDuo) ACTIONS.guess(m.n); sfx('pick'); } render(); return; }
   if(m.a==='keep' && S.phase==='scout' && S.scoutP===seat){ ACTIONS.keepmoves(); render(); return; }
   if(m.a==='moves' && m.round===S.round && tvChooser(seat)){
     const plans=m.plans||{}, helpers=(m.helperPlan||[]).filter(h=>(S.helpers[seat]||[]).includes(h));
@@ -147,7 +148,8 @@ function tvContinue(){
 }
 // Choices for the phone on screens with no single main button (home, end of a battle, credits)
 function tvChoices(view){
-  const duo=tvPhonesOn()>=2 ? [['duo',`2 players: ${tvSeatName(0)||'Player 1'} vs ${tvSeatName(1)||'Player 2'}`]] : [];
+  const on=S.tv?S.tv.seats.map((id,q)=>q).filter(tvSeatOn):[];
+  const duo=on.length>=2 ? [['duo',`${on.length} players: ${on.map(q=>tvSeatName(q)||`Player ${q+1}`).join(' vs ')}`]] : [];
   if(['tvhome','setup','modeset','codex'].includes(view)){ const p1=tvSeatName(0);
     return [...duo, ['story', p1?`Story mode · ${p1}’s save`:'Story mode'], ['quickplay', p1?`Quickplay: ${p1} vs the computer`:'Quickplay vs the computer']]; }
   if(view==='story') return [...duo, ...(dreamOpen()?[['dream','The Endless Dream'],['journey','The Slayer’s Journey']]:[]), ['home','Main menu']];
@@ -184,18 +186,20 @@ function tvChoose(key){
 // picks its own moves in secret, so there's no passing the phone
 function tvDuoStart(){
   if(tvPhonesOn()<2) return;
-  ACTIONS.mode('local'); S.n=2; S.duo=false; S.tvDuo=true; S.tvLocked={};
-  S.names=[tvSeatName(0)||'Player 1', tvSeatName(1)||'Player 2'];
+  S.tv.seats=S.tv.seats.filter((id,q)=>tvSeatOn(q));   // players are numbered by connected phone, so close any gaps
+  const n=Math.min(TV_SEATS, S.tv.seats.length);
+  ACTIONS.mode('local'); S.n=n; S.duo=false; S.tvDuo=true; S.tvLocked={};
+  S.names=S.tv.seats.slice(0,n).map((id,q)=>tvSeatName(q)||`Player ${q+1}`);
   toSpin();
 }
 // The story map for the phone: every battle with whether it's open, won, and its stars
 const tvStoryList = () => STAGES.map((st,i)=>({i, title:st.title, arc:ARCS[st.arc].title, open:stageUnlocked(i), won:stageCleared(i), stars:stageStars(st.id)}));
 // What the phone at seat q should show
 function tvSeatView(q, view){
-  const g=S.spin; if(S.phase==='spin' && g && (g.state==='picking' ? !g.picks[q] : g.state==='coin' && g.tied.who.includes(q)) && (S.tvDuo ? q<2 : q===0 && S.mode==='cpu')) return 'guess';
+  const g=S.spin; if(S.phase==='spin' && g && (g.state==='picking' ? !g.picks[q] : g.state==='coin' && g.tied.who.includes(q)) && (S.tvDuo ? q<nPlayers() : q===0 && S.mode==='cpu')) return 'guess';
   if(S.phase==='plan' && tvChooser(q) && !tvLocked(q) && !(S.tvMouse===S.round && S.planFor===q)) return 'plan';
   if(S.phase==='scout' && S.scoutP===q && tvChooser(q)) return 'scout';
-  if(view==='draft' && turn()===q && (S.tvDuo ? q<2 : q===0 && (S.mode==='cpu'||S.mode==='story'))) return 'draft';
+  if(view==='draft' && turn()===q && (S.tvDuo ? q<nPlayers() : q===0 && (S.mode==='cpu'||S.mode==='story'))) return 'draft';
   return 'watch';
 }
 // With a phone connected, a finished round moves on by itself after TV_AUTO_MS (nobody presses Continue between
@@ -212,7 +216,7 @@ function tvAuto(){
 function tvPublish(view){
   if(!isTV() || !TV.room) return;
   tvAuto();
-  const o={views:[0,1].map(q=>tvSeatView(q,view)), seats:S.tv.seats, next:tvNextLabel(), choices:tvChoices(view), story: view==='story' ? tvStoryList() : null, tvView:view, wait:tvWaiting(), tvCfg: view==='tvhome' ? tvCfgNow() : null};
+  const o={views:[0,1,2,3].map(q=>tvSeatView(q,view)), seats:S.tv.seats, next:tvNextLabel(), choices:tvChoices(view), story: view==='story' ? tvStoryList() : null, tvView:view, wait:tvWaiting(), tvCfg: view==='tvhome' ? tvCfgNow() : null};
   TV_FIELDS.forEach(k=>{ if(S[k]!==undefined) o[k]=S[k]; });
   // the crow's owner sees the other side's moves (never the owner's own, so the other phone learns nothing new)
   if(S.phase==='scout' && S.plans){ o.scoutPlans=S.plans.map((p,q)=>q===S.scoutP?{}:p); o.scoutHelpers=S.helperPlan.map((h,q)=>q===S.scoutP?[]:h); }
@@ -225,7 +229,9 @@ function tvWaiting(){
   if(!S.tvDuo && !tvAnyPhone()) return '';
   if(S.phase==='plan'){ const w=players().filter(q=>tvChooser(q) && !tvLocked(q)); if(!w.length) return '';
     const done=S.tvDuo ? players().filter(q=>tvChooser(q) && tvLocked(q)).map(q=>`${who(q)} ✓`) : [];
-    return [...done, ...w.map(q=>off(q)?`${who(q)}’s phone is reconnecting…`:`Waiting for ${who(q)}’s moves`)].join(' · '); }
+    const on=w.filter(q=>!off(q)), and=a=>a.length<2?a[0]:a.slice(0,-1).join(', ')+' and '+a[a.length-1];
+    const waitOn = on.length>1 ? [`Waiting for ${and(on.map(who))}`] : on.map(q=>`Waiting for ${who(q)}’s moves`);
+    return [...done, ...waitOn, ...w.filter(off).map(q=>`${who(q)}’s phone is reconnecting…`)].join(' · '); }
   if(S.phase==='scout' && S.scoutP>=0) return `${who(S.scoutP)}’s Kasugai Crow is scouting…`;
   if(S.phase==='spin' && S.spin && S.spin.state==='coin') return `Waiting for ${S.spin.tied.who.map(who).join(' or ')} to call the coin`;
   if(S.phase==='spin' && S.spin && S.spin.state==='picking'){ const w=players().filter(q=>!S.spin.picks[q] && (S.tvDuo||q===0)); return w.length ? `Waiting for ${w.map(who).join(' and ')} to pick a number` : ''; }
@@ -275,7 +281,7 @@ function sizeBoard(n){
   BOARD.ch=Math.max(110, Math.min(BOARD.card, Math.floor((h-BOARD.band-2*BOARD.rowGap)/2)));
   return Math.max(80, Math.min(BOARD.ch, Math.floor((w-BOARD.gap*(n-1))/n)));
 }
-const tvBoardOK = () => isTV() && !!S.teams && nPlayers()===2;
+const tvBoardOK = () => isTV() && !!S.teams && nPlayers()<=4 && !S.duo;
 // the move screen is a waiting board while a phone picks (unless the laptop chose to pick this round)
 // with a phone in hand the summaries go there (CK), and the TV stays a clean picture
 const tvPhonesShow = () => isTV() && (S.tvDuo || tvAnyPhone());
@@ -296,7 +302,7 @@ function vTvDraft(){
   const p=turn(), cpu=!S.tvDuo && p!==0, who=`<span style="color:${pc(p)}">${nm(p)}</span>`;
   const verb=S.banning?'ban':'pick', wait=tvWaiting();
   return `${topbar(S.banning?`Ban round · ${S.bans.length+1} of ${nPlayers()}`:'Draft', `${who}’s ${verb}`, false)}
-    <div class="tvturn" style="--tc:${pc(p)}"><span class="adots" aria-hidden="true"><i></i><i></i><i></i></span><b>${cpu?`${nm(p)} is ${S.banning?'banning':'picking'}…`:wait||`${nm(p)} is picking`}</b><span class="muted">${budget()} points each · up to ${teamCap()} fighters</span></div>
+    <div class="tvturn" style="--tc:${pc(p)}"><span class="adots" aria-hidden="true"><i></i><i></i><i></i></span><b>${cpu?`${nm(p)} is ${S.banning?'banning':'picking'}…`:wait||`${nm(p)} is picking`}</b><span class="muted">${budget()>=UNLIMITED?'Unlimited points':budget()+' points each'} · up to ${teamCap()} fighters</span></div>
     <div class="teams">${players().map(q=>teamBox(q,p)).join('')}</div>
     <div class="grid tvgrid">${S.pool.filter(id=>!isHelper(id)).map(id=>cardHTML(BYID[id],p)).join('')}</div>
     ${S.banning?'':`<div class="tvhelpers"><span class="tlabel">Back pocket</span>${S.pool.filter(isHelper).map(id=>{ const o=S.picks.findIndex(t=>t.includes(id)); return `<span class="hchip${o>=0?' owned':''}" ${o>=0?`style="--tc:${pc(o)}"`:''}>${seal(BYID[id],'pip')}<span><b>${esc(BYID[id].short)}</b><small>${o>=0?nm(o):esc(BYID[id].sig.tag)}</small></span></span>`; }).join('')}</div>`}`;
@@ -308,7 +314,7 @@ const rowStep = () => BOARD.ch + BOARD.band + 2*BOARD.rowGap;   // top row to bo
 function boardRoles(b, pos){
   const roles=new Map(), add=(u,cls,fx='',o={})=>{ if(!u) return; const r=roles.get(u.uid)||{cls:'',fx:''}; roles.set(u.uid, Object.assign(r, o, {cls:r.cls+' '+cls, fx:r.fx+fx})); };
   // the attacker flies dist of the way to `to` (a position on the board)
-  const fly=(u,to,dist)=>{ const a=pos.get(u.uid); if(a && to) add(u,'fly','',{dx:Math.round((to.x-a.x)*dist), dy:Math.round((to.ri-a.ri)*rowStep()*dist)}); };
+  const fly=(u,to,dist)=>{ const a=pos.get(u.uid); if(a && to) add(u,'fly','',{dx:Math.round((to.x-a.x)*dist), dy:Math.round((to.y-a.y)*dist)}); };
   const struck=(l,style)=>{ const t=findU(l.on); if(!t) return;
     const mark=l.fx==='miss'?'避':l.fx==='block'?'防':STYLE_KANJI[style]||'斬';
     add(t, l.fx==='miss'?'dodged':l.fx==='block'?'blocked':'struck', (['hit','ko','burn'].includes(l.fx)&&style?fxArt(style):'')+targetFx(l)+`<span class="amark">${mark}</span>`+popHTML(l)); };
@@ -326,7 +332,7 @@ function boardRoles(b, pos){
   }
   if(b.group && by){   // a special that hits a whole team: the attacker dives at the middle of that row
     const style=styleOf(by,'special'), t=findU((b.lines.find(l=>l.on)||{}).on);
-    if(t && pos.get(t.uid)) fly(by, {x:0, ri:pos.get(t.uid).ri}, .7);
+    if(t && pos.get(t.uid)) fly(by, {x:pos.get(t.uid).cx, y:pos.get(t.uid).y}, .7);
     b.lines.filter(l=>GROUP_FX.includes(l.fx)).forEach(l=>struck(l,style));
     return roles;
   }
@@ -343,9 +349,15 @@ function boardRoles(b, pos){
 }
 function vTvBoard(b){
   const me=leftSide(), foe=enemiesOf(me)[0], playing=!!b;
-  const rowU=[foe, me].map(p=>playing ? S.teams[p].filter(u=>!b.moment(u).hidden) : S.teams[p]);
-  const n=Math.max(1, ...rowU.map(r=>r.length)), W=sizeBoard(n);
-  const pos=new Map(); rowU.forEach((r,ri)=>r.forEach((u,i)=>pos.set(u.uid, {ri, x:(i-(r.length-1)/2)*(W+BOARD.gap)})));
+  const ffa=nPlayers()>2, teamU=p=>playing ? S.teams[p].filter(u=>!b.moment(u).hidden) : S.teams[p];
+  // 2 teams: the opponent on top, you below. 3 or 4 (free-for-all): two teams side by side in each row
+  const rowsP = ffa ? [players().slice(0,2), players().slice(2)] : [[foe],[me]];
+  BOARD.rowGap = ffa ? 44 : 14;   // room for each free-for-all team's name above its cards
+  const m=Math.max(1, ...players().map(p=>teamU(p).length));
+  const W = ffa ? sizeBoard(2*m+1) : sizeBoard(m), PW=m*W+(m-1)*BOARD.gap, CG=ffa?Math.max(BOARD.gap*2, W*.5):0;
+  const rowU=rowsP.map(ps=>ps.flatMap(teamU));
+  const pos=new Map(); rowsP.forEach((ps,ri)=>ps.forEach((p,c)=>{ const r=teamU(p), cx=ps.length>1?(c-.5)*(PW+CG):0;
+    r.forEach((u,i)=>pos.set(u.uid, {ri, cx, y:ri*rowStep(), x:cx+(i-(r.length-1)/2)*(W+BOARD.gap)})); }));
   const beat=playing && b.k>0, cur=b&&b.cur, first=b&&b.lines[0], by=first&&first.by&&findU(first.by);
   // beats that play over the board: the round intro, a special's cut-in, a move clip, a fighter's line
   const over = !playing ? '' : !beat ? `<div class="now intro"><span class="ir">Round ${S.round}</span><span class="ig">Fight!</span></div>`
@@ -368,6 +380,10 @@ function vTvBoard(b){
       <div class="ainfo"><span class="anm">${esc(u.name)}</span><span class="ahp${up&&h<=LOW?' low':''}"><span class="abar"><i class="${from!==h?'drain':''}" style="width:${h}%;--from:${from}%"></i></span><b>${hp>0||o.hp===undefined&&up?h+'%':'KO'}</b></span></div>
       ${!playing&&up?statusMarks(u, u.cd===0&&!u.stun):''}`;
     return `<div class="acard${state}${r.cls}${back}${o.lost?' lost':''}${o.smolder?' smolder':''}${o.hid?' talisman':''}${boundNow(u)?' bound'+boundNow(u):''}" style="--tc:${pc(u.p)}${r.dx!==undefined?`;--dx:${r.dx}px;--dy:${r.dy}px`:''}">${dust?`<div class="cr-pic">${inner}</div>${crumblePic(dust,'').replace('<span class="cr-pic"></span>','')}`:cut?`<div class="sl-wrapb">${inner}</div><div class="sl-wrapt">${inner}</div>`:inner}</div>`; };
+  // a free-for-all team: its cards, with its name, fighters standing and health above them
+  const panel=p=>{ const all=S.teams[p], hpOf=u=>playing&&b.cur.hp[u.uid]!==undefined?b.cur.hp[u.uid]:(u.alive?u.hp:0);
+    const up=all.filter(u=>!u.spawn||u.alive).filter(u=>hpOf(u)>0).length, tot=all.filter(u=>!u.spawn).length, pc_=Math.round(100*all.reduce((a,u)=>a+hpOf(u),0)/Math.max(1,all.reduce((a,u)=>a+u.max,0)));
+    return `<div class="apanel${up?'':' out'}" style="--tc:${pc(p)};width:${PW}px"><span class="aptag"><b>${esc(nm(p))}</b>${up?`<i>${up}/${tot} · ${pc_}%</i>`:'<i>Out</i>'}</span>${teamU(p).map(card).join('')}</div>`; };
   const big = beat && !over && b.lines.some(bigHit), kos = beat && !over && b.lines.some(l=>l.fx==='ko'||l.ko);
   const wait=tvWaiting(), goal=S.mode==='story'&&STAGES[S.stage]?twistText(STAGES[S.stage]):'';
   const roundOver = !playing && S.phase==='result';
@@ -380,11 +396,11 @@ function vTvBoard(b){
     : '<button class="btn ghost" data-a="tvmouse" data-v="0">Choose on this screen</button>';
   const heading = playing ? [`Round ${S.round}${b.total?` · ${b.step} of ${b.total}`:''}`, 'The clash'] : [`Round ${S.round}`, roundOver ? 'Round over' : S.phase==='scout' ? 'The crow is back' : 'Choose your moves'];
   return `${topbar(heading[0], heading[1], false)}
-    ${strengthBar(me, playing?u=>b.cur.hp[u.uid]:undefined, playing?u=>b.prev.hp[u.uid]:undefined)}
-    <div class="board${big?' big':''}${kos?' k':''}${over?' covered':''}${playing?'':' bwait'}${playing&&!beat&&S.round===1?' opener':''}" style="--w:${W}px;--ch:${BOARD.ch}px">
-      <div class="arow top${calmRow(rowU[0])}">${rowU[0].map(card).join('')}${calmRow(rowU[0])?waterRing():''}</div>
+    ${ffa?'':strengthBar(me, playing?u=>b.cur.hp[u.uid]:undefined, playing?u=>b.prev.hp[u.uid]:undefined)}
+    <div class="board${big?' big':''}${kos?' k':''}${over?' covered':''}${playing?'':' bwait'}${playing&&!beat&&S.round===1?' opener':''}" style="--w:${W}px;--ch:${BOARD.ch}px;--rg:${BOARD.rowGap}px">
+      <div class="arow top${calmRow(rowU[0])}${ffa?' ffa':''}" style="--cg:${CG}px">${ffa?rowsP[0].map(panel).join(''):rowU[0].map(card).join('')}${calmRow(rowU[0])?waterRing():''}</div>
       <div class="aband">${band}</div>
-      <div class="arow bot${calmRow(rowU[1])}">${rowU[1].map(card).join('')}${calmRow(rowU[1])?waterRing():''}</div>
+      <div class="arow bot${calmRow(rowU[1])}${ffa?' ffa':''}" style="--cg:${CG}px">${ffa?rowsP[1].map(panel).join(''):rowU[1].map(card).join('')}${calmRow(rowU[1])?waterRing():''}</div>
       ${over?`<div class="aover" aria-live="polite">${over}</div>`:''}
     </div>${beat&&!over?beatFx(b.lines,b.from)+momentFx(momentOf(b.lines,b.to,b.cur)):''}
     ${playing ? actionbar('<button class="btn ghost" data-a="skip">Skip</button>') : roundOver ? actionbar(S.final?`<button class="btn${tvAutoDue()?' tvautob':''}" data-a="finish" style="--auto:${TV_AUTO_MS}ms;--autod:${TV.autoAt?TV.autoAt-Date.now():0}ms">See who won</button>`:`<button class="btn${tvAutoDue()?' tvautob':''}" data-a="next" style="--auto:${TV_AUTO_MS}ms;--autod:${TV.autoAt?TV.autoAt-Date.now():0}ms">Next round</button>`) : mouse ? actionbar(mouse) : ''}`;
@@ -392,15 +408,15 @@ function vTvBoard(b){
 // The TV's lobby (TV mode opens here, and Main menu comes back here): the code, who has joined, what to play
 function vTvHome(){
   const t=S.tv, seat=q=>{ const on=tvSeatOn(q), name=tvSeatName(q);
-    return `<div class="tvslot${on?' on':''}" style="--tc:${pc(q)}"><span class="tvsn">Player ${q+1}</span><b>${on?esc(name):q?'Second phone (for 2 players)':'Waiting for a phone…'}</b><span class="muted">${on?'Connected ✓':t.seats[q]?'Reconnecting…':'Not joined yet'}</span></div>`; };
+    return `<div class="tvslot${on?' on':''}" style="--tc:${pc(q)}"><span class="tvsn">Player ${q+1}</span><b>${on?esc(name):q?'Another phone (2–4 players)':'Waiting for a phone…'}</b><span class="muted">${on?'Connected ✓':t.seats[q]?'Reconnecting…':'Not joined yet'}</span></div>`; };
   const ch=tvChoices('tvhome');
   return `<div class="tvhome">
     <div class="hero"><span class="kanji" aria-hidden="true">滅</span><div class="eyebrow">TV mode</div><h1>Slayer Squad</h1></div>
     <div class="tvjoin"><p>On your phones, open Slayer Squad, tap <b>📺 Join a TV</b> and type</p><div class="tvcode">${esc(t.code)}</div></div>
-    <div class="tvslots">${seat(0)}${seat(1)}</div>
+    <div class="tvslots">${[0,1,2,3].map(seat).join('')}</div>
     ${tvCfgRows(tvCfgNow())}
     <div class="tvmodes">${ch.map(([k,l],i)=>`<button class="btn${i?' ghost':''}" data-a="tvchoose" data-v="${k}">${esc(l)}</button>`).join('')}</div>
-    <p class="hint">Pick from either phone, or here. Story mode and unlocks use the players’ own saves from their phones, and story wins are saved back to Player 1’s phone.</p>
+    <p class="hint">Pick from any phone, or here. With 3 or 4 phones it’s a free-for-all: last team standing wins. Story mode and unlocks use the players’ own saves from their phones, and story wins are saved back to Player 1’s phone.</p>
     <div class="tvhomebar"><button class="btn ghost small" data-a="tvfull">Full screen</button><button class="btn ghost small" data-a="tvexit">Exit TV mode</button></div>
   </div>`;
 }

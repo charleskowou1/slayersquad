@@ -2,6 +2,7 @@
 // (CACHE 'squad-draft-vNN'), which goes up with every push. tools/make-guide.js prints this at the top of the guide.
 // Add a line here with every push (CK, Oct 28, 2026), then rebuild the guide: node tools/make-guide.js
 module.exports = [
+  [138, '2026-11-14', 'Free-for-all (3–4 players): specials that hit every enemy hit every enemy team, cleaner battle screens, and rare big cards (about 1 Random deal in 6). TV mode takes up to 4 phones, with a battle board for 3–4 teams. Destined Foes removed.'],
   [137, '2026-11-13', 'New music: Zankyou Sanka (Aimer) joins the home songs and Zenitsu’s Flaming Thunder God joins the battle songs; Tap to start now rings with the bell from the Demon Slayer soundtrack’s Beginning.'],
   [136, '2026-11-13', 'Tournament redesigned: a Your match card (round, best-of-3 score, both squads), a real bracket by round, picture cards and filters in the draft, a spoils preview, Leave or Quit; the draft order is now bid for with your own points; spoils are a true swap so no card is ever on two teams, and old tournaments are cleared; Mark Tanjiro’s Hinokami keeps its animation when it knocks someone out.'],
   [135, '2026-11-12', 'Tournament draft is shared: everyone (people and computers) picks one card at a time in snake order, and each card can be taken only once in the whole tournament (different versions can still be on different teams).'],

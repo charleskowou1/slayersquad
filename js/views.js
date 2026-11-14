@@ -128,6 +128,11 @@ function strengthBar(me, hpOf=u=>u.alive?u.hp:0, prevOf){
   const now=groups.map(share(hpOf)), was=prevOf?groups.map(share(prevOf)):now, sum=x=>x.reduce((a,b)=>a+b,0)||1;
   const name=g=>g.length>1 ? g.map(q=>q===me&&solo?'You':nm(q)).join(' & ') : g[0]===me&&solo?'You':g[0]!==me&&solo&&nPlayers()===2?'Opponent':nm(g[0]);
   const label=(g,i)=>`<span style="color:${pc(g[0])}">${i&&groups.length===2?`<b>${Math.round(now[i]*100)}%</b> ${name(g)}`:`${name(g)} <b>${Math.round(now[i]*100)}%</b>`}</span>`;
+  if(groups.length>2){   // free-for-all (CK, Nov 14, 2026): one standings card per team instead of four names squeezed on one line
+    const standing=g=>{ const us=g.flatMap(q=>S.teams[q]).filter(u=>hpOf(u)!==undefined); return [us.filter(u=>hpOf(u)>0).length, us.length]; };
+    return `<div class="ffastand" role="img" aria-label="${groups.map((g,i)=>`${name(g)} ${Math.round(now[i]*100)}% health`).join(', ')}">${groups.map((g,i)=>{ const [up,all]=standing(g), out=!up;
+      return `<div class="fstd${out?' out':''}${g.includes(me)&&solo?' me':''}" style="--tc:${pc(g[0])}"><span class="fsname">${esc(name(g))}</span><span class="fsstat">${out?'Out':`${up}/${all} · <b>${Math.round(now[i]*100)}%</b>`}</span><span class="fsbar"><i class="${was[i]!==now[i]?'drain':''}" style="width:${now[i]*100}%;--from:${was[i]*100}%"></i></span></div>`; }).join('')}</div>`;
+  }
   return `<div class="strength${groups.length>2?' multi':''}" role="img" aria-label="${groups.map((g,i)=>`${name(g)} ${Math.round(now[i]*100)}% health`).join(', ')}">
     <div class="sl">${groups.map(label).join('')}</div>
     <div class="sbar">${groups.map((g,i)=>`<i class="${was[i]!==now[i]?'drain':''}" style="width:${now[i]/sum(now)*100}%;--from:${was[i]/sum(was)*100}%;background:${pc(g[0])}"></i>`).join('')}</div></div>`;
@@ -136,7 +141,8 @@ const vsDivider = () => '<div class="vsdiv" aria-hidden="true"><span>VS</span></
 function teamBlock(p, label, moment, simple, hint){
   const os=S.teams[p].map(u=>Object.assign(moment?moment(u):{}, simple?{simple:true}:{})), shown=S.teams[p].filter((u,i)=>!os[i].hidden);
   const up=S.teams[p].filter((u,i)=>!os[i].hidden && (os[i].hp===undefined?u.alive:os[i].hp>0)).length;
-  return `<section class="side"><div class="sidehead"><span class="tname" style="color:${pc(p)}">${label||nm(p)}</span>
+  const ffa=simple && nPlayers()>2, hpPct=ffa ? Math.round(100*S.teams[p].reduce((a,u)=>a+(u.alive?u.hp:0),0)/S.teams[p].reduce((a,u)=>a+u.max,0)) : 0;
+  return `<section class="side${ffa?' ffaside':''}" style="--tc:${pc(p)}"><div class="sidehead"><span class="tname" style="color:${pc(p)}">${label||nm(p)}</span>${ffa?`<span class="tstat">${up}/${shown.length} · ${hpPct}%</span>`:''}
     ${hint?`<span class="taphint">${hint}</span>`:simple?'':`<span class="muted">${up} of ${shown.length} standing</span>`}</div>
     ${simple?'':synChips(p)}<div class="tiles${simple?' simple':''}">${S.teams[p].map((u,i)=>tile(u,{...os[i],i})).join('')}</div></section>`;
 }
@@ -177,8 +183,8 @@ function modeSettings(){
       <div class="setline"><span class="tlabel">Max fighters per team</span>${seg('cfgmax',c.maxTeam,[1,2,3,4,5,6].map(k=>[k,k]))}</div>
       <div class="setline"><span class="tlabel">Bans</span>${seg('cfgbans',c.bans?'on':'off',[['off','Off'],['on','1 each']])}
         <span class="hint">Before the draft, each player bans one character. Nobody can pick it.</span></div></details>`;
-  const note = n===4 && c.duo ? `<p class="hint">2v2: ${S.mode==='local'?'players 1 &amp; 3 team up against 2 &amp; 4':'you and an allied computer against two computers'}. Heals and shields can go on your partner's fighters; a team wins when the other team has nobody left. Cards over ${FFA_MAX_COST} pts aren't dealt.</p>`
-    : n>2 ? `<p class="hint">Free-for-all: every team fights every other team; last one standing wins. Specials that hit “every enemy” hit the whole team you aim at, and cards over ${FFA_MAX_COST} pts aren't dealt.</p>`
+  const note = n===4 && c.duo ? `<p class="hint">2v2: ${S.mode==='local'?'players 1 &amp; 3 team up against 2 &amp; 4':'you and an allied computer against two computers'}. Heals and shields can go on your partner's fighters; a team wins when the other team has nobody left. Cards over ${FFA_MAX_COST} pts are rare: a Random deal has one now and then, never two.</p>`
+    : n>2 ? `<p class="hint">Free-for-all: every team fights every other team; last one standing wins. Specials that hit “every enemy” hit every fighter on every other team. Cards over ${FFA_MAX_COST} pts are rare: a Random deal has one now and then, never two.</p>`
     : `<p class="hint">${{10:'Quick, chaotic games with 2–3 fighters each.',20:'The standard game.',30:'Bigger squads and stronger cards. Yoriichi and Final-Form Muzan stay rare.',[UNLIMITED]:'No point limit: anyone can be drafted, and only the fighter limit stops a team.'}[c.budget]}</p>`;
   if(S.mode==='local'){ const names=localNames(), side=(i,art)=>`<label class="vsside" style="--tc:${pc(i)}">${ART[art]?`<img decoding="sync" src="${ART[art]}" alt="">`:''}<span>Player ${i+1}</span><input id="n${i}" type="text" maxlength="14" value="${esc(names[i])}" aria-label="Player ${i+1} name"></label>`;
     return `<div class="vsboard">${side(0,'zenitsu')}<b class="vsmark" aria-hidden="true">VS</b>${side(1,'inosuke')}</div>
@@ -240,7 +246,6 @@ function codexSheet(){
     ${c.selfless?`<div class="pas"><b>Then: ${esc(SELFLESS.name)}</b>: ${esc(SELFLESS.desc)}${selflessOpen()?'':' <span class="muted">🔒 Unlocks when you win Destructive Death in the story.</span>'}</div>`:''}
     ${c.sig2?`<div class="pas"><b>Then: ${esc(c.sig2.name)}</b>: ${esc(c.sig2.desc)}${c.sig3?'':` <span class="muted">After it, back to ${esc(c.sig.name)}: the two take turns.${sig2Open(c)?'':` 🔒 Unlocks when you win ${esc((STAGES.find(s=>s.id===c.sig2.lock)||{}).title||'its story battle')}.`}</span>`}</div>`:''}
     ${c.sig3?`<div class="pas"><b>Then: ${esc(c.sig3.name)}</b>: ${esc(c.sig3.desc)} <span class="muted">After it, back to ${esc(c.sig.name)}: the three take turns.</span></div>`:''}
-    ${destinyLine(c)}
     ${c.basic?`<div class="pas"><b>${esc(c.basic.name)}</b> (instead of Attack): ${esc(c.basic.desc)}</div>`:''}
     ${c.regen?`<div class="pas">Regenerates ${c.regen} HP every round.</div>`:''}
     ${pas.map(x=>`<div class="pas">${esc(x)}</div>`).join('')}
@@ -393,7 +398,7 @@ function vSetup(){
       <p><b>Synergies</b> (like Tanjiro + Nezuko) are listed in the draft's Pool notes and in the 📖 Codex.</p>
       <p><b>Marks ✦</b> hit harder and recharge faster. <b>Legends</b> (Yoriichi) strike twice.</p>
       <p><b>Back pocket:</b> one optional 1 pt helper you can use once, on any round.</p>
-      <p><b>3–4 players:</b> a free-for-all or 2v2 teams. Specials that hit "every enemy" hit the team you aim at.</p>
+      <p><b>3–4 players:</b> a free-for-all or 2v2 teams. Specials that hit "every enemy" hit every enemy on every team, and a second hit (like Sanemi’s) can land on any team.</p>
       <p><b>Story</b> unlocks new characters for every mode as you win battles.</p>
     </div></details>
   ${updatesPanel()}
@@ -775,7 +780,6 @@ function vSheet(){
     ${c.selfless?`<div class="pas"><b>Then: ${esc(SELFLESS.name)}</b>: ${esc(SELFLESS.desc)}${selflessOpen()?'':' <span class="muted">🔒 Unlocks when you win Destructive Death in the story.</span>'}</div>`:''}
     ${c.sig2?`<div class="pas"><b>Then: ${esc(c.sig2.name)}</b>: ${esc(c.sig2.desc)}${c.sig3?'':` <span class="muted">After it, back to ${esc(c.sig.name)}: the two take turns.${sig2Open(c)?'':` 🔒 Unlocks when you win ${esc((STAGES.find(s=>s.id===c.sig2.lock)||{}).title||'its story battle')}.`}</span>`}</div>`:''}
     ${c.sig3?`<div class="pas"><b>Then: ${esc(c.sig3.name)}</b>: ${esc(c.sig3.desc)} <span class="muted">After it, back to ${esc(c.sig.name)}: the three take turns.</span></div>`:''}
-    ${destinyLine(c)}
     ${c.regen?`<div class="pas">Regenerates ${c.regen} HP every round.</div>`:''}
     ${pas.map(x=>`<div class="pas">${esc(x)}</div>`).join('')}
     ${c.splitOnHit?splitTree(c):''}
@@ -1061,8 +1065,6 @@ function stageCalm2(by){
 // from the point it struck, water splashes, and the attacker is pushed back
 const calmDome = () => `<span class="cb-dome" aria-hidden="true"><i class="cb-rip"></i><i class="cb-rip r2"></i><i class="cb-rip r3"></i>${rep(8,i=>`<i class="cb-drop" style="--a:${-150+i*17}deg;--l:${30+(i%3)*12}px;--d:${(.42+(i%4)*.03).toFixed(2)}s"></i>`)}</span>`;
 // Destined foe (Nov 12, 2026): printed on the card so it's never a hidden surprise
-const destinyLine = c => { const f=destinedFoes(c); if(!f) return ''; const names=[...new Set(f.filter(x=>BYID[x]&&!BYID[x].spawn).map(x=>BYID[x].short))];
-  return `<div class="pas"><b>✦ Destined foe</b>: facing ${esc(names.join(' or '))}, may awaken the Mark when down to ${Math.round(DESTINY_AT*100)}% (rare, once a match).</div>`; };
 // Who cast the Dead Calm protecting this team this round (for his silhouette behind a blocked teammate)
 const calmCaster = p => { const l=S.log.find(x=>x.calm && x.by && sameSide(findU(x.by).p,p)); return l ? findU(l.by) : null; };
 // Shinobu's blade stops at a demon's neck: a thin needle mark and a crossed-out 首 (head)
@@ -1219,7 +1221,7 @@ function stageGroup(lines){
 // `moment` gives HP at this beat; `involved` = uids in the current action.
 function miniTeam(p, moment, involved){
   const us=S.teams[p].map(u=>({u,o:moment(u)})).filter(x=>!x.o.hidden);
-  return `<div class="mini" style="--tc:${pc(p)}">${us.map(({u,o})=>{
+  return `<div class="mini${nPlayers()>2?' ffam':''}" style="--tc:${pc(p)}">${nPlayers()>2?`<span class="mlbl">${esc(soloView()&&p===(typeof myP==='function'?myP():0)?'You':nm(p))}</span>`:''}${us.map(({u,o})=>{
     const hp=o.hp===undefined?u.hp:o.hp, up=hp>0, h=up?pct(u,hp):0, from=o.from===undefined?h:Math.max(0,pct(u,o.from));
     return `<div class="m${up?'':' dead'}${involved.has(u.uid)?' inv':''}${o.flash?' '+o.flash:''}${o.calm?' calm':''}${o.lost?' lost':''}${o.smolder?' smolder':''}${o.hid?' talisman':''}">${sealBtn(u,'mini')}
       <span class="mb${up&&h<=LOW?' low':''}"><i class="${from<h?'drain':''}" style="width:${h}%;--from:${from}%"></i>${from>h?`<b class="dmgghost" style="left:${h}%;width:${from-h}%"></b>`:''}</span></div>`; }).join('')}</div>`;

@@ -68,7 +68,7 @@ function check(games){
       if(S.spin.r<0||S.spin.r>=n) throw new Error('spin winner out of range');
       newDraft(S.spin.r);
       if(turn()!==S.spin.r) throw new Error('spin winner did not pick first');
-      if(S.pool.some(id=>BYID[id].cost>maxCardCost())) throw new Error('card over the cost cap dealt');
+      { const over=S.pool.filter(id=>BYID[id].cost>maxCardCost()); if(over.length>(n>2&&!fullPool()?1:0) || over.some(id=>BYID[id].cost>budget())) throw new Error('card over the cost cap dealt'); }   // free-for-all Random deals may have one rare big card
       if(S.bansOn){ for(let b=0;b<n;b++){ if(!S.banning) throw new Error('ban round ended early'); vDraft(); S.sel=S.pool[0]; vSheet(); S.sel=null; cpuBan(); }
         if(S.banning || S.bans.length!==n) throw new Error('ban round did not finish'); if(S.pool.some(id=>S.bans.some(b=>BYID[b.id].fam===BYID[id].fam) && canPick(turn(),id))) throw new Error('banned card can be picked'); }
       let k=0; while(S.phase==='draft'&&k++<200){ vDraft(); if(k===1){ S.quitAsk=true; vSheet(); S.quitAsk=false; } { const keep=S.tv; S.tv=TVT; vTvDraft(); S.tv=keep; } S.pool.forEach(id=>{ S.sel=id; vSheet(); }); pocketDraft(turn()); S.sel=null; cpuDraftStep(level); }
