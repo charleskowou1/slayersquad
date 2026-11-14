@@ -649,7 +649,13 @@ const ACTIONS = {
   let quiet=false; try{ quiet=sessionStorage.getItem('squad-draft-quiet')==='1'; sessionStorage.removeItem('squad-draft-quiet'); }catch(e){}
   if(quiet || /[?&]test=/.test(location.search) || /nosplash/.test(location.search) || navigator.webdriver){ el.remove(); return; }   // quiet: the game just reloaded itself for an update
   let gone=false;
-  const go=()=>{ if(gone) return; gone=true; unlockSound(); sfx('intro'); el.classList.add('go');
+  // The sound on Tap to start (CK, Nov 13, 2026): the ring from "Beginning" (Demon Slayer OST), loaded as
+  // the game opens so it starts at once; falls back to the old synthesized sting if it can't play. Silent when effects are off.
+  const ringData=fetch('sounds/splash.mp3').then(r=>r.ok?r.arrayBuffer():null).catch(()=>null);   // fetched as data, not an <audio> (media range requests and the offline cache don't mix on iPhone)
+  const sting=()=>{ const v=(S.vol||loadVolumes()).sfx; if(!VOL_LEVELS[v]) return;
+    ringData.then(buf=>{ if(!buf || !AC) return sfx('intro');
+      AC.decodeAudioData(buf.slice(0)).then(b=>{ try{ if(AC.state!=='running') AC.resume(); const src=AC.createBufferSource(); src.buffer=b; src.connect(SFX_OUT); src.start(); }catch(e){ sfx('intro'); } }, ()=>sfx('intro')); }); };
+  const go=()=>{ if(gone) return; gone=true; unlockSound(); sting(); el.classList.add('go');
     setTimeout(()=>{ el.classList.add('out'); setTimeout(()=>{ el.remove(); if(UPDATE_READY && S.phase==='setup') reloadQuiet(); }, 700); }, quickMotion()?300:2400); };   // an update that arrived during the splash applies once it's gone
   el.addEventListener('click', go); el.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' ') go(); });
 })();

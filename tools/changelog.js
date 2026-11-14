@@ -2,6 +2,7 @@
 // (CACHE 'squad-draft-vNN'), which goes up with every push. tools/make-guide.js prints this at the top of the guide.
 // Add a line here with every push (CK, Oct 28, 2026), then rebuild the guide: node tools/make-guide.js
 module.exports = [
+  [137, '2026-11-13', 'New music: Zankyou Sanka (Aimer) joins the home songs and Zenitsu’s Flaming Thunder God joins the battle songs; Tap to start now rings with the bell from the Demon Slayer soundtrack’s Beginning.'],
   [136, '2026-11-13', 'Tournament redesigned: a Your match card (round, best-of-3 score, both squads), a real bracket by round, picture cards and filters in the draft, a spoils preview, Leave or Quit; the draft order is now bid for with your own points; spoils are a true swap so no card is ever on two teams, and old tournaments are cleared; Mark Tanjiro’s Hinokami keeps its animation when it knocks someone out.'],
   [135, '2026-11-12', 'Tournament draft is shared: everyone (people and computers) picks one card at a time in snake order, and each card can be taken only once in the whole tournament (different versions can still be on different teams).'],
   [134, '2026-11-12', 'Mark Tanjiro’s Hinokami Kagura redone: his regular one always plays the clip with Yoriichi and shows Yoriichi’s faded card striking with him (Shadow of the Sun); the unblockable one out of the Selfless State plays the upside-down Setting Sun Transformation clip and his card leaps over the target to cut down from above.'],

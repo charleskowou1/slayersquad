@@ -217,20 +217,22 @@ const TRACKS = {
   nezuko:        'music/nezuko-lullaby.mp3',        // Kamado Nezuko's Song (ufotable): home rotation, story map, calm scenes
   from_the_edge: 'music/from-the-edge.mp3',         // FictionJunction ft. LiSA, the Season 1 ending: home rotation
   gurenge:       'music/gurenge.mp3',               // LiSA, the Season 1 opening (TV size): home rotation
+  zankyou:       'music/zankyou-sanka.mp3',         // Aimer, the Season 2 opening (full): home rotation (CK, Nov 13, 2026)
   nezuko_finale: 'music/nezuko-finale.mp3',         // the same song's orchestral climax: story finale and end credits
   tengen:        'music/tengen.mp3',                // drafting and who-picks-first
   hashira:       'music/hashira.mp3',               // battles (one of three per match)
   zenitsu:       'music/zenitsu-thunderclap.mp3',
   zenitsu_mugen: 'music/zenitsu-mugen.mp3',
+  zenitsu_seventh:'music/zenitsu-seventh.mp3',      // Zenitsu 7th Form: Flaming Thunder God (Infinity Castle OST cover, Diego Mitre Music): battles (CK, Nov 13, 2026)
   akaza:         'music/akaza.mp3',                 // boss battles (Upper Moons, Muzan, Final Form) and epic scenes
   zohakuten:     'music/zohakuten.mp3',             // boss battles and dark scenes
 };
 // names shown in Settings → Now playing
 const SONG_TITLES = {nezuko:'Kamado Nezuko’s Song', nezuko_finale:'Kamado Nezuko’s Song (finale)', from_the_edge:'from the edge · FictionJunction ft. LiSA',
-  gurenge:'Gurenge · LiSA', tengen:'Tengen Uzui Theme', hashira:'Hashira Theme', zenitsu:'Zenitsu Theme · Thunderclap and Flash',
-  zenitsu_mugen:'Zenitsu Theme · Mugen Train', akaza:'Akaza Theme', zohakuten:'Zohakuten Theme'};
+  gurenge:'Gurenge · LiSA', zankyou:'Zankyou Sanka · Aimer', tengen:'Tengen Uzui Theme', hashira:'Hashira Theme', zenitsu:'Zenitsu Theme · Thunderclap and Flash',
+  zenitsu_mugen:'Zenitsu Theme · Mugen Train', zenitsu_seventh:'Zenitsu · Flaming Thunder God (cover)', akaza:'Akaza Theme', zohakuten:'Zohakuten Theme'};
 // Home screen rotation (CK, Nov 4, 2026): each time the game opens it starts on the next song, and one song follows another
-const HOME_TRACKS = ['nezuko', 'from_the_edge', 'gurenge'], BATTLE_TRACKS = ['hashira', 'zenitsu', 'zenitsu_mugen'], BOSS_TRACKS = ['akaza', 'zohakuten'];
+const HOME_TRACKS = ['nezuko', 'from_the_edge', 'gurenge', 'zankyou'], BATTLE_TRACKS = ['hashira', 'zenitsu', 'zenitsu_mugen', 'zenitsu_seventh'], BOSS_TRACKS = ['akaza', 'zohakuten'];
 const HOME_KEY = 'squad-draft-home-song';
 let HOME_AT = 0; try{ HOME_AT = (((+localStorage.getItem(HOME_KEY))||0) + 1) % HOME_TRACKS.length; localStorage.setItem(HOME_KEY, HOME_AT); }catch(e){}
 const homeTrack = () => HOME_TRACKS[HOME_AT];
