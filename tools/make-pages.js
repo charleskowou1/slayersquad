@@ -26,7 +26,7 @@ GROUPS.push(['Back-pocket helpers', '1 pt each and no fighter slot: use one once
 
 /* ---------- helpers ---------- */
 const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-const imgOf = c => ['jpg', 'png', 'webp'].flatMap(x => [c.id, c.id.replace(/_mark$/, ''), c.fam].map(n => `img/${n}.${x}`)).find(f => fs.existsSync(path.join(ROOT, f)));
+const imgOf = c => ['jpg', 'png', 'webp'].flatMap(x => [c.art, c.id, c.id.replace(/_mark$/, ''), c.fam].filter(Boolean).map(n => `img/${n}.${x}`)).find(f => fs.existsSync(path.join(ROOT, f)));
 const sideOf = c => c.helper ? 'Helper' : c.id === 'typezero' ? 'Training puppet' : c.legend ? 'Legend' : c.demon ? (/Demon ally/.test(c.type) ? 'Demon ally' : 'Demon') : 'Demon Slayer';
 const stageName = c => { const i = g.unlockStage(c.id); return i >= 0 && g.MAIN_STAGES[i] ? g.MAIN_STAGES[i].title : null; };
 const write = (rel, html) => { const f = path.join(ROOT, rel); fs.mkdirSync(path.dirname(f), { recursive: true }); const old = fs.existsSync(f) && fs.readFileSync(f, 'utf8'); if (old !== html) fs.writeFileSync(f, html); return old !== html; };

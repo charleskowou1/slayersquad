@@ -69,7 +69,7 @@ add({id:'gyokko_perfect',fam:'gyokko',sk:'gyokko_perfect',spawn:true,name:'Gyokk
 let HT_SPOTS = 3, HT_RISE = 1/3;
 // Zohakuten, Upper Moon 4's Strongest Emotion (CK's design, Nov 16, 2026). The draft card for Hantengu: id 'hantengu' so stats, story and unlocks
 // carry over. Knock him down and the real Hantengu (hantengu_true) comes out and hides behind card 1, 2 or 3 (engine: zohDown, zohGuess, zohRise).
-add({id:'hantengu',name:'Zohakuten',short:'Zohakuten',g:'憎',type:"Upper Moon 4's Strongest Emotion",demon:true,upper:true,cost:9,hp:30,pow:11,spd:9,def:6,regen:2,
+add({id:'hantengu',name:'Zohakuten',short:'Zohakuten',g:'憎',type:"Upper Moon 4's Strongest Emotion",demon:true,upper:true,cost:9,hp:44,pow:11,spd:9,def:6,regen:2,
   hatred:2, hatredCap:4, zoh:true, kin:'hantengu_true', art:'zohakuten',
   passive:'Upper Moon 4’s strongest emotion. His hatred grows: +2 PWR at the end of every round, up to +4. Knock him down and the real Hantengu comes out and hides behind card 1, 2 or 3: to hit him you pick a card. Right card, it lands; wrong card, it misses. Specials that hit every enemy pass over him, and his neck is hard as steel (DEF 10). If the real one survives the round, Zohakuten gets back up, weaker each time. Kill the real one and Zohakuten crumbles. After sunrise Zohakuten stays down and the real one has nowhere to hide.',
   sig:{id:'wooddragons',name:'Wood Dragons',desc:'Every enemy takes PWR−2, even through Defend.',cd:3,kind:'all'}});

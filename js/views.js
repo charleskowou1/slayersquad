@@ -289,7 +289,7 @@ function vReveal(){
     <div class="revealteam">${seals(S.picks[1])}</div>${yours}
     ${m==='random'?`<div class="tlabel revealhead">Your hand</div><div class="revealteam">${seals(S.picks[0])}</div>`:''}
     ${m==='final'?`<p class="hint">Every enemy hits ${Math.round(FINAL_POW*100)}% harder and never misjudges a move. The sun rises in round ${FINAL_SUNRISE} and burns them, but at dawn they stop defending and hit far harder.</p>`:''}
-    ${actionbar('<button class="btn" data-a="finalfight">Fight</button>')}</div>`;
+    ${actionbar(`${m==='random'?'<button class="btn ghost" data-a="gmredeal">Re-deal</button>':''}<button class="btn" data-a="finalfight">Fight</button>`)}</div>`;
 }
 const coopResult = () => { const g=S.series, won=coopWon(); return `<p class="dres ${won?'ok':''}">${g?(won?`Wave ${g.wave} cleared.`:`You cleared ${plural(g.wave-1,'wave')} together.`):won?'You beat Muzan together.':'Muzan wins.'}</p>`; };
 function gmResult(w){

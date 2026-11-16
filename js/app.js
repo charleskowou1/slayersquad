@@ -505,6 +505,7 @@ const ACTIONS = {
   toDraft(){ if(isAsync()) return send({a:'todraft'}); if(isOnline() && !iAmHost()) return; if(!S.spin || S.spin.state!=='done') return; newDraft(S.spin.r); },
   askquit(){ S.quitAsk=true; },
   unquit(){ S.quitAsk=false; },
+  gmredeal(){ if(S.mode==='random' && S.phase==='reveal') gmRandom(); },   // Random Squads: deal both hands again before the fight (CK, Nov 16, 2026)
   redeal(){ if(typeof isCtl==='function' && isCtl()) return ctlSend({a:'redeal'}); if(isOnline() && !iAmHost()) return; S.pool=buildPool(); S.sel=null; },
   onew(){ onlineCreate(); },
   shareroom(){ shareInvite(); },
@@ -721,7 +722,7 @@ const artFile = (dir, name) => { const f=((typeof ART_FILES!=='undefined'&&ART_F
 function findArt(){
   const found={}, ids=ROSTER.map(c=>c.id).concat(EXTRA_ART).filter(id=>artFile('img',id));
   ids.forEach(id=>{ const im=new Image(); found[id]=im.src=artFile('img',id); ART_KEEP.push(im); if(im.decode) im.decode().catch(()=>{}); });
-  ROSTER.forEach(c=>{ const src=found[c.id]||(c.art&&found[c.art])||found[c.id.replace(/_mark$/,'')]||found[c.fam]; if(src) ART[c.id]=src; });
+  ROSTER.forEach(c=>{ const src=(c.art&&found[c.art])||found[c.id]||found[c.id.replace(/_mark$/,'')]||found[c.fam]; if(src) ART[c.id]=src; });
   EXTRA_ART.forEach(id=>{ if(found[id]) ART[id]=found[id]; });
 }
 function findPlaces(){ [...ALL_STAGES.map(st=>st.id), ...Object.keys(ARCS)].forEach(arc=>{ const f=artFile('places',arc); if(f) PLACE_ART[arc]=f; }); }

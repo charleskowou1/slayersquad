@@ -715,7 +715,7 @@ function htRise(){
    The draft card is Zohakuten, a normal fighter. Knock him down and the real Hantengu comes out: he hides behind card 1, 2 or 3
    (his only move), and any attack or single-target special on him comes with a card guess. Right card: it lands. Wrong card: it misses
    (no other cost). Specials that hit every enemy pass over him; his DEF 10 means a normal hit does about half its PWR. If the real one
-   survives the round, Zohakuten gets back up, weaker each time (a third of his health, then a quarter, a fifth…). Kill the real one and
+   survives the round, Zohakuten gets back up, weaker each time (a quarter of his health, then a fifth, a sixth…). Kill the real one and
    Zohakuten crumbles. After sunrise Zohakuten stays down and the real one has nowhere to hide. The real one's wounds are kept on
    Zohakuten (realUid, realHp) so the state stays plain data for online games. */
 const zohHiding = t => t && t.zohReal && !sunUp();   // the real one is behind a card
@@ -729,11 +729,12 @@ function zohDown(z,a){
   return true;
 }
 // End of round: if the real one survived his round out, Zohakuten gets back up (weaker each time) and the real one goes back inside
+let ZOH_RISE = 3;   // he gets back up with max/(rises+ZOH_RISE): 3 → a quarter, a fifth, a sixth… (CK, Nov 16, 2026: 30 HP read too low; 44 HP with a third at the first get-up was 58% / 68%)
 function zohRise(){
   players().forEach(p=>S.teams[p].filter(z=>z.zoh && z.down!=null && z.down<=S.round).forEach(z=>{
     const real=S.teams[p].find(u=>u.alive && u.zohReal); if(!real) return;
     if(sunUp() && !sunSafe(z)){ z.down=null; L(`The sun is up. ${z.name} can't get back up, and the real Hantengu has nowhere left to hide.`,'k',fx('burn',null,z)); return; }
-    z.rises=(z.rises||0)+1; z.down=null; z.alive=true; z.hp=Math.max(1,Math.ceil(z.max/(z.rises+2))); z.stun=false; z.cd=Math.min(z.cd,1);
+    z.rises=(z.rises||0)+1; z.down=null; z.alive=true; z.hp=Math.max(1,Math.ceil(z.max/(z.rises+ZOH_RISE))); z.stun=false; z.cd=Math.min(z.cd,1);
     z.realHp=real.hp; S.teams[p].splice(S.teams[p].indexOf(real),1);
     L(`${z.name} gets back up ${gained(z,z.hp)}! The real Hantengu scurries back inside.`,'x',{...fx('spawn',null,z), htrise:true, real:real.uid}); }));
 }

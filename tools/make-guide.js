@@ -154,13 +154,13 @@ Special rules on single cards:
   it doesn't count as Yoriichi, so Muzan isn't scared of it.
 - Second versions share a slot with the original (one or the other is dealt): Demon King Tanjiro (rare),
   Awakened Nezuko, Retired Tengen, Final-Form Muzan.
-- Hantengu's card is Zohakuten, Upper Moon 4's Strongest Emotion (since v140): a normal fighter (30 HP, 11 PWR, can Defend)
+- Hantengu's card is Zohakuten, Upper Moon 4's Strongest Emotion (since v140): a normal fighter (44 HP, 11 PWR, can Defend)
   whose hatred grows +2 PWR every round, up to +4; Wood Dragons hit every enemy for PWR-2 through Defend. Knock Zohakuten down
   and the real Hantengu comes out and hides behind card 1, 2 or 3 (the Hantengu player picks it in secret; the computer picks
   at random). Anything aimed at him needs the right card: right card, it lands; wrong card, it misses, with no other cost.
   Several attackers can pick different cards (a team of three covers all three). Specials that hit every enemy pass over
   him. His neck is hard as steel (12 HP, DEF 10): a normal hit does about half its PWR, specials that ignore DEF cut deep.
-  If he survives the round, Zohakuten gets back up, weaker each time (a third of his health, then a quarter, a fifth...).
+  If he survives the round, Zohakuten gets back up, weaker each time (a quarter of his health, then a fifth, a sixth...).
   Kill the real one and Zohakuten crumbles. After sunrise Zohakuten stays down and the real one has nowhere to hide.`);
 
 hr('5. EVERY CHARACTER');

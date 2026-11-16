@@ -3383,7 +3383,7 @@ body.ctlmode .topbtns .ctlpill{margin-left:auto}
 
 /* Codex: the card flips over as it opens (Nov 12, 2026) */
 .modal .in.flipcard{animation:cardflip .6s cubic-bezier(.3,.7,.3,1) both}
-.modal .in.flipcard::before{content:'滅';position:absolute;inset:0;z-index:20;display:grid;place-items:center;border-radius:inherit;font-family:var(--display);font-size:5rem;color:#e8b84a;
+.modal .in.flipcard::before{content:'滅';position:absolute;inset:0;z-index:20;pointer-events:none;display:grid;place-items:center;border-radius:inherit;font-family:var(--display);font-size:5rem;color:#e8b84a;
   background:repeating-linear-gradient(45deg,rgba(232,184,74,.08) 0 10px,transparent 10px 20px),radial-gradient(circle,#4a1810,#1a0c08);box-shadow:inset 0 0 0 3px #e8b84a;animation:cardback .6s both}
 @keyframes cardflip{0%{transform:perspective(1000px) rotateY(180deg) scale(.85)}100%{transform:perspective(1000px) rotateY(0) scale(1)}}
 @keyframes cardback{0%,49%{opacity:1}50%,100%{opacity:0}}
