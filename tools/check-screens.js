@@ -74,7 +74,7 @@ function check(games){
       let k=0; while(S.phase==='draft'&&k++<200){ vDraft(); if(k===1){ S.quitAsk=true; vSheet(); S.quitAsk=false; } { const keep=S.tv; S.tv=TVT; vTvDraft(); S.tv=keep; } S.pool.forEach(id=>{ S.sel=id; vSheet(); }); pocketDraft(turn()); S.sel=null; cpuDraftStep(level); }
       if(S.phase==='draft') throw new Error('draft did not finish');
       if(S.teams.length!==n) throw new Error('wrong number of teams');
-      if(S.teams.some(t=>t.length>maxTeam)) throw new Error('a team is over the max fighters setting');
+      if(S.teams.some(t=>t.filter(u=>!u.spawn).length>maxTeam) || players().some(p=>fighterIds(p).length>maxTeam)) throw new Error('a team is over the max fighters setting');
       S.helpers[0]=['crow']; vPass();
       while(S.phase!=='over'){
         const me=S.me||0;

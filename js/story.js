@@ -154,7 +154,7 @@ const MAIN_STAGES = [
     stars:{standing:2, rounds:12},
     beats:[{when:'ko', id:'hantengu', who:'tanjiro', text:'He split again?!'}, {when:'low', id:'nezuko', at:.4, text:'Mmph!!'}],
     outro:[['','Tanjiro’s blade finds the real Hantengu at last, and Zohakuten crumbles with him.'],['nezuko','Mmph!'],['tanjiro','Nezuko… you’re standing in the sun!']],
-    boosts:[{side:1, hp:1.6, label:'Upper Moons: +60% HP'}],   // +100% HP +1 PWR before Gyokko's Perfect Form (Nov 12, 2026)
+    boosts:[],   // +100% HP +1 PWR before Gyokko's Perfect Form (Nov 12, 2026)
     blurb:'Two Upper Moons at once. Cut Hantengu down and four more appear. Then they merge.',
     scene:[['hantengu',"Don't hurt me! I'm so weak! So very weak!"],
       ['genya',"Cut his head off and he splits? Then I'll eat them all!"],
@@ -398,7 +398,7 @@ const DREAM_STAGES = [
     scene:[['tanjiro_demon',"Why would you leave? They're alive here. Father. Mother. Rengoku."],['tanjiro','None of this is real.'],['tanjiro_demon',"It's real enough. Stay, and nobody ever dies again. Isn't that what you wanted?"],['tanjiro','…More than anything.']],
     outro:[['tanjiro','But Nezuko is calling me. The real Nezuko.'],['tanjiro_demon',"Then you'll lose them all a second time."],['tanjiro','I know.'],['','The shadow breaks. Muzan stands behind it, where he has always been.'],['muzan_final',"Then I'll keep this world for myself."]]},
   {id:'dr_nine', pockets:['goto'], arc:'dream5', title:'Nine Hashira', place:'Where the dream is breaking', foe:'Final Muzan', mine:['giyu','shinobu','rengoku','muichiro','mitsuri','obanai','sanemi','gyomei','tengen'], enemy:['muzan_final'], level:'hard', waves:3,
-    boosts:[{side:1, hp:2.42, pow:2, label:'Muzan: +142% HP, +2 PWR'}],   // was +260%: retuned Nov 5, 2026 (later waves now get their synergies)
+    boosts:[{side:1, hp:2.30, pow:2, label:'Muzan: +130% HP, +2 PWR'}],   // was +260%: retuned Nov 5, 2026 (later waves now get their synergies)
     phases:[{id:'muzan_final', at:.25, rally:true, pow:3, label:'+3 PWR', line:'Why won\'t you stay DEAD?!', reply:{id:'rengoku', text:'Because he remembers us!'}}],
     blurb:'Three at a time. Choose the order. Everyone left charges in at the end.',
     scene:[['muzan_final',"You cling to the dead, boy. So I'll use them. I've lived in your grief since the last sunrise."],['tanjiro',"I can't beat him alone."],['rengoku','You never had to!'],['giyu','Tanjiro. Stay behind us.'],['shinobu','Just once more, all of us.'],['gyomei','Namu Amida Butsu. Hashira, to your places.']],
@@ -419,7 +419,7 @@ const DREAM_FINALE = [
 ];
 const SIX_STAGES = [
   {id:'six', arc:'six', title:'Yoriichi vs the Six', place:'A road at the end of the night', foe:'The Upper Moons', mine:['yoriichi'], enemy:['kokushibo','doma','akaza','hantengu','gyokko','gyutaro'], level:'hard',
-    boosts:[{side:0, hp:2.7, pow:3, label:'Yoriichi: +170% HP, +3 PWR'}],   // +160% until Kokushibo and Doma got more specials (Nov 11, 2026)
+    boosts:[{side:0, hp:2.65, pow:3, label:'Yoriichi: +165% HP, +3 PWR'}],   // +160% until Kokushibo and Doma got more specials (Nov 11, 2026)
     blurb:'For the ones who earned every star.',
     scene:[['yoriichi','Six moons, and no sun among them.'],['kokushibo','Brother.'],['yoriichi','You look tired, Michikatsu. Let me end this.']],
     outro:[['yoriichi',"It's done. Rest, all of you."]]},

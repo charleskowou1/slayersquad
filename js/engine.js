@@ -323,7 +323,7 @@ let UID=0;
 const finalUp = (v,p) => finalFight() && p===foeSeat() ? Math.round(v*(1+FINAL_POW)) : v;
 function mkUnit(id,p){ const c=BYID[id]; return {uid:'u'+(UID++),id,fam:c.fam,sk:c.sk,p,name:c.short,g:c.g,hp:c.hp,max:c.hp,pow:finalUp(c.pow,p),spd:c.spd,def:c.def,
   regen:c.regen||0,revive:c.revive||0,demon:!!c.demon,mark:!!c.mark,legend:!!c.legend,strikes:c.strikes||1,cap:c.cap||0,taken:0,grit:c.id==='murata',
-  sunproof:!!c.sunproof,noPoison:!!c.noPoison,vowed:false,noDefend:!!c.noDefend,basic:c.basic||null,anchor:c.anchor||null,emo:!!c.emo,kin:c.kin||null,drums:!!c.drums,splitOnHit:c.splitOnHit||null,
+  sunproof:!!c.sunproof,noPoison:!!c.noPoison,poisonHalf:!!c.poisonHalf,vowed:false,noDefend:!!c.noDefend,basic:c.basic||null,anchor:c.anchor||null,emo:!!c.emo,kin:c.kin||null,drums:!!c.drums,splitOnHit:c.splitOnHit||null,startSplit:!!c.startSplit,
   sig:c.sig,cd:0,alive:true,spawn:!!c.spawn,splits:c.splits||null,merge:c.merge||null,poison:null,stun:false,stunNext:false,defending:false,evade:false,sunburn:false}; }
 // Applies team bonuses to the units and returns their labels ('!' prefix = a penalty)
 function synergies(p){
@@ -379,6 +379,8 @@ function startBattle(){
   S.waveQ=null; S.said={}; S.failed=false; S.awoke={}; S.midScene=null; S.pendingAwake=[]; S.chainDone=false; S.chainPending=null;
   S.survived=false; S.htMore={}; S.htHide={};
   S.sib=players().map(()=>false); S.twins=players().map(()=>false); S.syn=players().map(p=>synergies(p)); S.outOrder=[];
+  // Hantengu never fights as the old man (CK, Nov 15, 2026: real players just tapped him and his small emotions down): his first two emotions take his place
+  S.teams.forEach(t=>{ for(let i=t.length-1;i>=0;i--){ const u=t[i]; if(u.startSplit && u.splitOnHit) t.splice(i,1,...u.splitOnHit.map(id=>mkUnit(id,u.p))); } });
   S.synShown=false; S.entShown=false; S.upSeen={};
   S.round=1; S.plans=players().map(()=>({})); S.lastPlans=players().map(()=>null); S.log=[]; S.matchLog=[]; S.replayLog=[]; S.replaying=null; S.planFor=S.me||0; S.focus=null; S.stats={};
   S.movesLocked=players().map(()=>false); S.readyNext=players().map(()=>false); S.roundId=0;   // online play
@@ -976,7 +978,7 @@ function resolve(){
   if(sun && S.round===sunRise()) players().forEach(p=>alive(p).filter(u=>u.revive && u.demon && !sunSafe(u)).forEach(u=>{ const h=Math.min(Math.ceil(u.max*u.revive),u.max-u.hp); u.hp+=h; u.revive=0; L(`${u.name} burns his remaining hearts to endure the dawn ${gained(u,h)}.`,'h',fx('heal',null,u)); }));
   if(sun && S.round===sunRise() && finalFight()){ alive(foeSeat()).forEach(u=>{ u.pow=Math.round(u.pow*(1+FINAL_FRENZY)); u.noDefend=true; }); L('Out of time, the demons throw everything they have left. They hit far harder and can no longer Defend.','k',{...fx('burn',null,null), frenzy:true}); }
   players().forEach(p=>S.teams[p].forEach(u=>{
-    if(u.alive && u.poison){ u.hp=Math.max(0,u.hp-u.poison.dmg); L(`Poison hits ${u.name} ${lost(u,u.poison.dmg)}.`,'k',fx('poison',null,u)); fall(u); u.poison.turns--; if(u.poison.turns<=0) u.poison=null; }
+    if(u.alive && u.poison){ const pd=u.poisonHalf?Math.ceil(u.poison.dmg/2):u.poison.dmg; u.hp=Math.max(0,u.hp-pd); L(`Poison hits ${u.name} ${lost(u,pd)}${u.poisonHalf?'. His shinobi body shrugs off half of it':''}.`,'k',fx('poison',null,u)); fall(u); u.poison.turns--; if(u.poison.turns<=0) u.poison=null; }
     if(u.alive && u.devoured){ u.hp=Math.max(0,u.hp-u.devoured); L(`Shinobu's poison eats away at ${u.name} ${lost(u,u.devoured)}.`,'k',fx('poison',null,u)); fall(u); }
     if(sun && u.alive && u.demon && !sunSafe(u)){ const d=Math.ceil(u.max*sunBurn()); u.hp=Math.max(0,u.hp-d); L(`The sun burns ${u.name} ${lost(u,d)}.`,'k',fx('burn',null,u)); fall(u);
       if(u.alive && u.fam==='nezuko') L(`${u.name} endures the sunlight. She has conquered the sun.`,'h',fx('buff',null,u)); }

@@ -40,7 +40,7 @@ function quitAsk(){
     <div class="row"><button class="btn ghost" data-a="unquit">Keep playing</button><button class="btn" data-a="quit" data-v="${S.mode==='story'?'map':'home'}">Quit${S.mode==='story'?' to story map':''}</button></div></div></div>`;
 }
 const actionbar = inner => `<div class="actionbar"><div class="in">${inner}</div></div>`;
-const statCells = c => `<span class="stats"><span><i>HP</i>${c.hp}</span><span><i>PWR</i>${c.pow}</span><span><i>SPD</i>${c.spd}</span><span><i>DEF</i>${c.def}</span></span>`;
+const statCells = c => c.startSplit ? splitStats(c) : `<span class="stats"><span><i>HP</i>${c.hp}</span><span><i>PWR</i>${c.pow}</span><span><i>SPD</i>${c.spd}</span><span><i>DEF</i>${c.def}</span></span>`;
 // A battle log line for the screen: each fighter's picture before their name, damage in red (−17%),
 // healing in green (+5%), other percents in bold. Engine lines tag health changes as [-17%] / [+5%].
 function fmtLog(t){
@@ -242,12 +242,12 @@ function codexSheet(){
     ${lock?`<div class="lockline">🔒 Locked. ${ui>=0?`Win <b>${esc(MAIN_STAGES[ui].title)}</b> (story battle ${ui+1})`:'Keep going in <b>The Endless Dream</b>'} to play with ${esc(c.short)} in every mode.</div>`
       : ui>=0?`<div class="muted">Unlocked in story battle ${ui+1}: ${esc(MAIN_STAGES[ui].title)}.</div>`:''}
     ${c.helper?'':statCells(c)}
-    <div class="sig"><div class="sname">${esc(c.sig.name)}${c.helper?'':` <span class="muted">· special, cooldown ${c.sig.cd}</span>`}</div>${esc(c.sig.desc)}</div>
+    ${c.startSplit?'':`<div class="sig"><div class="sname">${esc(c.sig.name)}${c.helper?'':` <span class="muted">· special, cooldown ${c.sig.cd}</span>`}</div>${esc(c.sig.desc)}</div>`}
     ${c.selfless?`<div class="pas"><b>Then: ${esc(SELFLESS.name)}</b>: ${esc(SELFLESS.desc)}${selflessOpen()?'':' <span class="muted">🔒 Unlocks when you win Destructive Death in the story.</span>'}</div>`:''}
     ${c.sig2?`<div class="pas"><b>Then: ${esc(c.sig2.name)}</b>: ${esc(c.sig2.desc)}${c.sig3?'':` <span class="muted">After it, back to ${esc(c.sig.name)}: the two take turns.${sig2Open(c)?'':` 🔒 Unlocks when you win ${esc((STAGES.find(s=>s.id===c.sig2.lock)||{}).title||'its story battle')}.`}</span>`}</div>`:''}
     ${c.sig3?`<div class="pas"><b>Then: ${esc(c.sig3.name)}</b>: ${esc(c.sig3.desc)} <span class="muted">After it, back to ${esc(c.sig.name)}: the three take turns.</span></div>`:''}
-    ${c.basic?`<div class="pas"><b>${esc(c.basic.name)}</b> (instead of Attack): ${esc(c.basic.desc)}</div>`:''}
-    ${c.regen?`<div class="pas">Regenerates ${c.regen} HP every round.</div>`:''}
+    ${c.basic&&!c.startSplit?`<div class="pas"><b>${esc(c.basic.name)}</b> (instead of Attack): ${esc(c.basic.desc)}</div>`:''}
+    ${c.regen&&!c.startSplit?`<div class="pas">Regenerates ${c.regen} HP every round.</div>`:''}
     ${pas.map(x=>`<div class="pas">${esc(x)}</div>`).join('')}
     ${c.helper?'<div class="pas">Back-pocket helper: doesn\'t fight or take a fighter slot. Use it once, on the round you choose.</div>':''}
     ${c.splitOnHit?splitTree(c):''}
@@ -629,9 +629,12 @@ const updatesNew = () => { try{ return !!latestUpdate() && +localStorage.getItem
 const updatesPanel = () => !latestUpdate() ? '' : `<details class="panel" id="updates"><summary>Latest Updates${updatesNew()?'<i class="newdot">New</i>':''}</summary>
     <div class="updhead"><b>Version ${LATEST_UPDATE.version}</b><span class="muted">${esc(LATEST_UPDATE.date)}</span></div>
     <ul class="updlist">${LATEST_UPDATE.notes.map(([t,d])=>`<li><b>${esc(t)}</b>${esc(d)}</li>`).join('')}</ul></details>`;
+// Hantengu starts as two emotions: the card shows both (Sekido / Karaku) instead of the old man's stats
+const splitStats = c => { const [a,b]=c.splitOnHit.map(id=>BYID[id]), v=k=>a[k]===b[k]?a[k]:a[k]+'/'+b[k];
+  return `<span class="stats"><span><i>HP</i>${a.hp}+${b.hp}</span><span><i>PWR</i>${v('pow')}</span><span><i>SPD</i>${v('spd')}</span><span><i>DEF</i>${v('def')}</span></span>`; };
 function splitTree(c){   // Hantengu's chain, shown on his card
   const form=id=>{ const f=BYID[id]; return `<div class="sform">${seal(f,'sm')}<div><b>${esc(f.short)}</b> <span class="muted">${f.hp} HP · PWR ${f.pow} · SPD ${f.spd}</span><br><span class="sx">${esc(f.sig.name)}: ${esc(f.sig.desc)}</span></div></div>`; };
-  return `<div class="splits"><div class="tlabel">The first hit splits him into</div>${['sekido','karaku'].map(form).join('')}
+  return `<div class="splits"><div class="tlabel">${c.startSplit?'He starts the battle as':'The first hit splits him into'}</div>${['sekido','karaku'].map(form).join('')}
     <div class="tlabel">The first of them to fall brings</div>${['aizetsu','urogi'].map(form).join('')}
     <div class="tlabel">When the last emotion falls, they merge into</div>${form('zohakuten')}
     <div class="tlabel">And the real one hides (hunt him, or knock Zohakuten down)</div>${form('hantengu_true')}</div>`;
@@ -776,7 +779,7 @@ function vSheet(){
     <div class="shead">${seal(c,'lg')}
       <div><div class="eyebrow">${esc(c.type)}</div><h2>${esc(c.name)}</h2></div><span class="cost${c.cost>=12?' big':''}">${c.cost}<small>pts</small></span></div>
     ${statCells(c)}
-    <div class="sig"><div class="sname">${esc(c.sig.name)} <span class="muted">· special, cooldown ${c.sig.cd}</span></div>${esc(c.sig.desc)}</div>
+    ${c.startSplit?'':`<div class="sig"><div class="sname">${esc(c.sig.name)} <span class="muted">· special, cooldown ${c.sig.cd}</span></div>${esc(c.sig.desc)}</div>`}
     ${c.selfless?`<div class="pas"><b>Then: ${esc(SELFLESS.name)}</b>: ${esc(SELFLESS.desc)}${selflessOpen()?'':' <span class="muted">🔒 Unlocks when you win Destructive Death in the story.</span>'}</div>`:''}
     ${c.sig2?`<div class="pas"><b>Then: ${esc(c.sig2.name)}</b>: ${esc(c.sig2.desc)}${c.sig3?'':` <span class="muted">After it, back to ${esc(c.sig.name)}: the two take turns.${sig2Open(c)?'':` 🔒 Unlocks when you win ${esc((STAGES.find(s=>s.id===c.sig2.lock)||{}).title||'its story battle')}.`}</span>`}</div>`:''}
     ${c.sig3?`<div class="pas"><b>Then: ${esc(c.sig3.name)}</b>: ${esc(c.sig3.desc)} <span class="muted">After it, back to ${esc(c.sig.name)}: the three take turns.</span></div>`:''}

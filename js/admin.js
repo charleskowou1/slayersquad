@@ -10,6 +10,21 @@ const modeName=k=>(k.startsWith('tv_')?'TV: ':'')+(MODE_NAMES[k.replace('tv_',''
 const rowsOf=(list,max)=>list.map(([n,v,note],i)=>`<div class="row"><em>${i+1}</em><span>${esc(n)}</span><small>${note||v}</small><u><i style="width:${max?Math.max(2,v/max*100):0}%"></i></u></div>`).join('')||'<p class="empty">Nothing yet.</p>';
 const card=(title,note,body,cls='',kanji='')=>`<section class="${cls}">${kanji?`<span class="kj" aria-hidden="true">${kanji}</span>`:''}<header><h2>${title}</h2>${note?`<p>${note}</p>`:''}</header>${body}</section>`;
 // A card's picture: its own, else its family's (Marks borrow the base picture), else none
+// Most played fighters: a podium for the top three, then rows with a bar for picks (data unchanged, display only)
+const fpct=(a,b)=>b?Math.round(a/b*100):0, ffmt=n=>Number(n||0).toLocaleString();
+const winCls = (w,p) => { const r=fpct(w,p); return r>=55?'good':r<45?'bad':''; };
+const dealtLine = c => c.d>=5 ? `picked in ${Math.min(100,fpct(c.r,c.d))}% of deals` : '';
+function fightersView(chars){
+  const top=chars.slice(0,3), rest=chars.slice(3), max=Math.max(1,chars[0].p);
+  const face=(c,cls)=>{ const img=portrait(c.id); return img?`<img class="${cls}" src="${img}" alt="" loading="lazy">`:`<span class="${cls} noimg">${esc(c.name[0])}</span>`; };
+  const pod=(c,i)=>`<div class="podc pod${i+1}"><span class="podrank">${i+1}</span>${face(c,'podimg')}<b class="podname">${esc((BYID[c.id]||{}).short||c.name)}</b>
+    <span class="podpicks"><strong>${ffmt(c.p)}</strong> picks</span><span class="winpill ${winCls(c.w,c.p)}">${fpct(c.w,c.p)}% won</span>${dealtLine(c)?`<small>${dealtLine(c)}</small>`:''}</div>`;
+  const row=(c,i)=>`<div class="frank"><em>${i+4}</em>${face(c,'fimg')}<div class="fmid"><div class="ftop"><span class="fn">${esc(c.name)}</span><small>${ffmt(c.p)} picks${dealtLine(c)?' · '+dealtLine(c):''}</small></div>
+    <u class="fbar"><i style="width:${Math.max(3,c.p/max*100)}%"></i></u></div><span class="winpill ${winCls(c.w,c.p)}">${fpct(c.w,c.p)}%</span></div>`;
+  // the podium reads 2 · 1 · 3, with the winner in the middle and tallest
+  const order=[top[1],top[0],top[2]].map(c=>c&&top.indexOf(c)).filter(i=>i!=null&&i>=0);
+  return `<div class="podium">${order.map(i=>pod(top[i],i)).join('')}</div>${rest.length?`<div class="franks">${rest.map(row).join('')}</div>`:''}`;
+}
 const portrait=id=>{ const files=(typeof ART_FILES!=='undefined'&&ART_FILES.img)||[], c=BYID[id]||{}, has=n=>files.find(f=>f.replace(/\.[^.]+$/,'')===n);
   const f=has(id)||has(c.fam)||has(String(id).split('_')[0]); return f?`img/${f}`:null; };
 const DEV_COLORS={ios:'#e0573b',android:'#7a8be0',computer:'#b8893a'};   // fixed per device, checked for colour-blind separation on the panel colour
@@ -91,7 +106,7 @@ function draw(uid, t, stats, reports, denied, seen){
   const modes=Object.keys(t).map(k=>k.match(/^m_(.+)_start$/)).filter(Boolean).map(m=>m[1]).map(k=>({name:modeName(k), start:ctr(`m_${k}_start`), fin:ctr(`m_${k}_finish`), win:ctr(`m_${k}_win`)})).filter(m=>m.start).sort((a,b)=>b.start-a.start);
   const storyRows=list=>list.map((s,i)=>({n:i+1, title:s.title, tries:ctr(`s_${s.id}_try`), wins:ctr(`s_${s.id}_win`)})).filter(r=>r.tries);
   const main=storyRows(MAIN_STAGES), dream=storyRows(DREAM_STAGES.concat(SIX_STAGES));
-  const chars=Object.entries(stats.chars||{}).filter(([id])=>BYID[id]).map(([id,c])=>({id, name:BYID[id].name, p:c.p||0, w:c.w||0})).sort((a,b)=>b.p-a.p).slice(0,10);
+  const chars=Object.entries(stats.chars||{}).filter(([id])=>BYID[id]).map(([id,c])=>({id, name:BYID[id].name, p:c.p||0, w:c.w||0, d:c.d||0, r:c.r||0})).sort((a,b)=>b.p-a.p).slice(0,10);   // read only: d = dealt, r = picked when dealt
   const placeName=k=>{ const parts=k.split(/[~\/]/), city=parts[parts.length-1].replace(/_/g,' '); return parts.length>1?`${city} · ${parts[0]}`:city; };
   const act=plist.filter(q=>inRange(q,days)), tally=(list,f)=>{ const m={}; list.forEach(q=>{ const k=f(q); if(k) m[k]=(m[k]||0)+1; }); return m; };
   const oldWhere=Object.fromEntries(Object.keys(t).filter(k=>k.startsWith('where_')).map(k=>[k.slice(6).replace(/~/g,'/'),t[k]]));
@@ -142,8 +157,7 @@ function draw(uid, t, stats, reports, denied, seen){
   ${card('Modes',`Matches started in ${rangeName}, and how many were played to the end.${datedNote}`,modes.length?`<div class="modes">${modes.map(m=>`<div class="mode"><span>${esc(m.name)}</span><b>${fmt(m.start)}</b><small>${pct(m.fin,m.start)}% finished${m.win?` · ${m.win} won`:''}</small><u><i style="width:${Math.max(2,m.start/modes[0].start*100)}%"></i></u></div>`).join('')}</div>`:'<p class="empty">Nothing in this time range.</p>','','戦')}
   <div class="grid2">
     ${card('Story',`Tries per battle in story order, ${rangeName}. Gold is wins, so a falling bar shows where players stop.${datedNote}`,story(main,Math.max(1,...main.map(r=>r.tries))),'','物')}
-    ${card('Most played fighters <span class="pill">All time</span>','Online, Quickplay and Same Phone matches.',chars.length?`<div class="fighters">${chars.map((c,i)=>{ const img=portrait(c.id);
-      return `<div class="fighter"><em>${i+1}</em>${img?`<img src="${img}" alt="" loading="lazy">`:`<span class="noimg">${esc(c.name[0])}</span>`}<span class="fn">${esc(c.name)}</span><small>${fmt(c.p)} picks</small><b class="${pct(c.w,c.p)>=50?'good':''}">${pct(c.w,c.p)}%</b></div>`; }).join('')}</div>`:'<p class="empty">Nothing yet.</p>','','剣')}
+    ${card('Most played fighters <span class="pill">All time</span>','Online, Quickplay and Same Phone matches. Win rate is green at 55% or more and red under 45%. Quickplay counts only the player\'s own squad, so most rates sit above 50%.',chars.length?fightersView(chars):'<p class="empty">Nothing yet.</p>','','剣')}
   </div>
   ${dream.length?card('The Endless Dream',`Tries per battle after the main story, ${rangeName}.`,story(dream,Math.max(1,...dream.map(r=>r.tries))),'','夢'):''}
   ${card(`Bug reports <span class="pill">${reps.length}</span>${crashes?` <span class="pill red">${crashes} crash${crashes>1?'es':''}</span>`:''}`,'',reps.length?reps.map(([id,r])=>`<div class="rep${r.auto?' auto':''}"><div class="rephead"><span class="tag">${r.auto?'Crash':'Report'}</span><small>${esc(new Date(r.at).toLocaleString([], {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'}))} · v${esc(r.v||'?')} · ${esc(r.where||'')}</small><button data-del="${esc(id)}" aria-label="Delete report">Delete</button></div><p>${esc(r.msg)}</p><small class="ua">${esc(r.ua||'')}</small></div>`).join(''):'<p class="empty">None. 🎉</p>','','虫')}

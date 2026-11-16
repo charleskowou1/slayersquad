@@ -69,20 +69,20 @@ add({id:'gyokko_perfect',fam:'gyokko',sk:'gyokko_perfect',spawn:true,name:'Gyokk
 let HT_SPOTS = 3, HT_RISE = 1/3;
 add({id:'hantengu',name:'Hantengu',short:'Hantengu',g:'怯',type:'Upper Moon 4',demon:true,upper:true,cost:9,hp:16,pow:0,spd:9,def:4,regen:1,noDefend:true,
   basic:{name:'Cower',tag:'takes half damage',k:'怯',kind:'self',cower:true,desc:'Instead of attacking: he cowers and takes half damage this round.'},
-  splitOnHit:['sekido','karaku'],
-  passive:'Cut him and it gets worse. The first hit cuts his head off and Sekido and Karaku burst out; the first of them to fall brings Aizetsu and Urogi. When the last emotion falls they merge into Zohakuten, and the real Hantengu hides. Hunt him (guess where he is; a wrong guess leaves that fighter wide open), or knock Zohakuten down to expose him for a round (if the real one survives it, Zohakuten gets back up, +2 PWR stronger each time). Cut down the real one to win.',
+  splitOnHit:['sekido','karaku'], startSplit:true,
+  passive:'He never fights as the old man: Sekido and Karaku start the battle in his place. The first of them to fall brings Aizetsu and Urogi. When the last emotion falls they merge into Zohakuten, and the real Hantengu hides. Hunt him (guess where he is; a wrong guess leaves that fighter wide open), or knock Zohakuten down to expose him for a round (if the real one survives it, Zohakuten gets back up, +2 PWR stronger each time). Cut down the real one to win.',
   sig:{name:'Cowering Hide',desc:'Moves first. Hides: attacks miss him this round, and he heals 6.',cd:3,kind:'self',prio:3}});
 // His forms (never dealt). Sekido and Karaku come from the head cut, Aizetsu and Urogi from the first emotion to fall.
-add({id:'sekido',spawn:true,name:'Sekido (Anger)',short:'Sekido',g:'怒',type:'Hantengu · Anger',demon:true,cost:0,hp:8,pow:8,spd:8,def:4,regen:1,emo:true,
-  passive:'Anger: cut him or Karaku and more emotions appear. When the last emotion falls, they merge into Zohakuten.',
+add({id:'sekido',spawn:true,name:'Sekido (Anger)',short:'Sekido',g:'怒',type:'Hantengu · Anger',demon:true,cost:0,hp:10,pow:9,spd:8,def:4,regen:1,emo:true,
+  passive:'Anger: the first of him or Karaku to fall brings more emotions. When the last emotion falls, they merge into Zohakuten.',
   sig:{name:'Lightning Staff',desc:'Every enemy takes 5, ignores DEF.',cd:3,kind:'all'}});
-add({id:'karaku',spawn:true,name:'Karaku (Joy)',short:'Karaku',g:'楽',type:'Hantengu · Joy',demon:true,cost:0,hp:8,pow:8,spd:10,def:3,regen:1,emo:true,
-  passive:'Joy: cut him or Sekido and more emotions appear. When the last emotion falls, they merge into Zohakuten.',
+add({id:'karaku',spawn:true,name:'Karaku (Joy)',short:'Karaku',g:'楽',type:'Hantengu · Joy',demon:true,cost:0,hp:10,pow:9,spd:10,def:3,regen:1,emo:true,
+  passive:'Joy: the first of him or Sekido to fall brings more emotions. When the last emotion falls, they merge into Zohakuten.',
   sig:{name:'Gale Fan',desc:'Every enemy takes PWR−6.',cd:3,kind:'all'}});
-add({id:'aizetsu',spawn:true,name:'Aizetsu (Sorrow)',short:'Aizetsu',g:'哀',type:'Hantengu · Sorrow',demon:true,cost:0,hp:6,pow:9,spd:9,def:3,regen:1,emo:true,
+add({id:'aizetsu',spawn:true,name:'Aizetsu (Sorrow)',short:'Aizetsu',g:'哀',type:'Hantengu · Sorrow',demon:true,cost:0,hp:8,pow:10,spd:9,def:3,regen:1,emo:true,
   passive:'Sorrow: when the last emotion falls, they merge into Zohakuten.',
   sig:{name:'Cross Spear',desc:'One enemy takes PWR+4, even through Defend.',cd:3,kind:'single'}});
-add({id:'urogi',spawn:true,name:'Urogi (Pleasure)',short:'Urogi',g:'喜',type:'Hantengu · Pleasure',demon:true,cost:0,hp:6,pow:7,spd:11,def:2,regen:1,emo:true,
+add({id:'urogi',spawn:true,name:'Urogi (Pleasure)',short:'Urogi',g:'喜',type:'Hantengu · Pleasure',demon:true,cost:0,hp:8,pow:8,spd:11,def:2,regen:1,emo:true,
   passive:'Pleasure: when the last emotion falls, they merge into Zohakuten.',
   sig:{name:'Sky Dive',desc:'Moves first. One enemy takes PWR+2.',cd:3,kind:'single',prio:1}});
 add({id:'zohakuten',spawn:true,name:'Zohakuten (Hatred)',short:'Zohakuten',g:'憎',type:'Hantengu merged · Hatred',demon:true,cost:0,hp:20,pow:10,spd:8,def:6,regen:1,noDefend:true,drums:true,kin:'hantengu_true',
@@ -135,11 +135,12 @@ markOf(obanai,{cost:8});
 add({id:'rengoku',name:'Kyojuro Rengoku',short:'Rengoku',g:'炎',type:'Flame Hashira',hashira:true,cost:7,hp:38,pow:11,spd:9,def:5,
   sig:{name:'Fifth Form: Flame Tiger',desc:'Strike for PWR+4.',cd:3,kind:'single'},
   sig2:{id:'ninth',name:'Ninth Form: Rengoku',desc:'Strike for PWR+10, ignores DEF.',cd:3,kind:'single',tag:'huge hit, ignores DEF',quote:'Flame Breathing, Ninth Form: Rengoku!'}});
-add({id:'tengen',name:'Tengen Uzui',short:'Tengen',g:'音',type:'Sound Hashira',hashira:true,cost:6,hp:34,pow:10,spd:10,def:5,
+add({id:'tengen',name:'Tengen Uzui',short:'Tengen',g:'音',type:'Sound Hashira',hashira:true,cost:6,hp:30,pow:11,spd:11,def:5,
+  passive:'Shinobi body: trained against poison, he takes half damage from it.', poisonHalf:true,
   sig:{name:'Constant Resounding Slashes',desc:'Every enemy takes PWR−2.',cd:3,kind:'all'}});
 // Retired Tengen: the other version of Tengen (one or the other is dealt). Lost a hand and an eye, no longer a Hashira.
 add({id:'tengen_retired',fam:'tengen',sk:'tengen_retired',name:'Tengen Uzui (Retired)',short:'Retired Tengen',g:'譜',type:'Former Sound Hashira',cost:4,hp:28,pow:8,spd:7,def:4,
-  passive:'Retired: lost a hand and an eye, so he no longer counts as a Hashira.',
+  passive:'Retired: lost a hand and an eye, so he no longer counts as a Hashira. Shinobi body: he takes half damage from poison.', poisonHalf:true,
   sig:{name:'Bodyguard',desc:'Moves first. Shields an ally (or himself): they count as Defending this round and take half damage.',cd:2,kind:'ally',prio:3}});
 add({id:'shinobu',name:'Shinobu Kocho',short:'Shinobu',g:'蟲',type:'Insect Hashira',hashira:true,cost:5,hp:24,pow:6,spd:10,def:3,
   passive:'Too small to cut a demon’s head: her blade leaves a demon on 1 HP, and poison or a teammate has to finish it. Wisteria Body: if a demon lands the blow that knocks her out, it devours her and loses 5 HP every round for the rest of the match. (Not Akaza: he never eats women.)',
@@ -363,7 +364,7 @@ const LORE = {
 const loreOf = c => LORE[c.id] || LORE[c.fam] || null;
 // One short line under each draft card: what the special does at a glance (the full text is on the card's details)
 const SIG_CAPTION = {gyokko_perfect:'Huge hit · ignores DEF', yoriichi:'Hits all · stops regen', yoriichi_old:'Huge single hit', muzan:'Hits all · heals him', muzan_final:'Hits all · heals him', kokushibo:'Three moon forms in turn', doma:'Hits all · then the ice Buddha',
-  akaza:'Big single hit', gyutaro:'Hits all · poison', daki:'Hits all · through Defend', nakime:'Banishes one enemy', gyokko:'Hit + stun', hantengu:'Splits when cut · hunt the real one', kaigaku:'Hits two', enmu:'Delays all specials',
+  akaza:'Big single hit', gyutaro:'Hits all · poison', daki:'Hits all · through Defend', nakime:'Banishes one enemy', gyokko:'Hit + stun', hantengu:'Two emotions from round 1 · hunt the real one', kaigaku:'Hits two', enmu:'Delays all specials',
   rui:'Hit + stun', kyogai:'Stuns one enemy', susamaru:'Hits two', yahaba:'Enemy\'s hits miss', hand:'Big single hit', swamp:'Dodges + hits', giyu:'Team takes no damage', gyomei:'Hits all · ignores DEF',
   sanemi:'Hits two', muichiro:'Dodges + hits', mitsuri:'Hits all · through Defend', obanai:'Big hit · through Defend', rengoku:'Big single hit', tengen:'Hits all', tengen_retired:'Guards an ally', shinobu:'Poisons one enemy',
   kanae:'Hit + heals', tanjiro:'Big hit · ignores DEF', tanjiro_demon:'Hits all · ignores DEF', nezuko:'Hits all · ignores DEF', nezuko_awakened:'Hits all · cures poison', zenitsu:'Moves first · double hit', inosuke:'Two random hits',

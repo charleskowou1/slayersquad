@@ -114,6 +114,8 @@ function poolNotes(){
   const regen=demons.filter(f=>BYID[inPool[f]].regen && !BYID[inPool[f]].sunproof);   // Demon King Tanjiro is sun-proof
   if(S.pool.includes('yoriichi') && regen.length) add('vs', ['yoriichi',...regen], 'Sun Breathing', "Yoriichi's special hits every enemy, and demons it hits stop regenerating for the rest of the match.", facing(['yoriichi'],regen));
   const poison=['shinobu','gyutaro'].filter(has);
+  const poisoners=['shinobu','gyutaro'].filter(has);
+  if(has('tengen')&&poisoners.length) add('vs', ['tengen',...poisoners], 'Shinobi body', 'Tengen takes half damage from poison, so Gyutaro’s sickles and other poison wear him down slowly.', facing(['tengen'],poisoners));
   if(has('tamayo')&&poison.length) add('vs', ['tamayo',...poison], 'Antidote', "Tamayo's heal also cures poison, so she can undo Shinobu's and Gyutaro's poison on her team.", facing(['tamayo'],poison));
 
   // Partner lists in the panel: only list characters that some team could still complete the synergy with, within

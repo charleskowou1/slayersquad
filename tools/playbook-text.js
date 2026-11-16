@@ -84,12 +84,13 @@ cards: {
          'Hantengu and Doma beat him most often (multiple bodies, regeneration).'] },
  tengen: {
   win: ['Constant Resounding Slashes hits every enemy for PWR−2: steady damage on wide teams.',
-        'SPD 10: acts before most of the roster.'],
+        'SPD 11: tied with Muichiro as the fastest Hashira without a Mark, so he acts before most of the roster.',
+        'Shinobi body: poison does half damage to him, so Gyutaro\'s sickles and Shinobu\'s poison wear him down slowly.'],
   beat: ['Area damage is spread thin: one high-HP, high-DEF fighter shrugs it off.',
-         'Gyutaro beats him one-on-one (canon).'] },
+         'Only 30 HP: focus him before his slashes add up.'] },
  tengen_retired: {
   win: ['4 pts, Bodyguard moves first and makes an ally count as Defending: protect your carry on the round they\'ll focus it.',
-        'Not a Hashira, so no Hashira bonuses.'],
+        'Not a Hashira, so no Hashira bonuses. Shinobi body: poison does half damage to him.'],
   beat: ['He does little damage: leave him for last and kill whoever he protects on his cooldown rounds.'] },
  shinobu: {
   win: ['Wisteria Poison: 8 a round to demons (3 to humans) for 3 rounds; with Kanae, 4 rounds. Her blade can\'t cut a demon\'s head (it stops at 1 HP), so the poison or a teammate finishes them.',
@@ -251,7 +252,7 @@ cards: {
         'Best with Hantengu (two Upper Moons: +1 regen).'],
   beat: ['Finish him in one push: if he ends a round under half, his Perfect Form is much harder to bring down.'] },
  hantengu: {
-  win: ['Cut him and it gets worse: the first hit cuts his head off and Sekido and Karaku burst out, the first of them to fall brings Aizetsu and Urogi, and when the last emotion falls they merge into Zohakuten while the real Hantengu hides. Many bodies for 9 pts.',
+  win: ['He never fights as the old man: Sekido and Karaku start the battle in his place, the first of them to fall brings Aizetsu and Urogi, and when the last emotion falls they merge into Zohakuten while the real Hantengu hides. Many bodies for 9 pts.',
         'Zohakuten has no Defend: Drums of Hatred adds +2 PWR for good, and Wood Dragons hit every enemy for full PWR through Defend.',
         'Knocked down, Zohakuten gets back up at the end of the next round unless the real one is cut down first.',
         'Doma is his best partner.'],
@@ -354,7 +355,7 @@ module.exports.squads = [
  [10, 'Doctor and guardian', ['tamayo','yushiro','inosuke'], 'Tamayo heals, Yushiro (+2 PWR with her) hides, Inosuke deals damage.'],
  [20, 'The old legend', ['yoriichi_old','swamp'], 'Old Yoriichi takes at most 12 a round; the Swamp Demon dives out of reach.'],
  [20, 'Demon King and doctor', ['tanjiro_demon','tamayo'], 'Rampage every few rounds; Tamayo keeps him topped up.'],
- [20, 'Upper Moon pair', ['doma','hantengu'], 'Two Upper Moons (+1 regen); Hantengu splits when he\'s cut and hides behind Zohakuten.'],
+ [20, 'Upper Moon pair', ['doma','hantengu'], 'Two Upper Moons (+1 regen); Hantengu starts as two emotions and hides behind Zohakuten.'],
  [20, 'Moon and wisteria', ['kokushibo','shinobu'], 'Kokushibo\'s Moon Breathing plus poison, and Shinobu punishes any demon that kills her.'],
  [20, 'Pillars', ['giyu','gyomei','urokodaki'], 'Two Hashira (+1 PWR), Giyu\'s Dead Calm, Gyomei\'s rocks, Urokodaki\'s +1 DEF for Giyu.'],
  [20, 'Kamaboko and sister', ['tanjiro','zenitsu','inosuke','nezuko'], 'Kamaboko Squad (+2 SPD) and Siblings in one team.'],
@@ -413,7 +414,7 @@ module.exports.depth = {
  daki: { role: 'Area chip, half of Two as One', draft: ['6 pts; only take her with Gyutaro.'], plan: ['Obi Sashes when ready; keep her alive while Gyutaro stands so she can rise.'] },
  gyutaro: { role: 'Area poison, half of Two as One', draft: ['8 pts; with Daki (14 for the pair).'], plan: ['Blood Sickles on round 1 to poison everyone, then Attack the weakest.'] },
  gyokko: { role: 'Control (trap) plus damage, then a Perfect Form', draft: ['7 pts; with another Upper Moon. Not dealt in 10-pt games.'], plan: ['Trap their carry the round before its special is ready.', 'Once he\'s under half he transforms: use Jinmei Kaigyo right away on their biggest threat.'] },
- hantengu: { role: 'Many lives: splits, merges, then hides', draft: ['9 pts; with another Upper Moon (Doma is his best partner).'], plan: ['The emotions are small: use their specials while they stand (Lightning Staff and Gale Fan hit everyone).', 'As Zohakuten, pound Drums of Hatred on quiet rounds and fire Wood Dragons when ready. Every round the real one stays hidden, Zohakuten can get back up, +2 PWR stronger each time.'] },
+ hantengu: { role: 'Many lives: two emotions, then more, then Zohakuten, then he hides', draft: ['9 pts; with another Upper Moon (Doma is his best partner).'], plan: ['Sekido and Karaku have their specials ready from round 1: use them while they stand (Lightning Staff and Gale Fan hit everyone).', 'As Zohakuten, pound Drums of Hatred on quiet rounds and fire Wood Dragons when ready. Every round the real one stays hidden, Zohakuten can get back up, +2 PWR stronger each time.'] },
  nakime: { role: 'Control (send away, act last)', draft: ['4 pts; never alone, and best against a single giant.'], plan: ['Castle Shift their giant on its special round; Biwa Strum their fastest fighter otherwise.'] },
  akaza: { role: 'Fast burst, then area damage', draft: ['9 pts; with Doma or Gyutaro.'], plan: ['Compass Needle for the single big hit, then Annihilation Type when several enemies are low.', 'Win before round 10: the sun ends his regeneration.'] },
  doma: { role: 'Area damage that ignores DEF, regeneration', draft: ['11 pts; with Hantengu or Akaza at 20.'], plan: ['Fire every special when ready: Frozen Lotus, then the Bodhisattva to slow their slayers\' specials; regen keeps him up between.', 'Never be the one to knock Shinobu out.'] },

@@ -77,6 +77,27 @@ section header p{margin:4px 0 0;color:var(--muted);font-size:.8rem;max-width:56c
 .frow.hard small b{color:var(--red)}
 i.tag{font-style:normal;margin-left:4px;padding:0 6px;border-radius:5px;font-size:.62rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:#40201a;color:var(--red)}
 
+/* Most played fighters: podium + ranked rows */
+.podium{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-items:end;margin-bottom:14px}
+.podc{position:relative;display:flex;flex-direction:column;align-items:center;gap:5px;text-align:center;padding:14px 8px 12px;border-radius:14px;background:var(--panel-2);border:1px solid var(--line)}
+.podc.pod1{padding-top:22px;border-color:color-mix(in srgb,var(--gold) 60%,transparent);background:linear-gradient(180deg,color-mix(in srgb,var(--gold) 14%,var(--panel-2)),var(--panel-2))}
+.podrank{position:absolute;top:8px;left:10px;font:800 .9rem var(--display);color:var(--muted)}.pod1 .podrank{color:var(--gold);font-size:1.1rem}
+.podimg{width:58px;height:58px;border-radius:50%;object-fit:cover;object-position:center 20%;border:2px solid var(--line-2);background:var(--bg)}
+.pod1 .podimg{width:76px;height:76px;border:3px solid var(--gold);box-shadow:0 0 22px color-mix(in srgb,var(--gold) 35%,transparent)}
+.podimg.noimg,.fimg.noimg{display:grid;place-items:center;font:800 1.1rem var(--display);color:var(--muted)}
+.podname{font-size:.9rem;font-weight:700;line-height:1.2;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.podpicks{font-size:.78rem;color:var(--muted)}.podpicks strong{color:var(--fg);font-size:1.05rem;font-variant-numeric:tabular-nums}
+.podc small{font-size:.7rem;color:var(--muted)}
+.winpill{display:inline-block;padding:3px 9px;border-radius:999px;background:var(--bg);border:1px solid var(--line-2);font-size:.78rem;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.winpill.good{color:var(--green);border-color:color-mix(in srgb,var(--green) 45%,transparent)}.winpill.bad{color:var(--red);border-color:color-mix(in srgb,var(--red) 45%,transparent)}
+.franks{display:flex;flex-direction:column}
+.frank{display:grid;grid-template-columns:20px 34px 1fr auto;gap:10px;align-items:center;padding:8px 0;border-top:1px solid #2a241e}
+.frank em{font-style:normal;color:var(--muted);font-size:.74rem;text-align:right}
+.fimg{width:34px;height:34px;border-radius:50%;object-fit:cover;object-position:center 20%;border:2px solid var(--line-2);background:var(--panel-2)}
+.fmid{min-width:0;display:flex;flex-direction:column;gap:5px}.ftop{display:flex;align-items:baseline;gap:8px;min-width:0}
+.ftop .fn{font-weight:500;font-size:.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ftop small{color:var(--muted);font-size:.74rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fbar{display:block;height:5px;border-radius:4px;background:#2b241d;text-decoration:none;position:relative}.fbar i{position:absolute;inset:0 auto 0 0;border-radius:4px;background:linear-gradient(90deg,#9c7634,var(--gold))}
+@media (max-width:420px){.podimg{width:46px;height:46px}.pod1 .podimg{width:60px;height:60px}.podname{font-size:.8rem}.ftop small{display:none}}
 .fighter{display:grid;grid-template-columns:22px 38px 1fr auto auto;gap:10px;align-items:center;padding:7px 0;border-top:1px solid #2a241e}
 .fighter:first-child{border:0;padding-top:0}.fighter em{font-style:normal;color:var(--muted);font-size:.74rem;text-align:right}
 .fighter img,.fighter .noimg{width:38px;height:38px;border-radius:50%;object-fit:cover;object-position:center 20%;border:2px solid var(--line-2);background:var(--panel-2)}

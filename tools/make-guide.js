@@ -154,7 +154,7 @@ Special rules on single cards:
   it doesn't count as Yoriichi, so Muzan isn't scared of it.
 - Second versions share a slot with the original (one or the other is dealt): Demon King Tanjiro (rare),
   Awakened Nezuko, Retired Tengen, Final-Form Muzan.
-- Hantengu never attacks (Cower: half damage). The first hit that lands cuts his head off and Sekido and Karaku burst out.
+- Hantengu never fights as the old man: Sekido and Karaku (10 HP each) start the battle in his place.
   The first of them to fall brings Aizetsu and Urogi. When the last emotion falls they merge into Zohakuten (no Defend: Drums
   of Hatred +2 PWR for good; Wood Dragons hit every enemy for full PWR through Defend) and the real Hantengu hides in one of 3
   hiding places, a new one every round. Hunt (pick a place): right, he's dragged out and hit; wrong, that fighter is wide open

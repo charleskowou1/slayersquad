@@ -85,7 +85,8 @@ function synergyIntro(){
   S.synShown=true; const list=players().flatMap(p=>(S.syn&&S.syn[p]||[]).filter(x=>x[0]!=='!').map(t=>({p,t}))).slice(0,6); if(!list.length) return;
   const el=document.createElement('div'); el.className='synreel'; el.setAttribute('role','status'); document.body.appendChild(el);
   let i=0, timer=null; const done=()=>{ clearTimeout(timer); el.classList.add('out'); setTimeout(()=>el.remove(),400); };
-  const next=()=>{ if(i>=list.length) return done(); const {p,t}=list[i++], m=synMembers(p,t), cut=t.includes(':')?t.indexOf(':'):t.search(/ [+−-]\d/), name=cut>0?t.slice(0,cut):t, what=synBonus(cut>0?t.slice(cut+1).trim():'');   // 'Brothers: …' or 'Hashira +1 PWR'
+  const teams=S.teams;
+  const next=()=>{ if(i>=list.length || S.teams!==teams) return done(); const {p,t}=list[i++], m=synMembers(p,t), cut=t.includes(':')?t.indexOf(':'):t.search(/ [+−-]\d/), name=cut>0?t.slice(0,cut):t, what=synBonus(cut>0?t.slice(cut+1).trim():'');   // 'Brothers: …' or 'Hashira +1 PWR'
     const L=m.us.slice(0,Math.ceil(m.us.length/2)), R=m.foe?[m.foe]:m.us.slice(Math.ceil(m.us.length/2));
     el.innerHTML=`<div class="synband" style="--tc:${pc(p)}"><span class="synteamtag">${esc(nm(p))}</span>
       <div class="synpair"><span class="synl">${L.map(u=>seal(u,'lg')).join('')}</span><i class="synlink${m.foe?' vs':''}">${m.foe?'VS':''}</i><span class="synr">${R.map(u=>seal(u,'lg')).join('')}</span></div>
@@ -331,8 +332,9 @@ function warmClips(){
 // Play the round back one log line at a time. Knockouts buzz the phone (Android; iPhones don't allow vibration).
 function playRound(){
   (S.replayLog=S.replayLog||[]).push({r:S.round, log:S.log, teams:JSON.parse(JSON.stringify(S.teams))});   // kept for Watch again (the teams as they are after this round)
-  S.play={k:0, done:false, steps:playSteps(S.log)};
+  const play=S.play={k:0, done:false, steps:playSteps(S.log)};
   const step=()=>{
+    if(S.play!==play) return;   // the player left (Quit / Home / Leave) or a newer round took over: this playback is over (crash reports, Nov 13, 2026)
     if(S.info || S.settings || S.quitAsk){ S._t=setTimeout(step,300); return; }   // paused while an info card, Settings or Quit is open
     if(S.play.k>=S.play.steps.length-1){ S.play.done=true; if(storyEnd() || storyMid()) return; render(); return; }
     S.play.k++; const [a,b]=S.play.steps[S.play.k], lines=S.log.slice(a,b+1), line=lines[0];
