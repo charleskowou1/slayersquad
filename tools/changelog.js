@@ -2,6 +2,7 @@
 // (CACHE 'squad-draft-vNN'), which goes up with every push. tools/make-guide.js prints this at the top of the guide.
 // Add a line here with every push (CK, Oct 28, 2026), then rebuild the guide: node tools/make-guide.js
 module.exports = [
+  [140, '2026-11-16', 'Hantengu’s card is now Zohakuten, Upper Moon 4’s Strongest Emotion: a full fighter (hatred +2 PWR a round up to +4, Wood Dragons through Defend). Knock him down and the real Hantengu hides behind one of three cards: pick the right card to hit him, with a card-flip animation; his DEF 10 neck makes every fighter hit him differently. Admin page: real players vs the sim, and a new-player funnel.'],
   [139, '2026-11-15', 'Hantengu starts the battle as Sekido and Karaku, and his emotions are tougher and hit harder; Tengen is faster (SPD 11) and both Tengens take half damage from poison; quitting during a round no longer crashes the game.'],
   [138, '2026-11-14', 'Free-for-all (3–4 players): specials that hit every enemy hit every enemy team, cleaner battle screens, and rare big cards (about 1 Random deal in 6). TV mode takes up to 4 phones, with a battle board for 3–4 teams. Destined Foes removed.'],
   [137, '2026-11-13', 'New music: Zankyou Sanka (Aimer) joins the home songs and Zenitsu’s Flaming Thunder God joins the battle songs; Tap to start now rings with the bell from the Demon Slayer soundtrack’s Beginning.'],

@@ -35,6 +35,9 @@ function data(){ return {ROSTER, BYID}; }`);
 const { ROSTER, BYID } = g.data();
 const t0 = Date.now(), SIM = {};
 for (const b of BUDGETS) { SIM[b] = g.drafts(N, b); console.error(`${b} pts: ${N} drafts (${((Date.now() - t0) / 1000).toFixed(0)} s)`); }
+// The admin page shows these next to real players' win rates (js/sim-rates.js, read only by admin.html)
+{ const R = {}; for (const b of BUDGETS) for (const [id, c] of Object.entries(SIM[b].C)) if (c.g >= 30) (R[id] = R[id] || {})[b] = Math.round(c.w / c.g * 1000) / 10;
+  fs.writeFileSync(path.join(__dirname, '..', 'js', 'sim-rates.js'), `// Written by tools/make-playbook.js: simulated Hard win rate (%) per card at 10, 20 and 30 points. Only admin.html loads it.\nconst SIM_RATES = ${JSON.stringify({ v: VERSION, n: N, at: new Date().toISOString().slice(0, 10), cards: R })};\n`); }
 const SQUADS = TXT.squads.map(([b, name, ids, why]) => ({ b, name, ids, why, wr: g.squad(ids, SQUAD_N, b) }));
 console.error(`squads done (${((Date.now() - t0) / 1000).toFixed(0)} s)`);
 

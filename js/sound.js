@@ -133,7 +133,7 @@ const STYLE_SFX = {
 // Basic attacks: what the fighter swings. Blades ring; fists, claws and demon arts sound like themselves.
 const WEAPON = {akaza:'fist', hakuji:'fist', typezero:'blade', hand:'claw', swamp:'claw', kyogai:'drum', rui:'thread', enmu:'dream', muzan:'whip', muzan_final:'whip',
   doma:'fan', gyutaro:'sickle', daki:'obi', gyokko:'blunt', susamaru:'blunt', yahaba:'arrow', nezuko:'kick', nezuko_awakened:'kick', tanjiro_demon:'claw',
-  tamayo:'blood', yushiro:'claw', hantengu:'claw', hantengu_true:'claw', sekido:'staff', karaku:'fan', aizetsu:'spear', urogi:'claw', zohakuten:'staff', kokushibo:'blade', kaigaku:'blade'};
+  tamayo:'blood', yushiro:'claw', hantengu:'staff', hantengu_true:'claw', sekido:'staff', karaku:'fan', aizetsu:'spear', urogi:'claw', zohakuten:'staff', kokushibo:'blade', kaigaku:'blade'};
 const ATTACK_SFX = {
   blade:  v=>{ swoosh(.12,.13*v,.2); steel(.3,.06*v); hiss('highpass',1800,500,.07,.08*v,.31); tone('sine',150,60,.12,.14*v,.31); },
   fist:   v=>{ hiss('lowpass',800,200,.08,.12*v,.2); tone('sine',150,55,.16,.5*v,.28); hiss('highpass',2500,4000,.04,.1*v,.28); },

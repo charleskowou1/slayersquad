@@ -158,6 +158,11 @@ const KO_TESTS = {
   ht_vs:   {custom:()=>htDraftTest(['hantengu','gyokko']), note:'Draft your squad with the same points as Hantengu + Gyokko (15), then fight him. Hunt the real one, or knock Zohakuten down to expose him.'},
   ht_solo: {custom:()=>htDraftTest(['hantengu']), note:'Draft your squad with the same points as Hantengu alone (9), then fight him.'},
   ht_play: {you:['hantengu','gyokko'], foe:['tanjiro_mark','zenitsu','inosuke'], keep:true, setup:()=>{ S.level='normal'; }, note:'You are Hantengu (and Gyokko). Keep the real one hidden as long as you can.'},
+  // Hantengu version 2 (prototype, Nov 16, 2026): cutting the emotions only makes more; find the real one
+  ht2_solo: {custom:()=>htDraftTest(['hantengu']), note:'New Zohakuten. Draft your squad with his points (9), then fight him. Knock him down, then pick the card the real Hantengu is hiding behind.'},
+  ht2_vs:   {custom:()=>htDraftTest(['hantengu','doma']), note:'New Zohakuten with Doma (20 pts). Draft your squad, then fight. Knock Zohakuten down, then pick the right card to hit the real Hantengu.'},
+  ht2_play: {you:['hantengu','doma'], foe:['tanjiro_demon','tanjuro'], keep:true, setup:()=>{ S.level='normal'; }, note:'You are the new Zohakuten with Doma, against Demon King Tanjiro and Tanjuro (Normal). When Zohakuten goes down, hide the real Hantengu behind a card.'},
+  ht2_hard: {you:['hantengu','doma'], foe:['tanjiro_demon','tanjuro'], keep:true, setup:()=>{ S.level='hard'; }, note:'Same battle on Hard: the computer guesses with up to two fighters (all of them if he\'s the only target).'},
   ht_hunt: {you:['tanjiro_mark','genya','mitsuri'], foe:['hantengu'], keep:true, setup:()=>{ const z=mkUnit('zohakuten',1); S.teams[1]=[z]; S.htHide[1]={spot:Math.floor(Math.random()*HT_SPOTS), u:null}; S.htMore[1]=true; S.level='normal'; },
             note:'Straight to Zohakuten, with the real Hantengu hiding. Hunt (pick a hiding place), or knock Zohakuten down.'},
   // dodges and guards (CK, Nov 3, 2026)
@@ -250,8 +255,8 @@ function render(){
   if(view==='over' && !scored && (isPractice() || S.mode==='story')){ scored=true;   // story and practice don't count toward stats
     if(S.winner!==0) sfx('lose'); }   // story wins are saved (and celebrated) before the ending scene
   if(view==='over' && !scored && isAsync()){ const g=myGame(S.asyncCode); if(g && g.scored===S.matchNo) scored=true; else setGame(S.asyncCode,{scored:S.matchNo}); }   // a reopened game isn't counted twice
-  if(view==='plan' && S.round===1 && !matchOn){ matchOn=modeKey(); track([`m_${matchOn}_start`, `d_${trackDay()}_games`]); }
-  if(view==='over' && matchOn){ track([`m_${matchOn}_finish`]); matchOn=null; ACTIONS.tipok('played'); }
+  if(view==='plan' && S.round===1 && !matchOn){ matchOn=modeKey(); track([`m_${matchOn}_start`, `d_${trackDay()}_games`]); funnel('play', 'fm_'+matchOn); }
+  if(view==='over' && matchOn){ track([`m_${matchOn}_finish`]); funnel('end'); if(S.coop ? coopWon() : S.winner>=0 && (S.mode==='local' || sameSide(S.winner,myP()))) funnel('win'); funnel('five'); matchOn=null; ACTIONS.tipok('played'); }
   if(view==='setup') matchOn=null;
   if(view==='over' && !scored){ scored=true; postStats(statsGame()); if(S.winner>=0){ const sc=loadScore(); players().filter(q=>sameSide(q,S.winner)).forEach(q=>{ const n=S.names[q]; sc[n]=(sc[n]||0)+1; }); saveScore(sc); } recordMatch();
     sfx(S.winner<0 || (soloView() && !sameSide(S.winner,myP())) ? 'lose' : 'win'); }
@@ -615,8 +620,8 @@ const ACTIONS = {
   keepmoves(){ if(typeof isCtl==='function' && isCtl()) return ctlKeep(); if(isOnline()) return onlineKeepMoves(); nextScoutOrFight(); },
   focus(v){ S.focus = focusOf(S.planFor)===v ? 'none' : v; S.reveal=true; },
   act(v,b){ const u=findU(b.dataset.u); setMove(u,v); if(unitReady(u)) advanceFocus(u.p); S.reveal=true; },
-  spot(v,b){ const u=findU(b.dataset.u); S.plans[u.p][u.uid].spot=+v; advanceFocus(u.p); S.reveal=true; },   // Hantengu H: the hiding place a hunter checks
-  tgt(v,b){ const u=findU(b.dataset.u); S.plans[u.p][u.uid].t=v; advanceFocus(u.p); S.reveal=true; },
+  spot(v,b){ const u=findU(b.dataset.u); if(!S.plans[u.p][u.uid]) S.plans[u.p][u.uid]={type:u.zohReal?'hide':'attack'}; S.plans[u.p][u.uid].spot=+v; if(unitReady(u)) advanceFocus(u.p); S.reveal=true; },   // Hantengu H: the hiding place a hunter checks
+  tgt(v,b){ const u=findU(b.dataset.u); S.plans[u.p][u.uid].t=v; if(unitReady(u)) advanceFocus(u.p); S.reveal=true; },
   lockMoves(){
     if(typeof isCtl==='function' && isCtl()) return ctlLock();   // controller: send the picks to the TV
     if(isOnline()){ onlineLockMoves(); return newPlanTurn(); }
@@ -1041,6 +1046,19 @@ function track(keys){
   // mode and story counters also get a dated copy, so the admin page can filter them by time
   firebaseReady().then(db=>{ const inc=firebase.database.ServerValue.increment(1), up={}; keys.forEach(k=>{ up[k]=inc; if(/^([ms]|src)_/.test(k)) up[`d_${day}_${k}`]=inc; }); return db.ref('track').update(up); }).catch(()=>{});
 }
+// New-player funnel for the admin page (CK, Nov 16, 2026: where do new players give up?). Each step counts once per browser,
+// under the day the browser first opened the game, so the admin page can follow one group of new players through:
+// play = started a first battle (fm_<mode> = which mode), end = finished a match, win = won one, back = came back another day,
+// five = finished 5 matches. Browsers from before this was added have no `first` and are left out.
+const FUNNEL_STEPS = ['play','end','win','back','five'];
+function funnel(step, extra){
+  if(trackOff()) return; let t={}; try{ t=JSON.parse(localStorage.getItem('squad-draft-track'))||{}; }catch(e){ return; }
+  if(!t.first) return; const f=t.f||'';
+  if(step==='five'){ t.n=(t.n||0)+1; if(t.n<5 || f.includes('five')){ try{ localStorage.setItem('squad-draft-track',JSON.stringify(t)); }catch(e){} return; } }
+  else if(f.split(',').includes(step)) return;
+  t.f=f?f+','+step:step; try{ localStorage.setItem('squad-draft-track',JSON.stringify(t)); }catch(e){ return; }
+  const keys=[`f_${step}`, `d_${t.first}_f_${step}`]; if(extra) keys.push(extra, `d_${t.first}_${extra}`); track(keys);
+}
 // This browser's anonymous id (random; backed up with the save, but a restoring device keeps its own)
 const trackId = () => { try{ let id=localStorage.getItem('squad-draft-pid'); if(!/^[a-z0-9]{12}$/.test(id||'')){ id=Array.from({length:12},()=>'abcdefghijkmnpqrstuvwxyz23456789'[Math.floor(Math.random()*32)]).join(''); localStorage.setItem('squad-draft-pid',id); } return id; }catch(e){ return null; } };
 // A scrambled fingerprint of the recovery code: browsers sharing a code (phone + iPad, old + new address) count as one person. The code itself never leaves the save.
@@ -1054,7 +1072,9 @@ async function trackOpen(){
   if(!t.day) keys.push('players', `d_${day}_new`, 'dev_'+dev);
   // Where a new player came from: links like slayersquad.app/?from=tiktok (letters, numbers, - and _ only). Counted once per browser.
   if(!t.day) keys.push('src_'+(FROM_PARAM||'direct'));
-  try{ localStorage.setItem('squad-draft-track',JSON.stringify({day})) }catch(e){}
+  const back=firstDay && t.first && t.first!==day; t.day=day; if(!t.first && keys.includes('players')) t.first=day;
+  try{ localStorage.setItem('squad-draft-track',JSON.stringify(t)) }catch(e){}
+  if(back) funnel('back');
   // Rough region, once per browser (existing players too): the device's time zone, e.g. America/Chicago. No location permission, no IP.
   let tz='Unknown'; try{ tz=(Intl.DateTimeFormat().resolvedOptions().timeZone||'Unknown').slice(0,50); }catch(e){}
   try{ if(navigator.onLine && !localStorage.getItem('squad-draft-where')){ keys.push('where_'+tz.replace(/[.$#\[\]\/]/g,'~')); localStorage.setItem('squad-draft-where','1'); } }catch(e){}

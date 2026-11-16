@@ -803,6 +803,7 @@ function moveSummary(u){
   if(u.stun) return 'Stunned · skips this round';
   const pl=S.plans[u.p][u.uid];
   if(!pl||!pl.type) return 'Choose a move';
+  if(pl.type==='hide') return pl.spot!=null?`Hiding behind card ${pl.spot+1}`:'Pick a card to hide behind';
   const name = pl.type==='attack'?(u.basic?esc(u.basic.name):'Attack'):pl.type==='defend'?'Defend':pl.type==='save'?'Save':pl.type==='drums'?'Drums of Hatred':pl.type==='hunt'?(pl.spot!=null?`Hunt → hiding place ${pl.spot+1}`:'Hunt · pick a hiding place'):esc(u.sig.name);
   if(!needsTarget(u,pl)) return name;
   const t=pl.t&&findU(pl.t);
@@ -814,6 +815,9 @@ function fighter(u, open){
   const head=`<div class="fhead">${sealBtn(u)}${zzz(u)}${spr&&!open?'<span class="spmark" title="Special ready" aria-label="Special ready">技</span>':''}<button class="fmain" data-a="focus" data-v="${u.uid}" aria-expanded="${open}" ${u.stun?'disabled':''}>
     <span class="tb">${health(u)}<span class="sum${ready?' ok':''}">${ready&&!u.stun?'✓ ':''}${moveSummary(u)}</span></span></button></div>`;
   if(!open) return `<div class="fighter${spr?' spready':''}" style="--tc:${pc(u.p)}">${head}</div>`;
+  const cards=(label,on)=>`<div class="htspots"><span class="tlabel">${label}</span><div class="htrow" style="--n:${HT_SPOTS}">${Array.from({length:HT_SPOTS},(_,k)=>`<button class="htspot${on===k?' on':''}" data-a="spot" data-u="${u.uid}" data-v="${k}"><b>?</b><small>${k+1}</small></button>`).join('')}</div></div>`;
+  if(u.zohReal) return `<div class="fighter open" style="--tc:${pc(u.p)}">${head}<div class="fbody">${cards('Hide behind a card. If they pick it, they hit you.',pl.spot)}</div></div>`;   // Zohakuten (prototype)
+  const aimHid=pl.t && zohHiding(findU(pl.t)) && !(pl.type==='special' && u.sig.kind==='all');
   // kept short on purpose: stats and the full special text are one tap away on the fighter's picture
   const mv=(v,k,label,sub,dis)=>`<button data-a="act" data-u="${u.uid}" data-v="${v}" class="${pl.type===v?'on':''}" ${dis?'disabled':''}><span class="mk" aria-hidden="true">${k}</span>${label}${sub?`<small>${sub}</small>`:''}</button>`;
   const opts=targetOptions(u,pl);
@@ -824,6 +828,7 @@ function fighter(u, open){
     <div class="moves">${u.basic?mv('attack',u.basic.k,esc(u.basic.name),esc(u.basic.tag)):mv('attack','攻','Attack',u.selfless?'ignores DEF · reveals you':u.strikes>1?'×'+u.strikes:'')}${u.selfless?mv('save','護','Save',u.saveUsed?'used':'ally takes no damage · once',u.saveUsed||!friends(u.p).some(f=>f!==u)):u.drums?mv('drums','鼓','Drums of Hatred','+2 PWR for good'):mv('defend','守','Defend',u.noDefend?'berserk':'',u.noDefend)}${typeof huntTeam==='function' && huntTeam(u.p)!==undefined?mv('hunt','探','Hunt','find the real Hantengu'):''}${mv('special','技',`<span class="spn">${esc(u.sig.name.split(':')[0])}</span>`,u.cd>0?`<span class="cdn">ready in ${u.cd}</span>`:esc(u.sig.tag),u.cd>0)}</div>
     ${pl.type==='hunt'?`<div class="htspots"><span class="tlabel">Where is he hiding? Wrong guess: ${esc(u.name)} is left wide open</span><div class="htrow" style="--n:${HT_SPOTS}">${Array.from({length:HT_SPOTS},(_,k)=>`<button class="htspot${pl.spot===k?' on':''}" data-a="spot" data-u="${u.uid}" data-v="${k}"><b>?</b><small>${k+1}</small></button>`).join('')}</div></div>`:''}
     ${opts.length?`<div class="targets"><span class="tlabel">${isAllyMove(u,pl)?'Ally':'Target'}</span>${opts.map(tgt).join('')}</div>`:''}
+    ${aimHid?cards('Which card is the real Hantengu behind? Right card: it lands. Wrong card: it misses.',pl.spot):''}
   </div></div>`;
 }
 function vPass(){
@@ -904,6 +909,7 @@ function stage(line){
   const dart=(line.dodge||line.guard) && by && on ? dodgeArt(line,on) : '';
   if(dart){ const rev=by.p!==leftSide(), att=`<div class="st-by">${seal(by,'stg')}<span class="st-nm" style="color:${pc(by.p)}">${esc(by.name)}</span></div>`, tgt=`<div class="st-on">${dart}<span class="st-nm" style="color:${pc(on.p)}">${esc(on.name)}</span></div>`;
       return `<div class="stage duo dodgestage fx-${type}${rev?' rev':''}" aria-hidden="true">${rev?tgt+att:att+tgt}</div>`; }
+  if(line.zg) return zohStage(line);
   if(line.htcut||line.htmore||line.hunt||line.htbare||line.htmerge||line.htdown||line.htrise) return htStage(line);
   if(line.ate) return genyaStage(line);
   if(type==='hit' && line.move==='special' && by && on && by.mark && by.sk==='tanjiro' && by.p!==on.p){ const sg=sigFor(line); if(sg==='unblock') return stageLeap(by,on,line); if(!sg) return stageYori(by,on,line); }
@@ -942,6 +948,18 @@ const HT_JAW = `<span class="htx-jaw"><svg viewBox="0 0 120 70"><g fill="#8a5a32
 // the real one's shadow scurrying off: a tiny horned figure mid-run
 const HT_RUN = `<svg viewBox="0 0 40 40"><g fill="#0b0806"><path d="M14 6 L16 1 L18 7 M24 7 L26 1 L28 6" stroke="#0b0806" stroke-width="2" stroke-linecap="round"/><circle cx="21" cy="11" r="7"/>
   <path d="M15 17 Q21 15 26 18 L29 27 L24 26 L27 37 L23 37 L20 28 L15 37 L11 36 L15 26 L9 24 Z"/></g><circle cx="23.5" cy="10" r="1.3" fill="#e0573b"/></svg>`;
+// The real Hantengu behind his cards (CK, Nov 16, 2026): the attacker's card lifts and flips. Found: he's on it, trembling, and a cut
+// crosses the card. Missed: an empty card (空), then his card flips too, showing where he was, and he scurries off. In the round he's
+// knocked down the cards never turn: he's already hidden.
+function zohStage(line){
+  const by=findU(line.by), real=findU(line.on), z=line.zg, pic=u=>u?seal(u,'stg'):'';
+  const card=k=>{ const mine=k===z.spot, his=k===z.at, flip=z.at!=null && (mine||his), late=his && !mine;
+    return `<span class="zc${mine?' pick':''}${flip?' flip':''}${late?' late':''}${his&&z.found?' found':''}" style="--k:${k}"><span class="zc-back"><b>?</b><small>${k+1}</small></span>
+      <span class="zc-face">${his?`<span class="zc-real">${pic(real)}</span>${z.found?'<i class="zc-cut"></i>':''}`:'<b class="zc-empty">空</b>'}</span></span>`; };
+  return `<div class="stage zcs ${z.found?'found':'miss'}${z.at==null?' hidden':''}" aria-hidden="true" style="--tc:${by?pc(by.p):'var(--gold)'}">
+    <div class="zc-by">${pic(by)}</div><div class="zc-row">${Array.from({length:HT_SPOTS},(_,k)=>card(k)).join('')}</div>
+    <b class="zc-kj">${z.found?'見つけた!':z.at==null?'隠':'外れ'}</b></div>`;
+}
 // Hantengu H (Nov 10, 2026): the head cut and split, more emotions bursting out, the hunt, and the real one laid bare
 function htStage(line){
   const kids=(line.spawn||[]).map(findU).filter(Boolean), pic=u=>u?seal(u,'stg'):'', kid=(k,i)=>`<div class="htx-kid k${i}">${pic(k)}<b>${esc(k.name)}</b></div>`;
@@ -954,7 +972,7 @@ function htStage(line){
   if(line.hunt){ const by=findU(line.by), h=line.hunt, real=kids[0];
     return `<div class="stage htx htx-hunt ${h.found?'found':'miss'}" aria-hidden="true"><div class="htx-by">${pic(by)}</div>
       <div class="htx-cards" style="--n:${HT_SPOTS}">${Array.from({length:HT_SPOTS},(_,k)=>`<span class="htx-card${k===h.spot?' pick':''}${!h.found&&k===h.at?' real':''}"><span class="htx-back">?</span><span class="htx-face">${k===h.spot&&h.found?pic(real):k===h.spot?HT_DECOY:''}</span>${!h.found&&k===h.at?`<span class="htx-shadow">${HT_RUN}</span>`:''}</span>`).join('')}</div>
-      ${h.found?'':HT_JAW}<b class="htx-kj">${h.found?'見つけた!':'罠'}</b></div>`; }
+      ${h.found||h.nojaw?'':HT_JAW}<b class="htx-kj">${h.found?'見つけた!':'罠'}</b></div>`; }
   if(line.htmerge){ const z=kids[0];
     return `<div class="stage htx htx-merge" aria-hidden="true">${['sekido','karaku','aizetsu','urogi'].map((id,i)=>`<span class="htx-emo e${i}">${seal(BYID[id],'stg')}</span>`).join('')}
       <i class="htx-flash"></i><div class="htx-zoh">${pic(z)}<b>${esc(z.name)}</b></div><b class="htx-kj">憎</b></div>`; }
@@ -1014,7 +1032,7 @@ function momentOf(lines, to, cur){
   { const l=lines.find(x=>x.by && x.move==='special' && (BYID[(findU(x.by)||{}).id]||{}).upper), u=l&&findU(l.by), key=S.round+':'+(S.play?S.play.k:0);   // an Upper Moon's first special this match (CK: not every first move)
     if(u){ S.upSeen=S.upSeen||{}; if(!S.upSeen[u.uid] || S.upSeen[u.uid]===key){ S.upSeen[u.uid]=key; return {k:'upper', u}; } } }
   if(lines.some(l=>l.fx==='stun' && l.move==='attack' && l.by && (findU(l.by)||{}).sk==='nakime')) return {k:'biwa'};
-  if(lines.some(l=>l.fx==='spawn' && !l.htcut && !l.hunt && !l.htbare && l.on && findU(l.on) && findU(l.on).sk==='hantengu')) return {k:'crack'};   // the Hantengu test version has its own moments
+  if(lines.some(l=>l.fx==='spawn' && !l.htcut && !l.hunt && !l.htbare && !l.htrise && !l.zg && l.on && findU(l.on) && findU(l.on).sk==='hantengu')) return {k:'crack'};   // the Hantengu test version has its own moments
   const ko=lines.filter(l=>l.fx==='ko'); if(!ko.length) return null;
   if(ko.some(l=>(findU(l.on)||{}).fam==='muzan')) return {k:'muzandeath'};   // Muzan's end gets the whole screen
   if(S.final && !S.log.slice(to+1).some(l=>l.fx==='ko')) return {k:'final', color:ko.some(l=>(findU(l.on)||{}).fam==='muzan')};   // Muzan's explosion stays in colour

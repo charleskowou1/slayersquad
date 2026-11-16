@@ -67,11 +67,12 @@ add({id:'gyokko_perfect',fam:'gyokko',sk:'gyokko_perfect',spawn:true,name:'Gyokk
 // fighter is wide open for the round), or knock Zohakuten down to expose him for a round; if the real one survives it,
 // Zohakuten gets back up with HT_RISE of his health and the real one hides again. Cut down the real one to win.
 let HT_SPOTS = 3, HT_RISE = 1/3;
-add({id:'hantengu',name:'Hantengu',short:'Hantengu',g:'怯',type:'Upper Moon 4',demon:true,upper:true,cost:9,hp:16,pow:0,spd:9,def:4,regen:1,noDefend:true,
-  basic:{name:'Cower',tag:'takes half damage',k:'怯',kind:'self',cower:true,desc:'Instead of attacking: he cowers and takes half damage this round.'},
-  splitOnHit:['sekido','karaku'], startSplit:true,
-  passive:'He never fights as the old man: Sekido and Karaku start the battle in his place. The first of them to fall brings Aizetsu and Urogi. When the last emotion falls they merge into Zohakuten, and the real Hantengu hides. Hunt him (guess where he is; a wrong guess leaves that fighter wide open), or knock Zohakuten down to expose him for a round (if the real one survives it, Zohakuten gets back up, +2 PWR stronger each time). Cut down the real one to win.',
-  sig:{name:'Cowering Hide',desc:'Moves first. Hides: attacks miss him this round, and he heals 6.',cd:3,kind:'self',prio:3}});
+// Zohakuten, Upper Moon 4's Strongest Emotion (CK's design, Nov 16, 2026). The draft card for Hantengu: id 'hantengu' so stats, story and unlocks
+// carry over. Knock him down and the real Hantengu (hantengu_true) comes out and hides behind card 1, 2 or 3 (engine: zohDown, zohGuess, zohRise).
+add({id:'hantengu',name:'Zohakuten',short:'Zohakuten',g:'憎',type:"Upper Moon 4's Strongest Emotion",demon:true,upper:true,cost:9,hp:30,pow:11,spd:9,def:6,regen:2,
+  hatred:2, hatredCap:4, zoh:true, kin:'hantengu_true', art:'zohakuten',
+  passive:'Upper Moon 4’s strongest emotion. His hatred grows: +2 PWR at the end of every round, up to +4. Knock him down and the real Hantengu comes out and hides behind card 1, 2 or 3: to hit him you pick a card. Right card, it lands; wrong card, it misses. Specials that hit every enemy pass over him, and his neck is hard as steel (DEF 10). If the real one survives the round, Zohakuten gets back up, weaker each time. Kill the real one and Zohakuten crumbles. After sunrise Zohakuten stays down and the real one has nowhere to hide.',
+  sig:{id:'wooddragons',name:'Wood Dragons',desc:'Every enemy takes PWR−2, even through Defend.',cd:3,kind:'all'}});
 // His forms (never dealt). Sekido and Karaku come from the head cut, Aizetsu and Urogi from the first emotion to fall.
 add({id:'sekido',spawn:true,name:'Sekido (Anger)',short:'Sekido',g:'怒',type:'Hantengu · Anger',demon:true,cost:0,hp:10,pow:9,spd:8,def:4,regen:1,emo:true,
   passive:'Anger: the first of him or Karaku to fall brings more emotions. When the last emotion falls, they merge into Zohakuten.',
@@ -85,12 +86,12 @@ add({id:'aizetsu',spawn:true,name:'Aizetsu (Sorrow)',short:'Aizetsu',g:'哀',typ
 add({id:'urogi',spawn:true,name:'Urogi (Pleasure)',short:'Urogi',g:'喜',type:'Hantengu · Pleasure',demon:true,cost:0,hp:8,pow:8,spd:11,def:2,regen:1,emo:true,
   passive:'Pleasure: when the last emotion falls, they merge into Zohakuten.',
   sig:{name:'Sky Dive',desc:'Moves first. One enemy takes PWR+2.',cd:3,kind:'single',prio:1}});
-add({id:'zohakuten',spawn:true,name:'Zohakuten (Hatred)',short:'Zohakuten',g:'憎',type:'Hantengu merged · Hatred',demon:true,cost:0,hp:20,pow:10,spd:8,def:6,regen:1,noDefend:true,drums:true,kin:'hantengu_true',
-  passive:'Hatred: the four emotions in one body. No Defend: Drums of Hatred gives him +2 PWR for good instead. The real Hantengu hides while he fights. Knock Zohakuten down and the real one is exposed for a round; if he survives it, Zohakuten gets back up (a third of his health, +2 PWR each time) and the real one hides again. Cut down the real one and Zohakuten crumbles.',
+add({id:'zohakuten',spawn:true,name:'Zohakuten (Hatred)',short:'Zohakuten',g:'憎',type:'Hantengu merged · Hatred',demon:true,cost:0,hp:20,pow:10,spd:8,def:6,regen:1,hatred:2,hatredCap:8,kin:'hantengu_true',
+  passive:'Hatred: the four emotions in one body. His hatred grows: +2 PWR at the end of every round, up to +8. The real Hantengu hides while he fights. Knock Zohakuten down and the real one is exposed for a round; if he survives it, Zohakuten gets back up (a third of his health, +2 PWR each time) and the real one hides again. Cut down the real one and Zohakuten crumbles.',
   sig:{name:'Wood Dragons',desc:'Every enemy takes PWR, even through Defend.',cd:3,kind:'all'}});
-add({id:'hantengu_true',fam:'hantengu',spawn:true,name:'Hantengu (the real one)',short:'Real Hantengu',g:'怯',type:'Hantengu · the real one',demon:true,cost:0,hp:12,pow:0,spd:12,def:4,regen:1,noDefend:true,
+add({id:'hantengu_true',fam:'hantengu',spawn:true,name:'Hantengu (the real one)',short:'Real Hantengu',g:'怯',type:'Hantengu · the real one',demon:true,cost:0,hp:12,pow:0,spd:12,def:10,regen:1,noDefend:true,
   basic:{name:'Tremble',tag:'half damage',k:'怯',kind:'self',cower:true,desc:'Instead of attacking: he trembles and takes half damage.'},
-  passive:'The real one: he never attacks. Cut him down and Zohakuten crumbles with him.',
+  passive:'The real one, hiding while Zohakuten is down. He never attacks: each round he picks card 1, 2 or 3 to hide behind, and only the right card finds him. His neck is hard as steel. Kill him and Zohakuten crumbles.',
   sig:{id:'flee',name:'Flee',desc:'Moves first. He scurries away and hides: attacks miss him this round.',cd:3,kind:'self',prio:3}});
 add({id:'kaigaku',name:'Kaigaku',short:'Kaigaku',g:'獪',type:'Upper Moon 6 · fallen Thunder',demon:true,upper:true,cost:5,hp:26,pow:9,spd:10,def:3,regen:1,
   passive:'Rival: an enemy Zenitsu gets +2 PWR against him.',
@@ -255,7 +256,7 @@ const SPECIAL_TAGS = {gyokko_perfect:'big hit, ignores DEF',
   muzan:'hit all, heal self', muzan_final:'hit all, heal self', kokushibo:'hit all enemies', doma:'hit all enemies',
   akaza:'big hit', gyutaro:'hit all + poison', daki:'hit all enemies', nakime:'send an enemy away', zohakuten:'hit all, through Defend', hantengu_true:'hides this round',
   susamaru:'hit two enemies', yahaba:"enemy's hits miss", kanae:'hit + heal ally', tanjiro_demon:'hit all enemies', nezuko_awakened:'hit all + cure poison',
-  typezero:'ally +2 SPD', hotaru:'reload a special', hantengu:'hide + heal self', gyokko:'hit + stun', kaigaku:'hit two enemies',
+  typezero:'ally +2 SPD', hotaru:'reload a special', hantengu:'hit all, through Defend', gyokko:'hit + stun', kaigaku:'hit two enemies',
   sekido:'every enemy 5', karaku:'hits every enemy', aizetsu:'through Defend', urogi:'moves first',
   enmu:'delay enemy specials', rui:'hit + stun', kyogai:'stun one enemy', hand:'strong hit', swamp:'dodge + hit',
   giyu:'team takes no damage', gyomei:'hit all enemies', sanemi:'hit two enemies', muichiro:'dodge + hit',
@@ -277,7 +278,7 @@ const SPECIAL_QUOTES = {gyokko_perfect:'Behold my true form!',
   zohakuten:'Why do you torment the weak?!', hantengu_true:'How dare you hurt someone so weak!', susamaru:"Let's play temari!", yahaba:'Your aim belongs to me now.',
   kanae:"I'd rather we didn't fight. But if we must…", tanjiro_demon:"I can't hear anyone anymore…", nezuko_awakened:'Grrrr!',
   typezero:'*clack clack clack*', hotaru:"You chipped my blade?! I'll end you!", akaza:'Become a demon and fight me forever!', gyutaro:'Take it all from them!',
-  hantengu:'Don\'t hurt me! I\'m so weak!', gyokko:'Admire my art!', kaigaku:'I was the one meant to rise.',
+  hantengu:'Why do you torment the weak?!', gyokko:'Admire my art!', kaigaku:'I was the one meant to rise.',
   sekido:'Anger burns the field!', karaku:'Ha! Blow them away!', aizetsu:'How sad. How very sad.', urogi:'Such joy, from up here!',
   enmu:'Sleep. Have a lovely dream.', rui:'You\'re not my family.', kyogai:'My writing was not trash!', hand:'I remember every student.',
   swamp:'Into the swamp with you.', giyu:'Water Breathing, Eleventh Form.', gyomei:'Namu Amida Butsu.', sanemi:'Come on, then. Try me.',
@@ -319,7 +320,7 @@ const LORE = {
   nakime: ['*strum*', 'The biwa player of the Infinity Castle. One note moves every room.'],
   gyokko_perfect: ['Behold my true form!', 'Gyokko out of his pot: scales harder than diamond, and hands that turn whatever they touch into fish.'],
   gyokko: ['Admire my art!', 'Upper Moon Five, an artist of pots and fish who traps his victims in water.'],
-  hantengu: ['Don’t hurt me! I’m so weak!', 'Upper Moon Four, a coward whose fear splits him into emotions, each one deadlier than the last.'],
+  hantengu: ['Why do you torment the weak?!', 'Hatred, Upper Moon Four’s strongest emotion. Behind him hides the real Hantengu, a tiny coward with a neck as hard as steel.'],
   kaigaku: ['I was the one meant to rise.', 'Zenitsu’s senior under Jigoro Kuwajima. He took Muzan’s blood and became Upper Moon Six.'],
   enmu: ['Have a lovely dream.', 'Lower Moon One, who put the Mugen Train to sleep and fused with the train itself.'],
   rui: ['A family is bound by fear.', 'Lower Moon Five of Mount Natagumo, who tied a fake family together with threads.'],
@@ -364,7 +365,7 @@ const LORE = {
 const loreOf = c => LORE[c.id] || LORE[c.fam] || null;
 // One short line under each draft card: what the special does at a glance (the full text is on the card's details)
 const SIG_CAPTION = {gyokko_perfect:'Huge hit · ignores DEF', yoriichi:'Hits all · stops regen', yoriichi_old:'Huge single hit', muzan:'Hits all · heals him', muzan_final:'Hits all · heals him', kokushibo:'Three moon forms in turn', doma:'Hits all · then the ice Buddha',
-  akaza:'Big single hit', gyutaro:'Hits all · poison', daki:'Hits all · through Defend', nakime:'Banishes one enemy', gyokko:'Hit + stun', hantengu:'Two emotions from round 1 · hunt the real one', kaigaku:'Hits two', enmu:'Delays all specials',
+  akaza:'Big single hit', gyutaro:'Hits all · poison', daki:'Hits all · through Defend', nakime:'Banishes one enemy', gyokko:'Hit + stun', hantengu:'Hits all · knock down, then find the real one', kaigaku:'Hits two', enmu:'Delays all specials',
   rui:'Hit + stun', kyogai:'Stuns one enemy', susamaru:'Hits two', yahaba:'Enemy\'s hits miss', hand:'Big single hit', swamp:'Dodges + hits', giyu:'Team takes no damage', gyomei:'Hits all · ignores DEF',
   sanemi:'Hits two', muichiro:'Dodges + hits', mitsuri:'Hits all · through Defend', obanai:'Big hit · through Defend', rengoku:'Big single hit', tengen:'Hits all', tengen_retired:'Guards an ally', shinobu:'Poisons one enemy',
   kanae:'Hit + heals', tanjiro:'Big hit · ignores DEF', tanjiro_demon:'Hits all · ignores DEF', nezuko:'Hits all · ignores DEF', nezuko_awakened:'Hits all · cures poison', zenitsu:'Moves first · double hit', inosuke:'Two random hits',

@@ -132,6 +132,22 @@ select{flex:1;min-width:0;font:inherit;color:var(--fg);background:var(--panel-2)
 pre{margin:0 0 10px;padding:12px;background:#0b0a08;border-radius:10px;overflow-x:auto;font-size:.74rem}
 .foot{color:#6f6556;font-size:.72rem;text-align:center;margin-top:24px;overflow-wrap:anywhere}
 @media (max-width:620px){.ranges{width:100%}.ranges button{flex:1;padding:7px 4px;font-size:.82rem}h1{font-size:1.35rem}.tiles{grid-template-columns:1fr 1fr}.tile b{font-size:1.5rem}.hero{grid-template-columns:1fr;padding:22px 18px}.hero b{font-size:3.4rem}.hero .weekbox{justify-self:stretch;text-align:left}section{padding:16px}.fighter{grid-template-columns:18px 34px 1fr auto}.fighter small{display:none}.modes{grid-template-columns:1fr 1fr}.mode{padding:10px 12px}.mode b{font-size:1.1rem}}
+.rsnote{color:var(--muted);font-size:.8rem;margin:0 0 10px}.rsh{font:700 .74rem var(--body);letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin:14px 0 6px}
+.rsrow{display:grid;grid-template-columns:1fr auto;column-gap:10px;row-gap:4px;align-items:center;padding:8px 0;border-top:1px solid #2a241e;font-size:.88rem}
+.rsn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rsrow small{grid-column:1;color:var(--ink-2);font-size:.78rem;font-variant-numeric:tabular-nums}
+.rsrow small b{color:var(--fg)}.rsg{grid-column:2;grid-row:1/3;font:800 1.15rem var(--display);font-style:normal;font-variant-numeric:tabular-nums}
+.rsg.up{color:var(--green)}.rsg.down{color:var(--red)}
+.rsbar{grid-column:1/3;position:relative;height:6px;border-radius:4px;background:#2b241d}.rsbar::before{content:"";position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--line-2)}
+.rsbar i{position:absolute;top:0;bottom:0;border-radius:4px}.rsbar i.up{left:50%;background:var(--green)}.rsbar i.down{right:50%;background:var(--red)}
+.rsw{grid-column:1/3;margin:2px 0 0;color:var(--muted);font-size:.78rem}.rsrow.strong .rsn{color:var(--fg);font-weight:700}
+.rsnote b.up{color:var(--green)}.rsnote b.down{color:var(--red)}
+.rsmore summary{cursor:pointer;color:var(--ink-2);font-size:.84rem;padding:8px 0}
+.fnrow{display:grid;grid-template-columns:1fr auto;column-gap:8px;row-gap:5px;align-items:center;padding:7px 0;border-top:1px solid #2a241e;font-size:.88rem}
+.fnrow:first-child{border:0;padding-top:0}.fnrow small{color:var(--ink-2);font-size:.78rem;font-variant-numeric:tabular-nums;white-space:nowrap}.fnrow small b{color:var(--fg)}
+.fdrop{font-style:normal;color:var(--muted);margin-left:4px}.fnrow.worst .fdrop{color:var(--red)}
+.fnrow u{grid-column:1/3;display:block;height:8px;border-radius:4px;background:#2b241d;text-decoration:none;overflow:hidden}
+.fnrow u i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,#9c7634,var(--gold))}i.tag.amb{background:#3d3018;color:var(--gold)}
+.fnrow.worst u i{background:linear-gradient(90deg,#b8462f,var(--accent))}
 </style></head><body><main>
 <div class="top"><img src="icons/icon-192.png" alt=""><div><h1>Slayer Squad Admin</h1><p class="sub" id="sub">Loading…</p></div><button id="copyall" title="Copy everything this page loaded, to paste into Claude">Copy all data</button><button id="refresh">Refresh</button></div>
 <nav class="ranges" id="ranges" aria-label="Time range"></nav>
@@ -142,5 +158,6 @@ pre{margin:0 0 10px;padding:12px;background:#0b0a08;border-radius:10px;overflow-
 <script src="js/roster.js"></script>
 <script src="js/engine.js"></script>
 <script src="js/story.js"></script>
+<script src="js/sim-rates.js"></script>
 <script src="js/admin.js"></script>
 </body></html>

@@ -17,7 +17,7 @@ const FIGHT_STYLE = {
   mitsuri:'love', obanai:'serpent', tengen:'sound', tengen_retired:'sound', shinobu:'insect', inosuke:'beast', kanao:'flower',
   genya:'claw', nezuko:'blood', tamayo:'blood', yushiro:'blood', kagaya:'slash',
   muzan:'blood', muzan_final:'blood', kokushibo:'moon', doma:'ice', akaza:'compass', gyutaro:'blood', gyokko:'water', gyokko_perfect:'water',
-  hantengu:'claw', hantengu_true:'claw', sekido:'thunder', karaku:'wind', aizetsu:'slash', urogi:'sound', enmu:'dream', rui:'thread', kyogai:'drum',
+  hantengu:{attack:'thunder', special:'beast'}, hantengu_true:'claw', sekido:'thunder', karaku:'wind', aizetsu:'slash', urogi:'sound', enmu:'dream', rui:'thread', kyogai:'drum',
   hand:'claw', swamp:'claw',
   daki:'thread', nakime:'sound', zohakuten:{attack:'thunder', special:'beast'}, susamaru:'compass', yahaba:'wind', kanae:'flower',
   tanjiro_demon:'blood', nezuko_awakened:'blood', typezero:'slash', makomo:'water', hinatsuru:'slash', makio:'slash', suma:'slash', michikatsu:'moon', hakuji:'compass', tanjuro:'sun', dojo_fighter:'slash',
@@ -57,7 +57,7 @@ const FX_ART = {
 // Big moments for a few specials (CK): drawn over the whole screen on the special's first hit, keyed by character (sk).
 // Akaza's and Doma's are drawn on their targets instead, so the eye stays on the damage. Tengen's plays on every hit, like
 // a drum. Rengoku has one for each special (tiger, then ninth for Ninth Form).
-const SPECIAL_FX = {doma:'frostbloom', kokushibo:'kmoon', zenitsu:'bolt', muichiro:'mist', tengen:'mscore', kanae:'hanagoromo', inosuke:'twinblades', shinobu:'stinger', tanjiro:'firering', rengoku:'tiger', zohakuten:'dragons', kaigaku:'darkbolt', sanemi:'tornado', gyutaro:'sickles', susamaru:'temari', sekido:'redbolt', suma:'kunai', akaza:'compass', yoriichi:'sunform', yoriichi_old:'sunform',
+const SPECIAL_FX = {doma:'frostbloom', kokushibo:'kmoon', zenitsu:'bolt', muichiro:'mist', tengen:'mscore', kanae:'hanagoromo', inosuke:'twinblades', shinobu:'stinger', tanjiro:'firering', rengoku:'tiger', zohakuten:'dragons', hantengu:'dragons', kaigaku:'darkbolt', sanemi:'tornado', gyutaro:'sickles', susamaru:'temari', sekido:'redbolt', suma:'kunai', akaza:'compass', yoriichi:'sunform', yoriichi_old:'sunform',
   muzan:'whips', muzan_final:'whipfan2', gyomei:'flail', mitsuri:'ribbon', obanai:'snake', enmu:'sleep',
   urokodaki:'waterwheel', makio:'burst', hand:'hands', tanjuro:'kagura', sabito:'boulder',
   kanao:'bloom', tanjiro_demon:'tendrils', murata:'fizzle', gyokko:'goldfish'};   // Awakened Nezuko: her targets catch pink fire (TARGET_ART)   // Sabito: the boulder on Mount Sagiri, cut clean in two   // CK, Nov 3, 2026: the last specials without their own moment

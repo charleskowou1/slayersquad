@@ -323,7 +323,7 @@ let UID=0;
 const finalUp = (v,p) => finalFight() && p===foeSeat() ? Math.round(v*(1+FINAL_POW)) : v;
 function mkUnit(id,p){ const c=BYID[id]; return {uid:'u'+(UID++),id,fam:c.fam,sk:c.sk,p,name:c.short,g:c.g,hp:c.hp,max:c.hp,pow:finalUp(c.pow,p),spd:c.spd,def:c.def,
   regen:c.regen||0,revive:c.revive||0,demon:!!c.demon,mark:!!c.mark,legend:!!c.legend,strikes:c.strikes||1,cap:c.cap||0,taken:0,grit:c.id==='murata',
-  sunproof:!!c.sunproof,noPoison:!!c.noPoison,poisonHalf:!!c.poisonHalf,vowed:false,noDefend:!!c.noDefend,basic:c.basic||null,anchor:c.anchor||null,emo:!!c.emo,kin:c.kin||null,drums:!!c.drums,splitOnHit:c.splitOnHit||null,startSplit:!!c.startSplit,
+  sunproof:!!c.sunproof,noPoison:!!c.noPoison,poisonHalf:!!c.poisonHalf,vowed:false,noDefend:!!c.noDefend,basic:c.basic||null,anchor:c.anchor||null,emo:!!c.emo,kin:c.kin||null,drums:!!c.drums,hatred:c.hatred||0,zoh:!!c.zoh,areaHalf:!!c.areaHalf,hatredCap:c.hatredCap||0,splitOnHit:c.splitOnHit||null,startSplit:!!c.startSplit,
   sig:c.sig,cd:0,alive:true,spawn:!!c.spawn,splits:c.splits||null,merge:c.merge||null,poison:null,stun:false,stunNext:false,defending:false,evade:false,sunburn:false}; }
 // Applies team bonuses to the units and returns their labels ('!' prefix = a penalty)
 function synergies(p){
@@ -394,7 +394,10 @@ function startBattle(){
   S.phase = gameMode() ? 'reveal' : S.mode==='local' && !S.tvDuo ? 'pass' : 'plan';   // TV 2-player: each phone picks in secret, no passing
 }
 const alive = p => S.teams[p].filter(u=>u.alive);
-const findU = uid => allUnits().find(u=>u.uid===uid) || Object.values(S.htHide||{}).map(h=>h&&h.u).find(u=>u&&u.uid===uid);   // a hiding real Hantengu is off the board but still known
+const findU = uid => allUnits().find(u=>u.uid===uid) || Object.values(S.htHide||{}).map(h=>h&&h.u).find(u=>u&&u.uid===uid) || zohGhost(uid);   // a hiding real Hantengu is off the board but still known
+// The real Hantengu behind Zohakuten: off the board between rounds he's out, so playback and logs still need to find him
+const zohGhost = uid => { const z=allUnits().find(u=>u.realUid===uid); if(!z) return undefined; const c=BYID.hantengu_true;
+  return {uid, id:c.id, fam:c.fam, sk:c.sk, p:z.p, name:c.short, g:c.g, hp:z.realHp??c.hp, max:c.hp, pow:0, spd:c.spd, def:c.def, regen:c.regen, strikes:1, sig:c.sig, cd:99, alive:true, zohReal:true, ghost:true}; };
 // Every enemy fighter still standing, from all the other teams
 const foes = p => enemiesOf(p).flatMap(q=>alive(q));
 // Your fighters and (2v2) your partner's: who ally moves (heals, hides, shields, training) can target
@@ -420,7 +423,10 @@ let FFA_AIM_TEAM = false;
 const aimsTeam = u => FFA_AIM_TEAM && u.sig.kind==='all' && nPlayers()>2 && !S.coop;
 const needsTarget = (u,pl) => (pl.type==='attack' && !(u.basic && u.basic.kind==='self')) || pl.type==='save' || (pl.type==='special' && (u.sig.kind==='single'||u.sig.kind==='ally'||aimsTeam(u)));
 const targetOptions = (u,pl) => !needsTarget(u,pl) ? [] : isAllyMove(u,pl) ? friends(u.p).filter(f=>pl.type!=='save'||f!==u) : foes(u.p);
-function unitReady(u){ if(u.stun) return true; const pl=S.plans[u.p][u.uid]; if(!pl||!pl.type) return false; if(pl.type==='hunt') return pl.spot!=null; return !needsTarget(u,pl) || !!pl.t; }
+function unitReady(u){ if(u.stun) return true; const pl=S.plans[u.p][u.uid];
+  if(u.zohReal) return !!pl && pl.type==='hide' && pl.spot!=null;   // the real Hantengu picks his card
+  if(pl && pl.t && zohHiding(findU(pl.t)) && pl.spot==null && !(pl.type==='special' && u.sig.kind==='all')) return false;   // …and anyone aiming at him picks one too
+  if(!pl||!pl.type) return false; if(pl.type==='hunt') return pl.spot!=null; return !needsTarget(u,pl) || !!pl.t; }
 // Hantengu H: the team hiding its real Hantengu from player p (or undefined)
 const huntTeam = p => (S.htHide ? enemiesOf(p).find(q=>S.htHide[q]) : undefined);
 const planReady = p => alive(p).every(unitReady);
@@ -467,6 +473,7 @@ const SIG_EST = {
   catastrophe: u=>({all:true, base:u.pow-5}),
   annihilation: u=>({all:true, base:u.pow-4, o:{ignoreDef:true}}),
   claws: u=>({all:true, base:u.pow-4, o:{ignoreDef:true}}),
+  wooddragons: u=>({all:true, base:u.pow-2, o:{pierce:true}}),
   ninth: u=>({base:u.pow+10, o:{ignoreDef:true}}),
   tengen: u=>({all:true, base:u.pow-2}),
   rui: u=>({base:u.pow, stun:true}),
@@ -504,6 +511,7 @@ function cpuPlanEasy(p){
     if(u.sig.kind==='ally'){ const hurt=alive(p).slice().sort((a,b)=>a.hp/a.max-b.hp/b.max)[0]; t=hurt.uid; if(type==='special' && u.sk==='tamayo' && hurt.hp>hurt.max*.75) type='attack'; if(type==='attack') t=low.uid; }
     S.plans[p][u.uid]={type, t};
   });
+  zohCpu(p,'easy');
 }
 // "Repeat last round": give each fighter the move they used last round. A special still recharging becomes Attack;
 // a target that's gone is dropped (or replaced when there's only one choice left).
@@ -588,6 +596,7 @@ function cpuPlan(p, level='hard'){
     S.plans[p][u.uid]={type:plan.type, t:plan.t};
   });
   // Hantengu H: while the real one hides, one fighter a round may gamble on a hiding place (more often while Zohakuten is healthy)
+  zohCpu(p, level); if(huntTeam(p)===undefined) return;
   const q=huntTeam(p); if(q!==undefined){ const z=alive(q).find(u=>u.id==='zohakuten'), mine=alive(p).filter(u=>!u.stun), odds=(level==='hard'?HUNT_ODDS:HUNT_ODDS*.8)*(z&&z.hp>z.max*.5?1:.2);
     if(mine.length && Math.random()<odds){ const u=mine.slice().sort((a,b)=>a.pow*a.strikes-b.pow*b.strikes)[0]; S.plans[p][u.uid]={type:'hunt', spot:Math.floor(Math.random()*HT_SPOTS)}; } }
 }
@@ -600,7 +609,7 @@ const fx = (type, by, on) => ({fx:type, by:by?by.uid:null, on:on?on.uid:null, mo
 function L(t,c='',extra){ const hp={}; allUnits().forEach(u=>{ hp[u.uid]=u.hp; }); S.log.push(Object.assign({t,c,hp},extra)); }
 function target(u,tid){ let t=findU(tid); if(!t||!t.alive||sameSide(t.p,u.p)){ const a=foes(u.p); t=a.length?rnd(a):null; } return t; }
 function fall(t,a){ if(t.hp>0) return;
-  if(t.id==='zohakuten' && htDown(t,a)) return; if(t.grit){ t.grit=false; t.hp=1; L(`${t.name} somehow survives on ${pct(t)}% health!`,'h',{...fx('heal',null,t), grit:true}); return; } if(t.revive && t.demon && sunUp() && !sunSafe(t)){ t.revive=0; L(`The sun is up. Seven Hearts can't save ${t.name} now.`,'k',fx('burn',null,t)); }   // the sun finishes Muzan: no getting back up after sunrise (CK, Nov 10, 2026)
+  if(t.id==='zohakuten' && htDown(t,a)) return; if(t.zoh && zohDown(t,a)) return; if(t.grit){ t.grit=false; t.hp=1; L(`${t.name} somehow survives on ${pct(t)}% health!`,'h',{...fx('heal',null,t), grit:true}); return; } if(t.revive && t.demon && sunUp() && !sunSafe(t)){ t.revive=0; L(`The sun is up. Seven Hearts can't save ${t.name} now.`,'k',fx('burn',null,t)); }   // the sun finishes Muzan: no getting back up after sunrise (CK, Nov 10, 2026)
   if(t.revive){ t.hp=Math.ceil(t.max*t.revive); t.revive=0; L(`${t.name} falls… and rises again! Seven Hearts ${gained(t,t.hp)}.`,'x',{...fx('revive',null,t), knit:true}); return; }
   if(t.anchor && S.teams[t.p].some(u=>u.alive && u.id===t.anchor)){ t.hp=1; L(`${t.name} won't fall! The real ${BYID[t.anchor].short} is still alive.`,'x',{...fx('block',null,t), held:true});
     return; }
@@ -615,7 +624,7 @@ function fall(t,a){ if(t.hp>0) return;
   if(t.splits) split(t);
   if(t.merge) merge(t);
   S.teams[t.p].filter(u=>u.alive && u.anchor===t.id).forEach(u=>{ u.hp=0; L(`With the real ${t.name} gone, ${u.name} crumbles.`,'k',fx('hit',a,u)); fall(u,a); });
-  S.teams[t.p].filter(u=>(u.alive||u.down) && u.kin===t.id).forEach(u=>{ u.hp=0; u.alive=false; u.down=null; L(`With the real Hantengu gone, ${u.name} crumbles away.`,'k',{ko:u.uid, ash:true, ...fx('ko',null,u)}); });
+  S.teams[t.p].filter(u=>(u.alive||u.down!=null) && u.kin===t.id).forEach(u=>{ u.hp=0; u.alive=false; u.down=null; L(`With the real Hantengu gone, ${u.name} crumbles away.`,'k',{ko:u.uid, ash:true, ...fx('ko',null,u)}); });
   if(t.emo){   // Hantengu's emotions
     if(!S.htMore[t.p]){ S.htMore[t.p]=true; const k=['aizetsu','urogi'].map(id=>mkUnit(id,t.p)); S.teams[t.p].push(...k);
       L(`Cutting ${t.name} only makes more! Aizetsu and Urogi burst out.`,'x',{spawn:k.map(x=>x.uid), htmore:{from:t.uid}, ...fx('spawn',null,t)}); }
@@ -640,6 +649,7 @@ function hit(a,t,base,o={}){
   if(!t||!t.alive) return 0;
   if(a && a.tech) o={...o, ignoreDef:true};   // Tecchin's Masterwork Edge
   if(a && a.revenge && t.fam===a.revenge){ base+=4; o={...o, ignoreDef:true}; }   // Revenge on Doma
+  if(zohHiding(t) && a && !zohGuess(a,t)) return 0;   // the real Hantengu: pick the right card or miss
   const ub=!!o.unblockable;   // Hinokami Kagura out of the Selfless State: nothing blocks it
   if(!ub){
     if(S.shield[t.p]){ L(`${t.name} is untouched. Dead Calm blocks it.`,'x',{...fx('block',a,t), calmblock:true}); return 0; }
@@ -653,6 +663,8 @@ function hit(a,t,base,o={}){
   const guarded = t.defending && !t.exposed && !o.pierce && !a.pierceAll && !ub;
   if(guarded) d = Math.ceil(d/2);
   let note = guarded?' (guarded)':'';
+  // Hantengu's emotions are small and scattered: a special that sweeps every enemy only half catches them
+  if(t.areaHalf && S.curMove==='special' && a && a.sig && a.sig.kind==='all'){ d=Math.ceil(d/2); note+=' (scattered)'; }
   const guardLine = guarded && t.guardBy ? {guard:t.guardBy} : null;   // Retired Tengen standing over an ally
   if(t.cap){ const room=t.cap-t.taken; if(room<=0){ L(`${t.name} sees it coming in the Transparent World. No damage.`,'x',fx('block',a,t)); return 0; } if(d>room){ d=room; note+=' (capped)'; } t.taken+=d; }
   if(t.exposed){ d=Math.ceil(d*1.5); note+=' (wide open)'; }
@@ -693,17 +705,66 @@ function htDown(z,a){
 }
 // End of round: a knocked-down Zohakuten gets back up if the real one survived his round in the open
 function htRise(){
-  players().forEach(p=>S.teams[p].filter(z=>z.down!=null && z.down<=S.round).forEach(z=>{
+  players().forEach(p=>S.teams[p].filter(z=>z.down!=null && z.down<=S.round && !z.zoh).forEach(z=>{   // the prototype Zohakuten gets up in zohRise()
     const real=S.teams[p].find(u=>u.alive && u.id==='hantengu_true'); z.down=null; if(!real) return;
     z.alive=true; z.hp=Math.ceil(z.max*HT_RISE); z.stun=false; z.cd=Math.min(z.cd,1); z.pow+=2;   // angrier every time (CK, Nov 11, 2026)
     S.teams[p].splice(S.teams[p].indexOf(real),1); S.htHide[p]={spot:Math.floor(Math.random()*HT_SPOTS), u:real};
     L(`Zohakuten gets back up, furious and stronger (+2 PWR)! The real Hantengu scurries back into hiding.`,'x',{...fx('spawn',null,z), htrise:true, real:real.uid}); }));
 }
+/* Zohakuten, Upper Moon 4's Strongest Emotion (CK's design, Nov 16, 2026; the Hantengu card).
+   The draft card is Zohakuten, a normal fighter. Knock him down and the real Hantengu comes out: he hides behind card 1, 2 or 3
+   (his only move), and any attack or single-target special on him comes with a card guess. Right card: it lands. Wrong card: it misses
+   (no other cost). Specials that hit every enemy pass over him; his DEF 10 means a normal hit does about half its PWR. If the real one
+   survives the round, Zohakuten gets back up, weaker each time (a third of his health, then a quarter, a fifth…). Kill the real one and
+   Zohakuten crumbles. After sunrise Zohakuten stays down and the real one has nowhere to hide. The real one's wounds are kept on
+   Zohakuten (realUid, realHp) so the state stays plain data for online games. */
+const zohHiding = t => t && t.zohReal && !sunUp();   // the real one is behind a card
+// Zohakuten at 0 HP: knocked down, the real one comes out (he can't be found until he's picked a card next round)
+function zohDown(z,a){
+  const q=z.p; if(sunUp() && !sunSafe(z)) return false;   // after sunrise he stays down (falls for real; the real one keeps the team alive)
+  z.hp=0; z.alive=false; z.down=S.round+1;
+  const r=Object.assign(mkUnit('hantengu_true',q),{zohReal:true, zohCard:null, cd:99}); if(z.realUid){ r.uid=z.realUid; r.hp=z.realHp; } else z.realUid=r.uid;
+  S.teams[q].push(r);
+  L(`${a?a.name+' knocks':'Something knocks'} ${z.name} down! The real Hantengu scurries out and hides behind one of three cards. Pick the right card to hit him.`,'h',{...fx('stun',a,z), htdown:true, spawn:[r.uid], real:r.uid});
+  return true;
+}
+// End of round: if the real one survived his round out, Zohakuten gets back up (weaker each time) and the real one goes back inside
+function zohRise(){
+  players().forEach(p=>S.teams[p].filter(z=>z.zoh && z.down!=null && z.down<=S.round).forEach(z=>{
+    const real=S.teams[p].find(u=>u.alive && u.zohReal); if(!real) return;
+    if(sunUp() && !sunSafe(z)){ z.down=null; L(`The sun is up. ${z.name} can't get back up, and the real Hantengu has nowhere left to hide.`,'k',fx('burn',null,z)); return; }
+    z.rises=(z.rises||0)+1; z.down=null; z.alive=true; z.hp=Math.max(1,Math.ceil(z.max/(z.rises+2))); z.stun=false; z.cd=Math.min(z.cd,1);
+    z.realHp=real.hp; S.teams[p].splice(S.teams[p].indexOf(real),1);
+    L(`${z.name} gets back up ${gained(z,z.hp)}! The real Hantengu scurries back inside.`,'x',{...fx('spawn',null,z), htrise:true, real:real.uid}); }));
+}
+// A hit on the real one while he hides: only the right card finds him. Area specials pass over him.
+function zohGuess(a,t){
+  if(S.curMove==='special' && a.sig && a.sig.kind==='all') return false;
+  const at=t.zohCard, g=a.guess;
+  if(at==null){ L(`${a.name} strikes at the real Hantengu, but he's already hidden.`,'x',{...fx('miss',a,t), zg:{spot:null, at:null, found:false}}); return false; }
+  if(g!==at){ L(`${a.name} picks card ${g!=null?g+1:'?'}… the real Hantengu isn't there. He was behind card ${at+1}.`,'x',{...fx('miss',a,t), zg:{spot:g??null, at, found:false}}); return false; }
+  if(!a.foundLogged){ a.foundLogged=true; L(`${a.name} picks card ${g+1}… FOUND HIM!`,'h',{zg:{spot:g, at, found:true}, ...fx('spawn',a,t)}); }
+  return true;
+}
+// Computer: the real one picks a card at random. Attackers decide whether to guess: Hard sends up to two (all of them if he's the only target).
+function zohCpu(p, level){
+  const mine=alive(p).filter(u=>u.zohReal); mine.forEach(u=>{ S.plans[p][u.uid]={type:'hide', spot:Math.floor(Math.random()*HT_SPOTS)}; });
+  const reals=foes(p).filter(u=>u.zohReal && !u.stun); if(!reals.length) return; const r=reals[0];
+  if(sunUp()) return;
+  const others=foes(p).filter(u=>!u.zohReal), att=alive(p).filter(u=>!u.stun && !u.zohReal && !(u.basic && !u.basic.dmg) && S.plans[p][u.uid] && S.plans[p][u.uid].type!=='defend');
+  const want=!others.length ? att.length : level==='hard' ? Math.min(2,att.length) : level==='normal' ? 1 : (Math.random()<.5?1:0);
+  const spots=Array.from({length:HT_SPOTS},(_,k)=>k).sort(()=>Math.random()-.5);
+  att.slice().sort((a,b)=>b.pow*b.strikes-a.pow*a.strikes).slice(0,want).forEach((u,i)=>{ const pl=S.plans[p][u.uid]; const single=pl.type==='special' && u.sig.kind!=='all' && u.sig.kind!=='self' && u.sig.kind!=='ally';
+    S.plans[p][u.uid]= single ? {type:'special', t:r.uid, spot:spots[i%HT_SPOTS]} : {type:'attack', t:r.uid, spot:spots[i%HT_SPOTS]}; });
+  Object.values(S.plans[p]).forEach(pl=>{ if(pl && pl.t===r.uid && pl.spot==null) pl.spot=Math.floor(Math.random()*HT_SPOTS); });   // anyone else aimed at him guesses too
+}
+
 const HUNT_ODDS = .3;   // how often the computer gambles on a hiding place (Hard; Normal a bit less, Easy never)
 function hunt(u,spot){
   const q=huntTeam(u.p); if(q===undefined){ L(`${u.name} looks around, but there's no one left to find.`,'',fx('stun',null,u)); return; }
   const h=S.htHide[q], found=h.spot===spot;
-  if(!found){ u.exposed=true; L(`${u.name} searches hiding place ${spot+1}… nothing! ${u.name} is left wide open this round.`,'x',{...fx('miss',u,null), hunt:{spot, at:h.spot, found:false}}); return; }
+  if(!found){ u.exposed=true;
+    L(`${u.name} searches hiding place ${spot+1}… nothing! ${u.name} is left wide open this round.`,'x',{...fx('miss',u,null), hunt:{spot, at:h.spot, found:false}}); return; }
   const r=htOut(q);
   L(`${u.name} searches hiding place ${spot+1}… FOUND HIM! The real Hantengu is dragged out.`,'h',{spawn:[r.uid], hunt:{spot, at:spot, found:true}, ...fx('spawn',u,r)});
   hit(u,r,u.pow);
@@ -769,6 +830,7 @@ function special(u,pl){
     case 'daki': en().forEach(e=>hit(u,e,u.pow-3,{counter:false})); break;
     case 'nakime': { const t=target(u,pl.t); if(hidden(t)){ L(`The castle shifts, but ${t.name}'s presence can't be found.`,'x',fx('miss',u,t)); break; } if(t&&t.alive){ t.away=true; L(`Nakime strums. ${t.name} is sent to another room of the castle this round.`,'k',{...fx('stun',u,t), gone:true}); } break; }
     case 'zohakuten': en().forEach(e=>hit(u,e,u.pow,{pierce:true,counter:false})); break;
+    case 'wooddragons': en().forEach(e=>hit(u,e,Math.max(1,u.pow-2),{pierce:true,counter:false})); break;   // Zohakuten, the Hantengu card
     case 'susamaru': { const t=target(u,pl.t); hit(u,t,u.pow-1); const o=en().filter(e=>e!==t); if(o.length) hit(u,rnd(o),u.pow-1); break; }
     case 'yahaba': { const t=target(u,pl.t); if(hidden(t)){ L(`Yahaba's arrows can't lock onto ${t.name}.`,'x',fx('miss',u,t)); break; } if(t&&t.alive){ t.astray=true; L(`Yahaba's arrows lock onto ${t.name}. Every hit they throw this round will miss.`,'k',fx('stun',u,t)); } break; }
     case 'kanae': { hit(u,target(u,pl.t),u.pow+3); const m=alive(u.p).sort((a,b)=>a.hp/a.max-b.hp/b.max)[0]; if(m){ const h=Math.min(4,m.max-m.hp); if(h){ m.hp+=h; L(`Kanae's petals heal ${m===u?'her':m.name} ${gained(m,h)}.`,'h',fx('heal',u,m)); } } break; }
@@ -931,6 +993,8 @@ function resolve(){
   players().forEach(p=>(S.helperPlan&&S.helperPlan[p]||[]).forEach(id=>useHelper(p,id)));   // back-pocket helpers act first
   const acts=[];
   players().forEach(p=>alive(p).forEach(u=>{ u.taken=0; acts.push({u, pl: u.stun?{type:'stunned'}:(S.plans[p][u.uid]||{type:u.noDefend?'attack':'defend'}), r:Math.random()}); }));
+  // The real Hantengu hides behind his chosen card before anyone moves (a random one if none was picked)
+  acts.forEach(x=>{ if(x.u.zohReal){ const sp=x.pl.type==='hide'&&x.pl.spot!=null?x.pl.spot:Math.floor(Math.random()*HT_SPOTS); x.u.zohCard=sp; x.pl={type:'hide', spot:sp}; } });
   acts.forEach(x=>{ if(x.pl.type==='defend' || (x.pl.type==='attack' && x.u.basic && x.u.basic.cower)) x.u.defending=true;
     if(x.u.selfless && x.pl.type==='attack') x.u.reveal=true;   // striking shows him for this round
     if(x.pl.type==='save' && x.u.selfless && !x.u.saveUsed){ const t=findU(x.pl.t); if(t && t.alive && t!==x.u && sameSide(t.p,x.u.p)){ t.saved=x.u.name; t.savedBy=x.u.uid; x.u.saveUsed=true; } } });
@@ -947,7 +1011,8 @@ function resolve(){
   for(const x of acts){
     const u=x.u; if(!u.alive || x.done) continue;
     u.actedRound=S.round;
-    S.curMove=x.pl.type;
+    S.curMove=x.pl.type; u.guess=x.pl.spot; u.foundLogged=false;
+    if(x.pl.type==='hide'){ S.curMove=null; continue; }   // the real Hantengu just hides
     if(u.stunNow){ u.stunNow=false; L(`${u.name} can't move.`,'',{...fx('stun',null,u), stuck:'drum'}); continue; }   // Kyogai's room caught them before they moved
     if(x.pl.type==='stunned'){ L(`${u.name} can't move.`,'',{...fx('stun',null,u), stuck:u.bound||true}); continue; }
     if(u.away){ L(u.carried ? `${u.name} is being carried to safety.` : `${u.name} is lost in the Infinity Castle and can't act.`,'',{...fx('stun',null,u), inCastle:!u.carried}); continue; }
@@ -970,7 +1035,7 @@ function resolve(){
   S.curMove=null;
   // end of round: poison, Shinobu's devour damage, sunrise, regeneration, cooldowns
   const sun=sunUp();
-  htRise();
+  htRise(); zohRise();
   perfectForm();
   Object.values(S.htHide||{}).forEach(h=>{ if(h) h.spot=Math.floor(Math.random()*HT_SPOTS); });   // the real Hantengu moves every round
   if(sun && S.round===sunRise()) L('The sun rises! From now on demons burn every round, hotter each time, and stop regenerating.','h',{...fx('burn',null,null), sunrise:true});
@@ -984,6 +1049,7 @@ function resolve(){
       if(u.alive && u.fam==='nezuko') L(`${u.name} endures the sunlight. She has conquered the sun.`,'h',fx('buff',null,u)); }
     if(u.alive && u.regen && u.hp<u.max && u.blood===S.round && !(sun && u.demon && !sunSafe(u))){ L(`Nezuko's blood burns in ${u.name}'s wounds. No regeneration this round.`,'h',fx('burn',null,u)); }
     else if(u.alive && u.regen && u.hp<u.max && !(sun && u.demon && !sunSafe(u))){ const h=Math.min(u.regen,u.max-u.hp); u.hp+=h; L(`${u.name} regenerates ${gained(u,h)}.`,'',Object.assign(fx('heal',null,u),{act:'regen'})); }
+    if(u.hatred && u.alive && u.hp>0 && (u.hatredGot||0)<(u.hatredCap||99)){ const g=Math.min(u.hatred,(u.hatredCap||99)-(u.hatredGot||0)); u.hatredGot=(u.hatredGot||0)+g; u.pow+=g; L(`${u.name}'s hatred grows. PWR +${g} (now ${u.pow}).`,'h',fx('buff',null,u)); }
     if(u.sk==='hakuji' && u.alive && !u.vowed && S.teams[p].some(m=>!m.alive)){ u.vowed=true; u.pow+=3; L(`${u.name} remembers his vow: +3 PWR.`,'h',fx('buff',null,u)); }
     if(u.cd>0) u.cd--;
     if(u.selfless && u.alive && u.cd===0){ u.selfless=false; u.unblock=true; L(`${u.name} leaves the Selfless State. Hinokami Kagura is ready, and nothing can stop it.`,'h',fx('buff',null,u)); }
@@ -1008,7 +1074,8 @@ function resolve(){
    Each round keeps what every fighter chose and the round's lines as plain text, so a player can look back at a whole
    match and see where it turned. Kept after the round resolves only, so online it never shows moves still being chosen. */
 function moveText(u,pl){
-  const t=pl.t && findU(pl.t), on=t && needsTarget(u,pl) ? ' → '+t.name : '';
+  if(pl.type==='hide') return `${u.name}: hides behind card ${(pl.spot??0)+1}`;
+  const t=pl.t && findU(pl.t), on=t && needsTarget(u,pl) ? ' → '+t.name+(t.zohReal&&pl.spot!=null?` (card ${pl.spot+1})`:'') : '';
   const what = pl.type==='stunned' ? "can't move" : pl.type==='defend' ? 'Defend' : pl.type==='save' ? 'Save'
     : pl.type==='special' ? u.sig.name : pl.type==='drums' ? 'Drums of Hatred' : pl.type==='hunt' ? `Hunt (hiding place ${(pl.spot??0)+1})` : u.basic ? u.basic.name : 'Attack';
   return `${u.name}: ${what}${on}`;

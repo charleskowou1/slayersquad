@@ -2791,6 +2791,36 @@ body.ctlmode .topbtns .ctlpill{margin-left:auto}
 @keyframes htxtearl{to{transform:translateX(-30px) rotate(-14deg);opacity:0}}
 @keyframes htxtearr{to{transform:translateX(30px) rotate(14deg);opacity:0}}
 .htx-more .htx-kid{animation-delay:.8s}
+/* The real Hantengu's cards (Nov 16, 2026): the chosen card lifts, then flips (scaleX, since rotateY + backface didn't hide in headless Chrome) */
+.stage.zcs{height:160px;display:flex;align-items:center;justify-content:flex-end;gap:0;padding-right:3%;overflow:visible}
+.zc-by{position:absolute;left:3%;top:50%;transform:translateY(-50%)}
+.zcs .gl.stg{width:60px;height:74px}
+.zc-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:min(66%,270px)}
+.zc{position:relative;aspect-ratio:3/4;border-radius:9px}
+.zc-back,.zc-face{position:absolute;inset:0;border-radius:9px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.zc-back{background:linear-gradient(160deg,#3a2a1c,#1f1712);border:1px solid rgba(214,165,77,.5);color:var(--gold)}
+.zc-back b{font:800 1.5rem var(--display)}.zc-back small{font-size:.66rem;color:var(--ink-2)}
+.zc-face{background:linear-gradient(160deg,#efe3c8,#cdb98f);border:1px solid #8a6a3a;opacity:0}
+.zc-empty{font:800 2rem var(--display);color:#6b5a44}
+.zc-real .gl.stg{width:46px;height:56px}
+.zc.pick{box-shadow:0 0 0 2px var(--tc),0 0 18px color-mix(in srgb,var(--tc) 60%,transparent);animation:zclift .4s .15s both}
+.zc.flip{animation:zcflip .5s .7s both}.zc.pick.flip{animation:zclift .4s .15s both,zcflip .5s .7s both}
+.zc.flip .zc-back{opacity:0;animation:zcback .5s .7s both}.zc.flip .zc-face{opacity:1;animation:zcface .5s .7s both}
+.zc.late{animation:zcflip .5s 1.35s both}.zc.late .zc-back{animation-delay:1.35s}.zc.late .zc-face{animation-delay:1.35s}
+.zc.found .zc-real{animation:zcshake .12s 1.2s 6 linear}
+.zc.late .zc-real{animation:zcrun .7s 2.8s ease-in forwards}
+.zc-cut{position:absolute;left:-10%;right:-10%;top:48%;height:4px;border-radius:3px;background:linear-gradient(90deg,transparent,#fff,var(--accent),transparent);transform:rotate(-24deg) scaleX(0);animation:zccut .25s 1.3s ease-out forwards;box-shadow:0 0 12px var(--accent)}
+.zc-kj{position:absolute;left:62%;top:-14px;transform:translateX(-50%);font:800 1.3rem var(--display);color:var(--gold);text-shadow:0 2px 10px #000;opacity:0;animation:zckj .4s 1.4s both}
+.zcs.miss .zc-kj{color:var(--ink-2)}.zcs.hidden .zc-kj{animation-delay:.4s}
+@keyframes zclift{to{transform:translateY(-10px)}}
+@keyframes zcflip{0%{scale:1 1}50%{scale:0 1}100%{scale:1 1}}
+@keyframes zcback{0%,49%{opacity:1}50%,100%{opacity:0}}
+@keyframes zcface{0%,49%{opacity:0}50%,100%{opacity:1}}
+@keyframes zcshake{0%,100%{transform:translateX(0)}50%{transform:translateX(3px)}}
+@keyframes zcrun{to{transform:translateX(60px) scale(.6);opacity:0}}
+@keyframes zccut{to{transform:rotate(-24deg) scaleX(1)}}
+@keyframes zckj{from{opacity:0;transform:translateX(-50%) scale(1.4)}to{opacity:1;transform:translateX(-50%) scale(1)}}
+@media (prefers-reduced-motion:reduce){.zc,.zc *{animation:none!important}}
 /* the hunt: six face-down cards, the chosen one flips */
 .htx-hunt{justify-content:flex-end;padding-right:4%}
 .htx-hunt .htx-by{left:3%;animation:none}

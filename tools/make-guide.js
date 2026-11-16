@@ -154,13 +154,14 @@ Special rules on single cards:
   it doesn't count as Yoriichi, so Muzan isn't scared of it.
 - Second versions share a slot with the original (one or the other is dealt): Demon King Tanjiro (rare),
   Awakened Nezuko, Retired Tengen, Final-Form Muzan.
-- Hantengu never fights as the old man: Sekido and Karaku (10 HP each) start the battle in his place.
-  The first of them to fall brings Aizetsu and Urogi. When the last emotion falls they merge into Zohakuten (no Defend: Drums
-  of Hatred +2 PWR for good; Wood Dragons hit every enemy for full PWR through Defend) and the real Hantengu hides in one of 3
-  hiding places, a new one every round. Hunt (pick a place): right, he's dragged out and hit; wrong, that fighter is wide open
-  for the round (x1.5 damage, no Defend). Or knock Zohakuten down (0 HP): the real one is exposed for the next round; if he
-  survives it, Zohakuten gets back up with a third of his health and the real one hides again (his wounds stay). Cut down the
-  real Hantengu to win: Zohakuten crumbles with him.`);
+- Hantengu's card is Zohakuten, Upper Moon 4's Strongest Emotion (since v140): a normal fighter (30 HP, 11 PWR, can Defend)
+  whose hatred grows +2 PWR every round, up to +4; Wood Dragons hit every enemy for PWR-2 through Defend. Knock Zohakuten down
+  and the real Hantengu comes out and hides behind card 1, 2 or 3 (the Hantengu player picks it in secret; the computer picks
+  at random). Anything aimed at him needs the right card: right card, it lands; wrong card, it misses, with no other cost.
+  Several attackers can pick different cards (a team of three covers all three). Specials that hit every enemy pass over
+  him. His neck is hard as steel (12 HP, DEF 10): a normal hit does about half its PWR, specials that ignore DEF cut deep.
+  If he survives the round, Zohakuten gets back up, weaker each time (a third of his health, then a quarter, a fifth...).
+  Kill the real one and Zohakuten crumbles. After sunrise Zohakuten stays down and the real one has nowhere to hide.`);
 
 hr('5. EVERY CHARACTER');
 out(`Order: most expensive first. Line 2 = cost | HP | PWR | SPD | DEF | regen per round. Hantengu's split forms are listed last; they can't be drafted.`);

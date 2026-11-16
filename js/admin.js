@@ -25,6 +25,46 @@ function fightersView(chars){
   const order=[top[1],top[0],top[2]].map(c=>c&&top.indexOf(c)).filter(i=>i!=null&&i>=0);
   return `<div class="podium">${order.map(i=>pod(top[i],i)).join('')}</div>${rest.length?`<div class="franks">${rest.map(row).join('')}</div>`:''}`;
 }
+// ---- Real players vs the simulation (CK, Nov 16, 2026): real games have disagreed with the sim before (Giyu wins, Hantengu lost) ----
+// Real rates run high because Quickplay counts only the player's own squad, so both sides are compared to their own average:
+// gap = (real − real average) − (sim − 50). The sim is the Hard computer at 20 pts (the default) from js/sim-rates.js, rebuilt with the playbook.
+// A gap counts only when it's bigger than chance could explain for that many games (one or two standard errors).
+function simView(chars){
+  if(typeof SIM_RATES==='undefined') return '<p class="empty">No sim numbers yet. Run node tools/make-playbook.js.</p>';
+  const all=Object.entries(chars).filter(([id,c])=>BYID[id] && SIM_RATES.cards[id] && SIM_RATES.cards[id][20]!=null).map(([id,c])=>({id, p:c.p||0, w:c.w||0, sim:SIM_RATES.cards[id][20], sim30:SIM_RATES.cards[id][30]}));
+  const tp=all.reduce((a,c)=>a+c.p,0), avg=tp?all.reduce((a,c)=>a+c.w,0)/tp*100:50;
+  const rows=all.filter(c=>c.p>=10).map(c=>{ const real=c.w/c.p*100, gap=(real-avg)-(c.sim-50), se=Math.sqrt(.25/c.p)*100, z=Math.abs(gap)/se;
+    return Object.assign(c,{real, gap, z, flag: Math.abs(gap)>=10 && z>=2 ? 'strong' : Math.abs(gap)>=10 && z>=1 ? 'watch' : ''}); }).sort((a,b)=>b.z-a.z);
+  const few=all.filter(c=>c.p<10).length, nm=id=>esc(BYID[id].short||BYID[id].name), sgn=x=>(x>=0?'+':'−')+Math.abs(Math.round(x));
+  const row=c=>`<div class="rsrow ${c.flag}" title="${nm(c.id)}: real ${c.w} wins of ${c.p} picks; sim ${c.sim}% at 20 pts${c.sim30!=null?`, ${c.sim30}% at 30`:''}">
+      <span class="rsn">${nm(c.id)}</span>
+      <small>Real <b>${Math.round(c.real)}%</b> · Sim <b>${Math.round(c.sim)}%</b> · ${c.p} picks</small>
+      <div class="rsbar" aria-hidden="true"><i class="${c.gap>=0?'up':'down'}" style="width:${Math.min(50,Math.abs(c.gap))}%"></i></div>
+      <em class="rsg ${c.gap>=0?'up':'down'}">${sgn(c.gap)}</em>
+      </div>`;
+  const strong=rows.filter(c=>c.flag==='strong'), watch=rows.filter(c=>c.flag==='watch'), ok=rows.filter(c=>!c.flag);
+  return `<p class="rsnote">Real players win ${Math.round(avg)}% on average here (Quickplay counts only their own squad), so each card is compared with that average, and the sim with 50%. Sim: ${SIM_RATES.n.toLocaleString()} Hard drafts at 20 pts, v${SIM_RATES.v}, ${esc(SIM_RATES.at)}. Real games mix all points and versions since stats began, so a card changed recently carries its old games too.</p>
+    <p class="rsnote"><b class="up">+</b> real players win more than the sim expects, <b class="down">−</b> less (percentage points).</p>
+    ${strong.length?`<h3 class="rsh">Too big to be chance</h3>${strong.map(row).join('')}`:'<p class="empty">No card is far enough from the sim to stand out yet.</p>'}
+    ${watch.length?`<details class="rsmore"><summary>Worth watching (${watch.length}): could still be chance</summary>${watch.map(row).join('')}</details>`:''}
+    ${ok.length?`<details class="rsmore"><summary>Matches the sim (${ok.length})</summary>${ok.map(row).join('')}</details>`:''}
+    ${few?`<p class="rsnote">${few} more cards have under 10 picks, too few to judge.</p>`:''}`;
+}
+// ---- New-player funnel: each group of new players (by the day they first opened the game) followed step by step ----
+const FUNNEL=[['play','Started a first battle'],['end','Finished a match'],['win','Won a match'],['back','Came back another day'],['five','Finished 5 matches']];
+function funnelView(t, days, today){
+  const start=Object.keys(t).map(k=>k.match(/^d_(\d{4}-\d{2}-\d{2})_f_/)).filter(Boolean).map(m=>m[1]).sort()[0];
+  if(!start) return '<p class="empty">Starts counting with v140: every new player from then on is followed through these steps.</p>';
+  const coh=days.filter(x=>x>=start), d=(x,k)=>t[`d_${x}_${k}`]||0, sum=k=>coh.reduce((a,x)=>a+d(x,k),0), n=sum('new');
+  if(!n) return '<p class="empty">No new players in this time range yet.</p>';
+  const steps=[['new','Opened the game',n]].concat(FUNNEL.map(([k,l])=>[k,l,sum('f_'+k)]));
+  let worst=-1, wi=-1; for(let i=1;i<4;i++){ const drop=steps[i-1][2]-steps[i][2]; if(drop>worst){ worst=drop; wi=i; } }   // the biggest drop among the first steps
+  const modes=Object.keys(t).map(k=>k.match(/^d_\d{4}-\d{2}-\d{2}_fm_(.+)$/)).filter(Boolean).map(m=>m[1]).filter((x,i,a)=>a.indexOf(x)===i).map(k=>[modeName(k),sum('fm_'+k)]).filter(m=>m[1]).sort((a,b)=>b[1]-a[1]);
+  const young=coh.filter(x=>x>=shiftDay(today,-1)).length;
+  return `<div class="fnl">${steps.map(([k,l,v],i)=>`<div class="fnrow${i===wi&&worst>0?' worst':''}"><span>${l}${i===wi&&worst>0?' <i class="tag red">biggest drop</i>':''}</span><small><b>${Math.round(v/n*100)}%</b> · ${v.toLocaleString()}${i?` <i class="fdrop">${Math.round((steps[i-1][2]-v)/Math.max(1,steps[i-1][2])*100)}% stop here</i>`:''}</small><u><i style="width:${Math.max(1,v/n*100)}%"></i></u></div>`).join('')}</div>
+    ${modes.length?`<h3 class="rsh">Their first battle was in</h3>${rowsOf(modes.slice(0,8),modes[0][1])}`:''}
+    <p class="rsnote">New players who first opened the game ${coh.length===days.length?'in this time range':`from ${new Date(start+'T12:00').toLocaleDateString([], {month:'short', day:'numeric'})} on`}.${young?' Players from today and yesterday haven\'t had time to come back yet, so the later steps fill in over the next days.':''}</p>`;
+}
 const portrait=id=>{ const files=(typeof ART_FILES!=='undefined'&&ART_FILES.img)||[], c=BYID[id]||{}, has=n=>files.find(f=>f.replace(/\.[^.]+$/,'')===n);
   const f=has(id)||has(c.fam)||has(String(id).split('_')[0]); return f?`img/${f}`:null; };
 const DEV_COLORS={ios:'#e0573b',android:'#7a8be0',computer:'#b8893a'};   // fixed per device, checked for colour-blind separation on the panel colour
@@ -158,6 +198,10 @@ function draw(uid, t, stats, reports, denied, seen){
   <div class="grid2">
     ${card('Story',`Tries per battle in story order, ${rangeName}. Gold is wins, so a falling bar shows where players stop.${datedNote}`,story(main,Math.max(1,...main.map(r=>r.tries))),'','物')}
     ${card('Most played fighters <span class="pill">All time</span>','Online, Quickplay and Same Phone matches. Win rate is green at 55% or more and red under 45%. Quickplay counts only the player\'s own squad, so most rates sit above 50%.',chars.length?fightersView(chars):'<p class="empty">Nothing yet.</p>','','剣')}
+  </div>
+  <div class="grid2">
+    ${card('New players',`Where players who are new in ${rangeName} stop. Each step counts once per player.`,funnelView(t,days,today),'','初')}
+    ${card('Real players vs the sim <span class="pill">All time</span>','Cards where real games and the simulation disagree. Real players beat the sim before (Giyu) and lost where it said a card was strong (Hantengu).',simView(stats.chars||{}),'','比')}
   </div>
   ${dream.length?card('The Endless Dream',`Tries per battle after the main story, ${rangeName}.`,story(dream,Math.max(1,...dream.map(r=>r.tries))),'','夢'):''}
   ${card(`Bug reports <span class="pill">${reps.length}</span>${crashes?` <span class="pill red">${crashes} crash${crashes>1?'es':''}</span>`:''}`,'',reps.length?reps.map(([id,r])=>`<div class="rep${r.auto?' auto':''}"><div class="rephead"><span class="tag">${r.auto?'Crash':'Report'}</span><small>${esc(new Date(r.at).toLocaleString([], {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'}))} · v${esc(r.v||'?')} · ${esc(r.where||'')}</small><button data-del="${esc(id)}" aria-label="Delete report">Delete</button></div><p>${esc(r.msg)}</p><small class="ua">${esc(r.ua||'')}</small></div>`).join(''):'<p class="empty">None. 🎉</p>','','虫')}

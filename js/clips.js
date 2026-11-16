@@ -51,7 +51,7 @@ const CLIPS = {
   gyokko:        {special: 'https://media.tenor.com/WhSFVAa0eE8AAAPo/gyokko-pot.mp4'},   // Water Prison Pot
   gyutaro:       {special: 'https://media.tenor.com/0ViOIVwIBOgAAAPo/demon-slayer-demon-slayer-s2.mp4'},   // Flying Blood Sickles
   hantengu_true: {},
-  hantengu:      {special: 'https://media.giphy.com/media/wiNn6bskDVY4SvE3kf/giphy.mp4'},   // Cowering Hide
+  hantengu:      {special: 'https://media.tenor.com/c97RTCFc8kkAAAPo/zohakuten-kimetsu-no-yaiba.mp4'},   // the card is Zohakuten now: Wood Dragons (was Cowering Hide)
   kanae:         {special: 'https://media.giphy.com/media/xWIklyBVywrEjcMKWJ/giphy.mp4'},   // Crimson Hanagoromo
   murata:        {special: 'https://media.tenor.com/wtlDk3glPlEAAAPo/sm32-murata.mp4'},   // Water Surface Slash
   susamaru:      {special: 'https://media.tenor.com/iYH7ipY5zkMAAAPo/susamaru-temari-balls.mp4'},   // Temari Barrage
@@ -116,7 +116,7 @@ const CLIP_SOUNDS = {
   // Nov 12, 2026 drop (CK's YouTube links, English dub; each cut checked by transcribing it)
   doma:     {special: 'sounds/doma-special.mp3'},       // "Blood Demon Art... Frozen Lotus"
   muzan:    {special: 'sounds/muzan-special.mp3'},      // "You think you've driven me into a corner? I'll massacre every one of you before sunrise!" (5.3 s: "with your little plan" cut, 8% faster; covers Final Form)
-  hantengu: {special: 'sounds/hantengu-special.mp3'},   // "How terrifying, terrifying!"
+  hantengu: {special: 'sounds/zohakuten-special.mp3'},   // the card is Zohakuten now (was sounds/hantengu-special.mp3)   // "How terrifying, terrifying!"
   sekido:   {special: 'sounds/sekido-special.mp3'},     // "Infuriating! Infuriating!" (CK confirmed)
   karaku:   {special: 'sounds/karaku-special.mp3'},     // "You guys wouldn't mind if I joined the fight, would ya?" (CK confirmed)
   aizetsu:  {special: 'sounds/aizetsu-special.mp3'},    // "...Spears!"

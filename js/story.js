@@ -152,9 +152,9 @@ const MAIN_STAGES = [
       ['mitsuri','Everyone believed in me… I won’t let them down!'],
       ['mitsuri_mark','A heart-shaped mark blooms on her neck. Love Breathing, full power!',{awaken:true}]]}],
     stars:{standing:2, rounds:12},
-    beats:[{when:'ko', id:'hantengu', who:'tanjiro', text:'He split again?!'}, {when:'low', id:'nezuko', at:.4, text:'Mmph!!'}],
+    beats:[{when:'low', id:'hantengu', at:.5, who:'tanjiro', text:'There’s a tiny one hiding behind him! Knock Zohakuten down and find the real one!'}, {when:'low', id:'nezuko', at:.4, text:'Mmph!!'}],
     outro:[['','Tanjiro’s blade finds the real Hantengu at last, and Zohakuten crumbles with him.'],['nezuko','Mmph!'],['tanjiro','Nezuko… you’re standing in the sun!']],
-    boosts:[],   // +100% HP +1 PWR before Gyokko's Perfect Form (Nov 12, 2026)
+    boosts:[{side:0, hp:1.1, label:'Your squad: +10% HP'}],   // Hantengu is the new Zohakuten card (Nov 16, 2026): 96/97/81% with it, 90/87/65% without; before that no boost; +100% HP +1 PWR on the demons before Gyokko's Perfect Form (Nov 12)
     blurb:'Two Upper Moons at once. Cut Hantengu down and four more appear. Then they merge.',
     scene:[['hantengu',"Don't hurt me! I'm so weak! So very weak!"],
       ['genya',"Cut his head off and he splits? Then I'll eat them all!"],
@@ -419,7 +419,7 @@ const DREAM_FINALE = [
 ];
 const SIX_STAGES = [
   {id:'six', arc:'six', title:'Yoriichi vs the Six', place:'A road at the end of the night', foe:'The Upper Moons', mine:['yoriichi'], enemy:['kokushibo','doma','akaza','hantengu','gyokko','gyutaro'], level:'hard',
-    boosts:[{side:0, hp:2.65, pow:3, label:'Yoriichi: +165% HP, +3 PWR'}],   // +160% until Kokushibo and Doma got more specials (Nov 11, 2026)
+    boosts:[{side:0, hp:2.8, pow:3, label:'Yoriichi: +180% HP, +3 PWR'}],   // +165% until the new Zohakuten card (Nov 16, 2026); +160% until Kokushibo and Doma got more specials (Nov 11, 2026)
     blurb:'For the ones who earned every star.',
     scene:[['yoriichi','Six moons, and no sun among them.'],['kokushibo','Brother.'],['yoriichi','You look tired, Michikatsu. Let me end this.']],
     outro:[['yoriichi',"It's done. Rest, all of you."]]},
