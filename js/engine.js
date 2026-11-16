@@ -424,7 +424,7 @@ const aimsTeam = u => FFA_AIM_TEAM && u.sig.kind==='all' && nPlayers()>2 && !S.c
 const needsTarget = (u,pl) => (pl.type==='attack' && !(u.basic && u.basic.kind==='self')) || pl.type==='save' || (pl.type==='special' && (u.sig.kind==='single'||u.sig.kind==='ally'||aimsTeam(u)));
 const targetOptions = (u,pl) => !needsTarget(u,pl) ? [] : isAllyMove(u,pl) ? friends(u.p).filter(f=>pl.type!=='save'||f!==u) : foes(u.p);
 function unitReady(u){ if(u.stun) return true; const pl=S.plans[u.p][u.uid];
-  if(u.zohReal) return !!pl && pl.type==='hide' && pl.spot!=null;   // the real Hantengu picks his card
+  if(u.zohReal) return sunUp() || (!!pl && pl.type==='hide' && pl.spot!=null);   // the real Hantengu picks his card (after sunrise there's nowhere to hide)
   if(pl && pl.t && zohHiding(findU(pl.t)) && pl.spot==null && !(pl.type==='special' && u.sig.kind==='all')) return false;   // …and anyone aiming at him picks one too
   if(!pl||!pl.type) return false; if(pl.type==='hunt') return pl.spot!=null; return !needsTarget(u,pl) || !!pl.t; }
 // Hantengu H: the team hiding its real Hantengu from player p (or undefined)
@@ -774,6 +774,8 @@ function htSplit(t,a){
   t.alive=false; t.hp=0; const kids=t.splitOnHit.map(id=>mkUnit(id,t.p)); S.teams[t.p].push(...kids);
   L(`${a?a.name+' cuts':'Something cuts'} Hantengu's head off… and he splits! Sekido and Karaku appear.`,'x',{spawn:kids.map(k=>k.uid), htcut:{by:a?a.uid:null}, ...fx('spawn',null,t)});
 }
+// When a poison lands (this round, this log line), so playback only shows the poison glow once it gets there (CK, Nov 16, 2026)
+const poisonedNow = t => { t.poisonAt={r:S.round, i:S.log.length-1}; };
 function special(u,pl){
   const s=u.sig, en=()=>aimsTeam(u) ? aimedTeam(u,pl) : foes(u.p);
   L(`${u.name}: ${s.name}!`,'x',{...fx('special',u,null), sig:s.id||(u.unblock?'unblock':null), flare:!!u.mark && !u.flared});   // a Mark flares the first time it's used
@@ -811,14 +813,14 @@ function special(u,pl){
     case 'obanai': hit(u,target(u,pl.t),u.pow+4,{pierce:true}); break;
     case 'rengoku': hit(u,target(u,pl.t),u.pow+4); break;   // Fifth Form: Flame Tiger (Ninth Form is his second special)
     case 'makomo': hit(u,target(u,pl.t),u.pow); break;
-    case 'hinatsuru': { const t=target(u,pl.t); if(t&&t.alive&&!S.shield[t.p]&&!t.evade&&!hidden(t)&&!t.noPoison){ t.poison={dmg:t.demon?4:2,turns:3}; L(`${t.name} is poisoned.`,'h',fx('poison',u,t)); } hit(u,t,u.pow); break; }
+    case 'hinatsuru': { const t=target(u,pl.t); if(t&&t.alive&&!S.shield[t.p]&&!t.evade&&!hidden(t)&&!t.noPoison){ t.poison={dmg:t.demon?4:2,turns:3}; L(`${t.name} is poisoned.`,'h',fx('poison',u,t)); poisonedNow(t); } hit(u,t,u.pow); break; }
     case 'makio': hit(u,target(u,pl.t),u.pow+3); break;
     case 'suma': { const e=en(); if(e.length) hit(u,rnd(e),u.pow); break; }
     case 'michikatsu': hit(u,target(u,pl.t),u.pow+4); break;   // Moon Breathing, First Form: moves first (prio 2)
     case 'hakuji': hit(u,target(u,pl.t),u.pow+3); break;
     case 'dojo_fighter': hit(u,target(u,pl.t),u.pow+2); break;
     case 'tanjuro': { const healed=alive(u.p).map(m=>{ const h=Math.min(3,m.max-m.hp); m.hp+=h; return h?`${m.name} ${gained(m,h)}`:''; }).filter(Boolean); L(`Tanjuro dances the Hinokami Kagura.${healed.length?' '+healed.join(', ')+'.':''}`,'h',fx('heal',u,null)); break; }
-    case 'shinobu': { const t=target(u,pl.t); if(t&&t.alive){ if(S.shield[t.p]||t.evade||hidden(t)){L(`The poison misses.`,'x',fx('miss',u,t));break;} if(t.noPoison){L(`The poison does nothing to ${t.name}. It's only a puppet.`,'x',fx('miss',u,t));break;} t.poison={dmg:t.demon?8:3,turns:u.poisonTurns||3,src:'shinobu'}; L(`${t.name} is poisoned.`,'h',fx('poison',u,t)); } break; }
+    case 'shinobu': { const t=target(u,pl.t); if(t&&t.alive){ if(S.shield[t.p]||t.evade||hidden(t)){L(`The poison misses.`,'x',fx('miss',u,t));break;} if(t.noPoison){L(`The poison does nothing to ${t.name}. It's only a puppet.`,'x',fx('miss',u,t));break;} t.poison={dmg:t.demon?8:3,turns:u.poisonTurns||3,src:'shinobu'}; L(`${t.name} is poisoned.`,'h',fx('poison',u,t)); poisonedNow(t); } break; }
     case 'tengen': en().forEach(e=>hit(u,e,u.pow-2,{counter:false})); break;
     case 'rui': { const t=target(u,pl.t); hit(u,t,u.pow); stunT(t,'thread'); break; }
     case 'kyogai': { const t=target(u,pl.t);   // CK, Nov 12, 2026: someone who hasn't moved yet loses this round's turn; someone faster loses the next one
@@ -826,7 +828,7 @@ function special(u,pl){
       else stunT(t,'drum'); break; }
     case 'hand': hit(u,target(u,pl.t),u.pow+3); break;
     case 'swamp': hit(u,target(u,pl.t),u.pow+1); break;
-    case 'gyutaro': en().forEach(e=>{ hit(u,e,4,{ignoreDef:true,counter:false}); if(e.alive&&!e.noPoison&&!S.shield[e.p]&&!e.evade&&(!e.poison||e.poison.dmg<2)) e.poison={dmg:2,turns:2}; }); break;
+    case 'gyutaro': en().forEach(e=>{ hit(u,e,4,{ignoreDef:true,counter:false}); if(e.alive&&!e.noPoison&&!S.shield[e.p]&&!e.evade&&(!e.poison||e.poison.dmg<2)){ e.poison={dmg:2,turns:2}; poisonedNow(e); } }); break;
     case 'akaza': hit(u,target(u,pl.t),u.pow+6); break;
     case 'daki': en().forEach(e=>hit(u,e,u.pow-3,{counter:false})); break;
     case 'nakime': { const t=target(u,pl.t); if(hidden(t)){ L(`The castle shifts, but ${t.name}'s presence can't be found.`,'x',fx('miss',u,t)); break; } if(t&&t.alive){ t.away=true; L(`Nakime strums. ${t.name} is sent to another room of the castle this round.`,'k',{...fx('stun',u,t), gone:true}); } break; }
@@ -995,7 +997,7 @@ function resolve(){
   const acts=[];
   players().forEach(p=>alive(p).forEach(u=>{ u.taken=0; acts.push({u, pl: u.stun?{type:'stunned'}:(S.plans[p][u.uid]||{type:u.noDefend?'attack':'defend'}), r:Math.random()}); }));
   // The real Hantengu hides behind his chosen card before anyone moves (a random one if none was picked)
-  acts.forEach(x=>{ if(x.u.zohReal){ const sp=x.pl.type==='hide'&&x.pl.spot!=null?x.pl.spot:Math.floor(Math.random()*HT_SPOTS); x.u.zohCard=sp; x.pl={type:'hide', spot:sp}; } });
+  acts.forEach(x=>{ if(x.u.zohReal && sunUp()){ x.u.zohCard=null; x.pl={type:'hide', spot:null}; } else if(x.u.zohReal){ const sp=x.pl.type==='hide'&&x.pl.spot!=null?x.pl.spot:Math.floor(Math.random()*HT_SPOTS); x.u.zohCard=sp; x.pl={type:'hide', spot:sp}; } });
   acts.forEach(x=>{ if(x.pl.type==='defend' || (x.pl.type==='attack' && x.u.basic && x.u.basic.cower)) x.u.defending=true;
     if(x.u.selfless && x.pl.type==='attack') x.u.reveal=true;   // striking shows him for this round
     if(x.pl.type==='save' && x.u.selfless && !x.u.saveUsed){ const t=findU(x.pl.t); if(t && t.alive && t!==x.u && sameSide(t.p,x.u.p)){ t.saved=x.u.name; t.savedBy=x.u.uid; x.u.saveUsed=true; } } });
@@ -1036,13 +1038,14 @@ function resolve(){
   S.curMove=null;
   // end of round: poison, Shinobu's devour damage, sunrise, regeneration, cooldowns
   const sun=sunUp();
-  htRise(); zohRise();
+  htRise();
   perfectForm();
   Object.values(S.htHide||{}).forEach(h=>{ if(h) h.spot=Math.floor(Math.random()*HT_SPOTS); });   // the real Hantengu moves every round
   if(sun && S.round===sunRise()) L('The sun rises! From now on demons burn every round, hotter each time, and stop regenerating.','h',{...fx('burn',null,null), sunrise:true});
   // Seven Hearts at dawn (CK, Nov 11, 2026): a demon who still has a second life spends it to endure the sunrise (heals that much at once). He never gets back up after it.
   if(sun && S.round===sunRise()) players().forEach(p=>alive(p).filter(u=>u.revive && u.demon && !sunSafe(u)).forEach(u=>{ const h=Math.min(Math.ceil(u.max*u.revive),u.max-u.hp); u.hp+=h; u.revive=0; L(`${u.name} burns his remaining hearts to endure the dawn ${gained(u,h)}.`,'h',fx('heal',null,u)); }));
   if(sun && S.round===sunRise() && finalFight()){ alive(foeSeat()).forEach(u=>{ u.pow=Math.round(u.pow*(1+FINAL_FRENZY)); u.noDefend=true; }); L('Out of time, the demons throw everything they have left. They hit far harder and can no longer Defend.','k',{...fx('burn',null,null), frenzy:true}); }
+  zohRise();   // after the sunrise line, so "Zohakuten can't get back up" follows "The sun rises!"
   players().forEach(p=>S.teams[p].forEach(u=>{
     if(u.alive && u.poison){ const pd=u.poisonHalf?Math.ceil(u.poison.dmg/2):u.poison.dmg; u.hp=Math.max(0,u.hp-pd); L(`Poison hits ${u.name} ${lost(u,pd)}${u.poisonHalf?'. His shinobi body shrugs off half of it':''}.`,'k',fx('poison',null,u)); fall(u); u.poison.turns--; if(u.poison.turns<=0) u.poison=null; }
     if(u.alive && u.devoured){ u.hp=Math.max(0,u.hp-u.devoured); L(`Shinobu's poison eats away at ${u.name} ${lost(u,u.devoured)}.`,'k',fx('poison',null,u)); fall(u); }
@@ -1075,7 +1078,7 @@ function resolve(){
    Each round keeps what every fighter chose and the round's lines as plain text, so a player can look back at a whole
    match and see where it turned. Kept after the round resolves only, so online it never shows moves still being chosen. */
 function moveText(u,pl){
-  if(pl.type==='hide') return `${u.name}: hides behind card ${(pl.spot??0)+1}`;
+  if(pl.type==='hide') return sunUp() ? `${u.name}: nowhere to hide (the sun is up)` : `${u.name}: hides behind card ${(pl.spot??0)+1}`;
   const t=pl.t && findU(pl.t), on=t && needsTarget(u,pl) ? ' → '+t.name+(t.zohReal&&pl.spot!=null?` (card ${pl.spot+1})`:'') : '';
   const what = pl.type==='stunned' ? "can't move" : pl.type==='defend' ? 'Defend' : pl.type==='save' ? 'Save'
     : pl.type==='special' ? u.sig.name : pl.type==='drums' ? 'Drums of Hatred' : pl.type==='hunt' ? `Hunt (hiding place ${(pl.spot??0)+1})` : u.basic ? u.basic.name : 'Attack';

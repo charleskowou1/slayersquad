@@ -373,13 +373,13 @@ function vTvBoard(b){
     // a fighter hit down to 0 stays standing at 0% this beat; it falls on its own "falls!" beat (flash 'ko')
     const up=o.hp===undefined ? u.alive : hp>0 || (o.from>0 && o.flash!=='ko');
     const h=hp>0?pct(u,hp):0, from=o.from===undefined?h:Math.max(0,pct(u,o.from)), r=roles.get(u.uid)||{cls:'',fx:''};
-    const koLine=beat&&b.lines.find(l=>l.ko===u.uid), cut=!!koLine && slicedBy(koLine,u), dust=crumbleKind(koLine);
-    const state = dust ? ` crumbling ${dust}` : cut ? ` cutdown cut-${cutStyle(koLine)}` : r.cls.includes('kod') || o.flash==='ko' ? ' felled' : !up ? ' dead' : o.flash==='spawn' ? ' spawned' : !r.cls && o.flash==='hit' ? ' struck' : !r.cls && o.flash==='heal' ? ' fx-heal' : '';
+    const koLine=beat&&b.lines.find(l=>l.ko===u.uid), blown=!!koLine && cellBurst(koLine,u), cut=!blown && !!koLine && slicedBy(koLine,u), dust=!blown && crumbleKind(koLine);
+    const state = blown ? ' blown' : dust ? ` crumbling ${dust}` : cut ? ` cutdown cut-${cutStyle(koLine)}` : r.cls.includes('kod') || o.flash==='ko' ? ' felled' : !up ? ' dead' : o.flash==='spawn' ? ' spawned' : !r.cls && o.flash==='hit' ? ' struck' : !r.cls && o.flash==='heal' ? ' fx-heal' : '';
     const back = beat && !over && !b.involved.has(u.uid) && !r.cls && !state ? ' back' : '';
     const inner=`${o.calm&&b.involved.has(u.uid)?waterRing():''}<div class="aart">${artOf(u)?`<img decoding="sync" src="${artOf(u)}" alt="">`:`<span class="ak">${u.g}</span>`}</div>${r.fx}
       <div class="ainfo"><span class="anm">${esc(u.name)}</span><span class="ahp${up&&h<=LOW?' low':''}"><span class="abar"><i class="${from!==h?'drain':''}" style="width:${h}%;--from:${from}%"></i></span><b>${hp>0||o.hp===undefined&&up?h+'%':'KO'}</b></span></div>
       ${!playing&&up?statusMarks(u, u.cd===0&&!u.stun):''}`;
-    return `<div class="acard${state}${r.cls}${back}${o.lost?' lost':''}${o.smolder?' smolder':''}${o.hid?' talisman':''}${boundNow(u)?' bound'+boundNow(u):''}" style="--tc:${pc(u.p)}${r.dx!==undefined?`;--dx:${r.dx}px;--dy:${r.dy}px`:''}">${dust?`<div class="cr-pic">${inner}</div>${crumblePic(dust,'').replace('<span class="cr-pic"></span>','')}`:cut?`<div class="sl-wrapb">${inner}</div><div class="sl-wrapt">${inner}</div>`:inner}</div>`; };
+    return `<div class="acard${state}${r.cls}${back}${o.lost?' lost':''}${o.smolder?' smolder':''}${o.hid?' talisman':''}${boundNow(u)?' bound'+boundNow(u):''}" style="--tc:${pc(u.p)}${r.dx!==undefined?`;--dx:${r.dx}px;--dy:${r.dy}px`:''}">${blown?cellPic(inner):dust?`<div class="cr-pic">${inner}</div>${crumblePic(dust,'').replace('<span class="cr-pic"></span>','')}`:cut?`<div class="sl-wrapb">${inner}</div><div class="sl-wrapt">${inner}</div>`:inner}</div>`; };
   // a free-for-all team: its cards, with its name, fighters standing and health above them
   const panel=p=>{ const all=S.teams[p], hpOf=u=>playing&&b.cur.hp[u.uid]!==undefined?b.cur.hp[u.uid]:(u.alive?u.hp:0);
     const up=all.filter(u=>!u.spawn||u.alive).filter(u=>hpOf(u)>0).length, tot=all.filter(u=>!u.spawn).length, pc_=Math.round(100*all.reduce((a,u)=>a+hpOf(u),0)/Math.max(1,all.reduce((a,u)=>a+u.max,0)));

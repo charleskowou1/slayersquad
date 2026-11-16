@@ -2,6 +2,7 @@
 // (CACHE 'squad-draft-vNN'), which goes up with every push. tools/make-guide.js prints this at the top of the guide.
 // Add a line here with every push (CK, Oct 28, 2026), then rebuild the guide: node tools/make-guide.js
 module.exports = [
+  [142, '2026-11-16', 'Demons that Muzan or Final Muzan finish swell and burst (phone and TV); poison and stun marks in playback wait for the move that causes them. The real Hantengu: after sunrise he no longer picks a card (nowhere to hide, said on screen and in the log); "Zohakuten can’t get back up" now comes after "The sun rises!".'],
   [141, '2026-11-16', 'Zohakuten 44 HP (was 30), gets back up with a quarter of his health, then a fifth…; his card shows Zohakuten’s picture; the × on a Codex card works again after the flip; Re-deal button in Random Squads.'],
   [140, '2026-11-16', 'Hantengu’s card is now Zohakuten, Upper Moon 4’s Strongest Emotion: a full fighter (hatred +2 PWR a round up to +4, Wood Dragons through Defend). Knock him down and the real Hantengu hides behind one of three cards: pick the right card to hit him, with a card-flip animation; his DEF 10 neck makes every fighter hit him differently. Admin page: real players vs the sim, and a new-player funnel.'],
   [139, '2026-11-15', 'Hantengu starts the battle as Sekido and Karaku, and his emotions are tougher and hit harder; Tengen is faster (SPD 11) and both Tengens take half damage from poison; quitting during a round no longer crashes the game.'],

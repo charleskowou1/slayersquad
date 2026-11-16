@@ -159,6 +159,10 @@ const KO_TESTS = {
   ht_solo: {custom:()=>htDraftTest(['hantengu']), note:'Draft your squad with the same points as Hantengu alone (9), then fight him.'},
   ht_play: {you:['hantengu','gyokko'], foe:['tanjiro_mark','zenitsu','inosuke'], keep:true, setup:()=>{ S.level='normal'; }, note:'You are Hantengu (and Gyokko). Keep the real one hidden as long as you can.'},
   // Hantengu version 2 (prototype, Nov 16, 2026): cutting the emotions only makes more; find the real one
+  // Muzan's cells: his killing blow bursts a demon
+  mc_one:   {you:['muzan'], foe:['akaza','gyokko'], note:'Muzan finishes a demon and it bursts. Tap Attack on Akaza, then Fight.'},
+  mc_final: {you:['muzan_final'], foe:['doma','daki'], note:'Final Muzan finishes a demon. Tap Attack on Doma, then Fight.'},
+  mc_whips: {you:['muzan'], foe:['akaza','gyokko','daki'], keep:true, setup:()=>{ S.teams[1].forEach(u=>{ u.hp=1; u.pow=0; u.cd=9; u.regen=0; u.spd=0; }); S.teams[0][0].cd=0; S.teams[0][0].spd=99; }, note:'Three demons on 1 HP. Pick Muzan\'s special and Fight: several burst at once.'},
   ht2_solo: {custom:()=>htDraftTest(['hantengu']), note:'New Zohakuten. Draft your squad with his points (9), then fight him. Knock him down, then pick the card the real Hantengu is hiding behind.'},
   ht2_vs:   {custom:()=>htDraftTest(['hantengu','doma']), note:'New Zohakuten with Doma (20 pts). Draft your squad, then fight. Knock Zohakuten down, then pick the right card to hit the real Hantengu.'},
   ht2_play: {you:['hantengu','doma'], foe:['tanjiro_demon','tanjuro'], keep:true, setup:()=>{ S.level='normal'; }, note:'You are the new Zohakuten with Doma, against Demon King Tanjiro and Tanjuro (Normal). When Zohakuten goes down, hide the real Hantengu behind a card.'},

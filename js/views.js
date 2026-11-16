@@ -4,9 +4,11 @@ const esc = s => String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
 const pc = p => `var(--p${p+1})`;   // player colours: green, wisteria, amber, rose
 const nm = p => esc(titled(S.names[p]));
 // The round is worked out before it plays, so a pot or thread only shows once the replay reaches the move that did it
-const boundNow = u => { const p=S.play; if(!u.bound || !p || p.done || !p.steps || !p.steps[p.k]) return u.bound||'';
+const boundNow = u => { const p=S.play; if(!u.bound) return ''; if(!p || p.done || !p.steps) return u.bound; if(!p.steps[p.k]) return '';   // the round intro: nothing has happened yet
   return S.log.slice(p.steps[0][0], p.steps[p.k][1]+1).some(l=>l.kind===u.bound && l.on===u.uid) ? u.bound : ''; };
-const glyphCls = c => { const b=boundNow(c); return (c.legend?'leg':c.mark?'mk':'')+(b?' bound'+b:'')+(c.poison&&c.alive!==false?' poisoned':''); };   // poisoned: bubbles rise off the picture (Nov 12, 2026)
+// Poison the same way: a poison that lands this round shows once playback reaches it (poisonAt, set by the engine)
+const poisonNow = u => { if(!u.poison || u.alive===false) return false; const p=S.play, a=u.poisonAt; if(!p || p.done || !p.steps || !a || a.r!==S.round) return true; const st=p.steps[p.k]; return !!st && a.i<=st[1]; };
+const glyphCls = c => { const b=boundNow(c); return (c.legend?'leg':c.mark?'mk':'')+(b?' bound'+b:'')+(poisonNow(c)?' poisoned':''); };   // poisoned: bubbles rise off the picture (Nov 12, 2026)
 const plural = (n,w) => `${n} ${w}${n===1?'':'s'}`;
 // Character pictures found in img/ (filled in by app.js at startup): card id → file path
 const ART = {};
@@ -801,6 +803,7 @@ function focusOf(p){
 }
 function moveSummary(u){
   if(u.stun) return 'Stunned · skips this round';
+  if(u.zohReal && sunUp()) return 'Nowhere to hide';
   const pl=S.plans[u.p][u.uid];
   if(!pl||!pl.type) return 'Choose a move';
   if(pl.type==='hide') return pl.spot!=null?`Hiding behind card ${pl.spot+1}`:'Pick a card to hide behind';
@@ -816,7 +819,7 @@ function fighter(u, open){
     <span class="tb">${health(u)}<span class="sum${ready?' ok':''}">${ready&&!u.stun?'✓ ':''}${moveSummary(u)}</span></span></button></div>`;
   if(!open) return `<div class="fighter${spr?' spready':''}" style="--tc:${pc(u.p)}">${head}</div>`;
   const cards=(label,on)=>`<div class="htspots"><span class="tlabel">${label}</span><div class="htrow" style="--n:${HT_SPOTS}">${Array.from({length:HT_SPOTS},(_,k)=>`<button class="htspot${on===k?' on':''}" data-a="spot" data-u="${u.uid}" data-v="${k}"><b>?</b><small>${k+1}</small></button>`).join('')}</div></div>`;
-  if(u.zohReal) return `<div class="fighter open" style="--tc:${pc(u.p)}">${head}<div class="fbody">${cards('Hide behind a card. If they pick it, they hit you.',pl.spot)}</div></div>`;   // Zohakuten (prototype)
+  if(u.zohReal) return `<div class="fighter open" style="--tc:${pc(u.p)}">${head}<div class="fbody">${sunUp()?'<p class="hint">The sun is up. The real Hantengu has nowhere left to hide: every attack on him lands.</p>':cards('Hide behind a card. If they pick it, they hit you.',pl.spot)}</div></div>`;   // Zohakuten (prototype)
   const aimHid=pl.t && zohHiding(findU(pl.t)) && !(pl.type==='special' && u.sig.kind==='all');
   // kept short on purpose: stats and the full special text are one tap away on the fighter's picture
   const mv=(v,k,label,sub,dis)=>`<button data-a="act" data-u="${u.uid}" data-v="${v}" class="${pl.type===v?'on':''}" ${dis?'disabled':''}><span class="mk" aria-hidden="true">${k}</span>${label}${sub?`<small>${sub}</small>`:''}</button>`;
@@ -892,8 +895,8 @@ function stage(line){
   const cut=type==='ko' && slicedBy(line,on), dust=crumbleKind(line), act=line.move==='special'&&by?' by-'+by.sk:'';
   const dmg=dmgOf(line), impact=['hit','ko'].includes(type)&&dmg>=40, guarded=type==='hit'&&/\(guarded\)/.test(line.t);   // impact frame, blade clash
   const fast=duo&&by&&by.spd>=FAST&&['hit','ko','miss','block'].includes(type);
-  const muz=type==='ko' && on && on.fam==='muzan', fell=type==='ko' && on && !dust && !cut && !muz && PETAL_FAMS.includes(on.fam);
-  const who=(u,role)=>`<div class="st-${role}">${role==='on'&&muz?muzanPic(seal(u,'stg')):role==='on'&&dust?crumblePic(dust,seal(u,'stg')):role==='on'&&cut?slicePic(u,seal(u,'stg'),cutStyle(line)):role==='on'&&fell?fallPic(u,seal(u,'stg')):seal(u,'stg')}${ring(u,role)}${role==='on'&&line.nocut?NOCUT:''}${role==='on'&&line.gone?kDoors:''}${role==='by'?byFx(line):''}${role==='on'?art+pop+targetFx(line):''}${role==='by'&&fast?`<span class="afterimg" aria-hidden="true">${seal(u,'stg')}${seal(u,'stg')}</span>`:''}${role==='by'&&type==='special'&&style?fxArt(style,'aura'):''}<span class="st-nm" style="color:${pc(u.p)}">${esc(u.name)}</span></div>`;
+  const muz=type==='ko' && on && on.fam==='muzan', blown=type==='ko' && cellBurst(line,on), fell=type==='ko' && on && !dust && !cut && !muz && !blown && PETAL_FAMS.includes(on.fam);
+  const who=(u,role)=>`<div class="st-${role}">${role==='on'&&blown?cellPic(seal(u,'stg')):role==='on'&&muz?muzanPic(seal(u,'stg')):role==='on'&&dust?crumblePic(dust,seal(u,'stg')):role==='on'&&cut?slicePic(u,seal(u,'stg'),cutStyle(line)):role==='on'&&fell?fallPic(u,seal(u,'stg')):seal(u,'stg')}${ring(u,role)}${role==='on'&&line.nocut?NOCUT:''}${role==='on'&&line.gone?kDoors:''}${role==='by'?byFx(line):''}${role==='on'?art+pop+targetFx(line):''}${role==='by'&&fast?`<span class="afterimg" aria-hidden="true">${seal(u,'stg')}${seal(u,'stg')}</span>`:''}${role==='by'&&type==='special'&&style?fxArt(style,'aura'):''}<span class="st-nm" style="color:${pc(u.p)}">${esc(u.name)}</span></div>`;
   if(line.helper){ const h=BYID[line.helper];   // a back-pocket helper acting
     return `<div class="stage fx-${type} solo helperfx" aria-hidden="true"><span class="st-mark">${FX_MARK[type]||''}</span><div class="st-on">${seal(h,'stg')}<span class="st-nm">${esc(h.short)}</span></div></div>`; }
   const mark=`<span class="st-mark">${style&&(type==='hit'||type==='special')?STYLE_KANJI[style]:FX_MARK[type]||''}</span>`;
@@ -1007,6 +1010,11 @@ const PETAL_FAMS = ['shinobu','kanae','kanao'];
 const fallPic = (u, html) => `<span class="fall petals"><span class="fl-pic">${html}</span>${rep(12,i=>`<i style="--x:${(i*31)%100}%;--dx:${((i*47)%80)-40}px;--d:${(i%6)*.12}s"></i>`)}</span>`;
 // Muzan's knockout (CK: the first one was weak): red veins crack across his card, the stage shakes, then he explodes in a
 // shockwave of burning pieces that fly across the battle area
+// Muzan's cells (CK, Nov 16, 2026): a demon either Muzan finishes swells as his blood takes it over, red veins spread, and it bursts in a
+// spray of blood. Smaller and quicker than Muzan's own death. CK picked this over an "absorbed" version (tendrils pulling it into him).
+const CELL_BURST = true;
+const cellBurst = (l, t) => { if(!CELL_BURST || !l || !t || !t.demon || t.fam==='muzan') return false; const a=l.by&&findU(l.by); return !!(a && a.fam==='muzan'); };
+const cellPic = html => `<span class="crumble muzcell"><span class="cr-pic">${html}</span><svg class="mcveins" viewBox="0 0 100 100" aria-hidden="true"><path d="M50 8 C44 30 58 40 50 62 C44 80 54 88 50 96 M8 40 C28 44 36 32 50 46 C66 58 76 48 94 54 M20 12 C30 28 40 26 50 46 M82 14 C70 30 62 30 50 46 M18 88 C30 70 40 72 50 62 M84 86 C72 70 62 70 50 62"/></svg><b class="mcmist"></b>${rep(30,i=>{ const a=i*12+((i*29)%11), r=70+((i*41)%110); return `<i style="--dx:${Math.round(Math.cos(a*Math.PI/180)*r)}px;--dy:${Math.round(Math.sin(a*Math.PI/180)*r)}px;--s:${5+(i*5)%9}px;--d:${(i%6)*.025}s"></i>`; })}</span>`;
 const muzanPic = html => `<span class="crumble muzanburst"><span class="cr-pic">${html}</span><svg class="veins" viewBox="0 0 100 100" aria-hidden="true"><path d="M50 50 L22 14 M50 50 L84 20 M50 50 L90 62 M50 50 L64 92 M50 50 L18 80 M50 50 L8 44 M34 30 L20 34 M70 34 L78 46 M58 72 L74 78 M32 66 L24 56"/></svg><b class="shock"></b><b class="shock s2"></b>${rep(56,i=>{ const a=i*6.43, r=90+((i*37)%170); return `<i style="--dx:${Math.round(Math.cos(a*Math.PI/180)*r)}px;--dy:${Math.round(Math.sin(a*Math.PI/180)*r)}px;--s:${4+(i*7)%9}px;--d:${(i%8)*.03}s"></i>`; })}</span>`;
 // A special's big moment for this beat (effects.js): over the whole screen, on its first hit (every hit for Tengen)
 const SPECIAL_HITS = ['hit','ko','miss','block'];
@@ -1230,8 +1238,8 @@ function stageGroup(lines){
   const by=findU(lines[0].by), style=styleOf(by,'special'), rev=by.p!==leftSide();
   const hits=lines.filter(l=>GROUP_FX.includes(l.fx));
   const target=l=>{ const t=findU(l.on), amt=l.t.match(/\[([+-])(\d+%)\]/), ko=lines.some(m=>m.fx==='ko'&&m.on===l.on);
-    const koL=lines.find(m=>m.fx==='ko'&&m.on===l.on), cut=ko && slicedBy(koL,t), dust=crumbleKind(koL), muz=ko && t.fam==='muzan', fell=ko && !cut && !dust && !muz && PETAL_FAMS.includes(t.fam);
-    const dga=dodgeArt(l,t), pic=dga?dga:muz?muzanPic(seal(t,'stg')):dust?crumblePic(dust,seal(t,'stg')):cut?slicePic(t,seal(t,'stg'),cutStyle(koL)):fell?fallPic(t,seal(t,'stg')):seal(t,'stg');
+    const koL=lines.find(m=>m.fx==='ko'&&m.on===l.on), cut=ko && slicedBy(koL,t), dust=crumbleKind(koL), muz=ko && t.fam==='muzan', blown=ko && cellBurst(koL,t), fell=ko && !cut && !dust && !muz && !blown && PETAL_FAMS.includes(t.fam);
+    const dga=dodgeArt(l,t), pic=dga?dga:blown?cellPic(seal(t,'stg')):muz?muzanPic(seal(t,'stg')):dust?crumblePic(dust,seal(t,'stg')):cut?slicePic(t,seal(t,'stg'),cutStyle(koL)):fell?fallPic(t,seal(t,'stg')):seal(t,'stg');
     return `<div class="st-on${ko?(cut||dust||muz||fell?' sliced':' koed'):''}${l.fx!=='hit'?' missed':''}">${ko&&pic.startsWith('<span')?`<span class="kolater">${pic}</span>`:pic}${l.calmblock?calmDome():calmSides().has(t.p)?waterRing():''}${targetFx(l)}${l.fx==='hit'?fxArt(style):''}${ko?'':amt?`<span class="pop dmg">−${amt[2]}</span>`:l.fx!=='hit'?`<span class="pop">${l.fx==='miss'?'miss':'blocked'}</span>`:''}<span class="st-nm" style="color:${pc(t.p)}">${esc(t.name)}</span></div>`; };
   const attacker=`<div class="st-by">${seal(by,'stg')}${by.sk==='kokushibo'?kokuBlade():''}<span class="st-nm" style="color:${pc(by.p)}">${esc(by.name)}</span></div>`;
   const row=`<div class="st-targets">${hits.map(target).join('')}</div>`, mark=`<span class="st-mark">${STYLE_KANJI[style]}</span>`;
